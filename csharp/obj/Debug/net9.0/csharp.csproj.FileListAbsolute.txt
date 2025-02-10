@@ -12,3 +12,4 @@
 /workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.pdb
 /workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.genruntimeconfig.cache
 /workspaces/ubuntu/csharp/obj/Debug/net9.0/ref/csharp.dll
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.sourcelink.json

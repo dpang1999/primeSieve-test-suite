@@ -22,11 +22,11 @@ g++ -o ../src/primeSieve ../src/primeSieve.cpp > /dev/null 2>&1
 
 # Run Rust test
 echo "Running Rust test..."
-(cd ../src && cargo run -- 100 > /dev/null 2>&1)
+(cd ../rust && cargo run -- 100 > /dev/null 2>&1)
 
 # Run C# test
 echo "Running C# test..."
-(cd ../src && dotnet run -- 100 > /dev/null 2>&1)
+(cd ../csharp && dotnet run -- 100 > /dev/null 2>&1)
 
 # Run Fortran test
 echo "Running Fortran test..."
