@@ -1,0 +1,14 @@
+/workspaces/ubuntu/csharp/bin/Debug/net9.0/csharp
+/workspaces/ubuntu/csharp/bin/Debug/net9.0/csharp.deps.json
+/workspaces/ubuntu/csharp/bin/Debug/net9.0/csharp.runtimeconfig.json
+/workspaces/ubuntu/csharp/bin/Debug/net9.0/csharp.dll
+/workspaces/ubuntu/csharp/bin/Debug/net9.0/csharp.pdb
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.GeneratedMSBuildEditorConfig.editorconfig
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.AssemblyInfoInputs.cache
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.AssemblyInfo.cs
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.csproj.CoreCompileInputs.cache
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.dll
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/refint/csharp.dll
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.pdb
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/csharp.genruntimeconfig.cache
+/workspaces/ubuntu/csharp/obj/Debug/net9.0/ref/csharp.dll
