@@ -1,0 +1,41 @@
+Running tests for 10000 primes...
+Running Go test...
+
+real	0m0.737s
+user	0m0.116s
+sys	0m0.286s
+Running Julia test...
+
+real	0m0.558s
+user	0m0.521s
+sys	0m0.095s
+Running Java test...
+
+real	0m0.038s
+user	0m0.029s
+sys	0m0.028s
+Running TypeScript test...
+
+real	0m0.566s
+user	0m0.185s
+sys	0m0.097s
+Running C++ test...
+
+real	0m0.006s
+user	0m0.000s
+sys	0m0.003s
+Running Rust test...
+
+real	0m0.244s
+user	0m0.029s
+sys	0m0.007s
+Running C# test...
+
+real	0m1.314s
+user	0m0.846s
+sys	0m0.210s
+Running Fortran test...
+
+real	0m0.007s
+user	0m0.002s
+sys	0m0.000s
