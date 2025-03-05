@@ -1,1 +1,1 @@
-/workspaces/ubuntu/rust/target/debug/rust: /workspaces/ubuntu/rust/src/main.rs
+/home/vscode/primeSieve-test-suite/rust/target/debug/rust: /home/vscode/primeSieve-test-suite/rust/src/main.rs

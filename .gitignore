@@ -1,4 +1,4 @@
-primeSieve-rust/target
-primeSieve-rust/Cargo.lock
 csharp/obj/
 csharp/bin/
+test/results/
+rust/target

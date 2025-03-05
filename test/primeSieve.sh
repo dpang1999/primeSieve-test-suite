@@ -1,50 +1,49 @@
-> primeSieve_results.txt
-> sanity.txt
-#Echo parameter given to script
-echo "Running tests for primes up to $1..." | tee -a primeSieve_results.txt sanity.txt
+results_file="results/primeSieve_results$1.txt"
+sanity_file="results/sanity$1.txt"
 
-# I'm conflicted on whether to include the compilation step in the timing or not
-# C# for example includes compilation and running in the dotnet command whereas in java has separate commands
-# But my question becomes, do people care about compilation time?
+> "$results_file"
+> "$sanity_file"
+#Echo parameter given to script
+echo "Running tests for primes up to $1..." | tee -a "$results_file" "$sanity_file"
 
 # Run Go test
-echo "Running Go test..." | tee -a primeSieve_results.txt sanity.txt
-{ time go run ../go/primeSieve.go $1 >> ../test/sanity.txt 2>&1;} 2>> primeSieve_results.txt
+echo "Running Go test..." | tee -a "$results_file" "$sanity_file"
+{ time go run ../go/primeSieve.go $1 >> ../test/"$sanity_file" 2>&1;} 2>> "$results_file"
 
 # Run Julia test
-echo "Running Julia test..." | tee -a primeSieve_results.txt sanity.txt
-{ time julia ../julia/primeSieve.jl $1 >> ../test/sanity.txt 2>&1;} 2>> primeSieve_results.txt
+echo "Running Julia test..." | tee -a "$results_file" "$sanity_file"
+{ time julia ../julia/primeSieve.jl $1 >> ../test/"$sanity_file" 2>&1;} 2>> "$results_file"
 
 # Run Java test
-echo "Running Java test..." | tee -a primeSieve_results.txt sanity.txt
+echo "Running Java test..." | tee -a "$results_file" "$sanity_file"
 cd ../java && javac primeSieve.java > /dev/null 2>&1
-{ time java -cp ./ primeSieve $1 >> ../test/sanity.txt 2>&1;} 2>> ../test/primeSieve_results.txt
+{ time java -cp ./ primeSieve $1 >> ../test/"$sanity_file" 2>&1;} 2>> ../test/"$results_file"
 cd ../test
 
 # Run TypeScript test
-echo "Running TypeScript test..." | tee -a primeSieve_results.txt sanity.txt
-{ time tsx ../typescript/index.ts $1 >> ../test/sanity.txt 2>&1;} 2>> primeSieve_results.txt
+echo "Running TypeScript test..." | tee -a "$results_file" "$sanity_file"
+{ time tsx ../typescript/index.ts $1 >> ../test/"$sanity_file" 2>&1;} 2>> "$results_file"
 
 # Run C++ test
-echo "Running C++ test..." | tee -a primeSieve_results.txt sanity.txt
+echo "Running C++ test..." | tee -a "$results_file" "$sanity_file"
 cd ../cpp && g++ -o primeSieve primeSieve.cpp > /dev/null 2>&1
-{ time ./primeSieve $1 >> ../test/sanity.txt 2>&1;} 2>> ../test/primeSieve_results.txt
+{ time ./primeSieve $1 >> ../test/"$sanity_file" 2>&1;} 2>> ../test/"$results_file"
 cd ../test
 
 # Run Rust test
-echo "Running Rust test..." | tee -a primeSieve_results.txt sanity.txt
+echo "Running Rust test..." | tee -a "$results_file" "$sanity_file"
 cd ../rust
-{ time cargo run -- $1 >> ../test/sanity.txt 2>&1;} 2>> ../test/primeSieve_results.txt
+{ time cargo run -- $1 >> ../test/"$sanity_file" 2>&1;} 2>> ../test/"$results_file"
 cd ../test
 
 # Run C# test
-echo "Running C# test..." | tee -a primeSieve_results.txt sanity.txt
+echo "Running C# test..." | tee -a "$results_file" "$sanity_file"
 cd ../csharp
-{ time dotnet run -- $1 >> ../test/sanity.txt 2>&1;} 2>> ../test/primeSieve_results.txt
+{ time dotnet run -- $1 >> ../test/"$sanity_file" 2>&1;} 2>> ../test/"$results_file"
 cd ../test
 
 # Run Fortran test
-echo "Running Fortran test..." | tee -a primeSieve_results.txt sanity.txt
+echo "Running Fortran test..." | tee -a "$results_file" "$sanity_file"
 cd ../fortran && gfortran primeSieve.f90 -o primeSieve > /dev/null 2>&1
-{ time ./primeSieve $1 >> ../test/sanity.txt 2>&1;} 2>> ../test/primeSieve_results.txt
+{ time ./primeSieve $1 >> ../test/"$sanity_file" 2>&1;} 2>> ../test/"$results_file"
 cd ../test
