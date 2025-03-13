@@ -7,10 +7,10 @@ std::vector<bool> primeSieve(int num)
     std::vector<bool> primes(num, true);
     primes[0] = false;
     primes[1] = false;
-    for(int i = 2; i < num; i++)
+    for(long long i = 2; i < num; i++)
     {
         if(primes[i] != false) {
-            int j = i;
+            long long j = i;
             while (i*j < num) {
                 primes[i*j] = false;
                 j++;
@@ -22,7 +22,7 @@ std::vector<bool> primeSieve(int num)
 
 int main(int argc, char *argv[])
 {
-    int max = 42;
+    int max = 42; // default value
     if (argc > 1) // program name is always the first argument
     {
         max = atoi(argv[1]);
