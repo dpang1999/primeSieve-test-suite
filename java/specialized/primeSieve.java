@@ -1,3 +1,4 @@
+package specialized;
 public class primeSieve {
     static boolean[] sieve(int num) {
         boolean[] primes = new boolean[num];

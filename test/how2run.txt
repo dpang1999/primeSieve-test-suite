@@ -4,6 +4,7 @@ g++ -o (output file name) (source file name)
 
 Rust:
 cargo run
+also "cargo run --bin (bin name: found in cargo.toml)
 
 Typescript:
 tsx (source file name)
@@ -15,7 +16,7 @@ C#:
 dotnet run
 
 Java
-javac (source file name).java
+javac (source file name, or the entire directory with *).java
 java (source file name, no extension)
 
 Julia:

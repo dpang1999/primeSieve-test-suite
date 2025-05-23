@@ -5,6 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "java",
+            "name": "LU",
+            "request": "launch",
+            "mainClass": "specialized.LU",
+            "projectName": "primeSieve-test-suite_455806c7"
+        },
+        {
+            "type": "java",
+            "name": "GenLU",
+            "request": "launch",
+            "mainClass": "generic.GenLU",
+            "projectName": "primeSieve-test-suite_455806c7"
+        },
+        {
             "type": "lldb",
             "request": "launch",
             "name": "Debug",

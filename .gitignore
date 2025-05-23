@@ -2,3 +2,4 @@ csharp/obj/
 csharp/bin/
 test/results/
 rust/target
+*.class

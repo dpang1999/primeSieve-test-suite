@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../../../../workspaces/ubuntu"
+		},
+		{
+			"name": "primeSieve-test-suite",
+			"path": "../.."
+		}
+	],
+	"settings": {}
+}
