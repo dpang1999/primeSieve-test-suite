@@ -8,7 +8,7 @@ public class DoubleRing implements IRing<DoubleRing>,
 
 	public boolean printShort = true;
 
-	public static int fCount;
+	//public static int fCount;
 
 	DoubleRing(double d) {
 		this.d = d;
@@ -23,7 +23,7 @@ public class DoubleRing implements IRing<DoubleRing>,
 	}
 
 	public DoubleRing a(DoubleRing o) {
-		fCount++;
+		//fCount++;
 		if (o == null)
 			return new DoubleRing(d);
 		else
@@ -31,13 +31,13 @@ public class DoubleRing implements IRing<DoubleRing>,
 	}
 
 	public void ae(DoubleRing o) {
-		fCount++;
+		//fCount++;
 		if (o != null)
 			d += o.d;
 	}
 
 	public DoubleRing s(DoubleRing o) {
-		fCount++;
+		//fCount++;
 		if (o != null)
 			return new DoubleRing(d - o.d);
 		else
@@ -45,13 +45,13 @@ public class DoubleRing implements IRing<DoubleRing>,
 	}
 
 	public void se(DoubleRing o) {
-		fCount++;
+		//fCount++;
 		if (o != null)
 			d -= o.d;
 	}
 
 	public DoubleRing m(DoubleRing o) {
-		fCount++;
+		//fCount++;
 		if (o != null)
 			return new DoubleRing(d * o.d);
 		else
@@ -59,7 +59,7 @@ public class DoubleRing implements IRing<DoubleRing>,
 	}
 
 	public void me(DoubleRing o) {
-		fCount++;
+		//fCount++;
 		if (o != null)
 			d *= o.d;
 		else
@@ -127,7 +127,7 @@ public class DoubleRing implements IRing<DoubleRing>,
 	}
 
 	public DoubleRing invert() {
-		fCount++;
+		//fCount++;
 		return new DoubleRing(1 / d);
 	}
 

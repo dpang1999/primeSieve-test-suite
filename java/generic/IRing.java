@@ -1,7 +1,7 @@
 package generic;
 
 
-interface IRing <T> {
+interface IRing<T> {
 	T a(T o);
 	void ae(T o);
 	T s(T o);

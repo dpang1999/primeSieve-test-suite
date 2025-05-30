@@ -9,3 +9,6 @@ rand = "0.9.1"
 [[bin]]
 name = "lu"
 path = "src/specialized/LU.rs"
+[[bin]]
+name = "genlu"
+path = "src/GenLU.rs"

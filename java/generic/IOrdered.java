@@ -1,9 +1,9 @@
 package generic;
 
 
-interface IOrdered<R extends IRing<R>> {
-	boolean lt(R o);
-	boolean le(R o);
-	boolean gt(R o);
-	boolean ge(R o);
+interface IOrdered<T extends IRing<T>> {
+	boolean lt(T o);
+	boolean le(T o);
+	boolean gt(T o);
+	boolean ge(T o);
 }

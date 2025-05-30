@@ -1,7 +1,7 @@
 package generic;
 
 
-interface IMath<R extends IRing<R> & IOrdered<R>> {
-	R abs();
+interface IMath<T extends IRing<T> & IOrdered<T>> {
+	T abs();
 	void sqrt();
 }
