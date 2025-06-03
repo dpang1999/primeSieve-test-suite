@@ -1,0 +1,10 @@
+pub struct ComplexField<T> {
+    pub re: T,
+    pub im: T,
+}
+
+impl<T> ComplexField<T> {
+    pub fn new(re: T, im: T) -> Self {
+        ComplexField { re, im }
+    }
+}

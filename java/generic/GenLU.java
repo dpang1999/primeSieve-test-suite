@@ -11,7 +11,7 @@ import java.lang.reflect.*;
  * 
  * 
  */
-public class GenLU<R extends IRing<R> & IInvertible<R>> {
+public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>> {
 	/**
 	 * Returns a <em>copy</em> of the compact LU factorization. (useful mainly
 	 * for debugging.)
@@ -30,7 +30,7 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected static <U extends IRing<U>> U[] new_copy(U x[]) {
+	protected static <U extends IField<U>> U[] new_copy(U x[]) {
 		int N = x.length;
 		U T[] = (U[]) Array.newInstance(x[0].getClass(), N);
 		for (int i = 0; i < N; i++)
@@ -39,7 +39,7 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected static <U extends IRing<U>> U[][] new_copy(U A[][]) {
+	protected static <U extends IField<U>> U[][] new_copy(U A[][]) {
 		int M = A.length;
 		int N = A[0].length;
 		int dims[] = new int[2];
@@ -66,7 +66,7 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 		return T;
 	}
 
-	protected static final <U extends IRing<U>> void insert_copy(U B[][],
+	protected static final <U extends IField<U>> void insert_copy(U B[][],
 			U A[][]) {
 		int M = A.length;
 		int N = A[0].length;
@@ -155,7 +155,7 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 	 * 
 	 * @return 0, if OK, nozero value, othewise.
 	 */
-	public static <U extends IRing<U> & IInvertible<U>> int factor(U A[][], int pivot[]) {
+	public static <U extends IField<U> & IInvertible<U> & IOrdered<U> & IMath<U>> int factor(U A[][], int pivot[]) {
 		int N = A.length;
 		int M = A[0].length;
 
@@ -166,9 +166,9 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 
 			int jp = j;
 
-			U t = A[j][j].coerce(Math.abs(A[j][j].coerce()));
+			U t = A[j][j].abs();
 			for (int i = j + 1; i < M; i++) {
-				U ab = A[i][j].coerce(Math.abs(A[i][j].coerce()));
+				U ab = A[i][j].abs();
 				if (ab.coerce() > t.coerce()) {
 					jp = i;
 					t = ab;
@@ -194,7 +194,7 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 				// note A(j,j), was A(jp,p) previously which was
 				// guarranteed not to be zero (Label #1)
 				//
-				U recp = A[j][j].coerce(1.0).m(A[j][j].invert());
+				U recp = A[j][j].one().d(A[j][j]); 
 
 				for (int k = j + 1; k < M; k++)
 					A[k][j] = A[k][j].m(recp);
@@ -233,7 +233,7 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 	 *            (in/out) On input, the right-hand side. On output, the
 	 *            solution vector.
 	 */
-	public static <U extends IRing<U> & IInvertible<U>> void solve(U LU[][], int pvt[], U b[]) {
+	public static <U extends IField<U> & IInvertible<U>> void solve(U LU[][], int pvt[], U b[]) {
 		int M = LU.length;
 		int N = LU[0].length;
 		int ii = 0;
@@ -268,15 +268,15 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 		if (args.length > 0)
 			N = Integer.parseInt(args[0]);
 
-		DoubleRing A[][] = new DoubleRing[N][N];
-		DoubleRing b[] = new DoubleRing[N];
+		DoubleField A[][] = new DoubleField[N][N];
+		DoubleField b[] = new DoubleField[N];
 		int pivot[] = new int[N];
 		
 
 		for (int i = 0; i < N; i++) {
 			for (int j = 0; j < N; j++)
-				A[i][j] = new DoubleRing(Math.random()*1000);
-			b[i] = new DoubleRing(Math.random()*1000);
+				A[i][j] = new DoubleField(Math.random()*1000);
+			b[i] = new DoubleField(Math.random()*1000);
 		}
 		printMatrix(A);
 
@@ -290,19 +290,19 @@ public class GenLU<R extends IRing<R> & IInvertible<R>> {
 		System.exit(0);
 	}
 
-	static void printMatrix(DoubleRing A[][]) {
+	static void printMatrix(DoubleField A[][]) {
 		int M = A.length;
 		int N = A[0].length;
 
 		for (int i = 0; i < M; i++) {
-			DoubleRing Ai[] = A[i];
+			DoubleField Ai[] = A[i];
 			for (int j = 0; j < N; j++)
 				System.out.print(Ai[j].toString() + " ");
 			System.out.println();
 		}
 		System.out.println();
 	}
-	static void printVector(DoubleRing B[]) {
+	static void printVector(DoubleField B[]) {
 		int M = B.length;
 
 		for (int i = 0; i < M; i++)
