@@ -4,4 +4,5 @@ pub trait IOrdered: IField {
     fn le (&self, o: &Self) -> bool;
     fn gt (&self, o: &Self) -> bool;
     fn ge (&self, o: &Self) -> bool;
+    fn eq (&self, o: &Self) -> bool;
 }

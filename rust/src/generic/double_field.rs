@@ -67,9 +67,9 @@ impl IField for DoubleField {
         self.d /= o.d;
     }
 
-    fn coerce(&self) -> f64 {
+    /*fn coerce(&self) -> f64 {
         self.d
-    }
+    }*/
 
     fn is_zero(&self) -> bool {
         self.d == 0.0
@@ -79,11 +79,11 @@ impl IField for DoubleField {
         self.d == 1.0
     }
 
-    fn zero() -> DoubleField {
+    fn zero(&self) -> DoubleField {
         DoubleField::new(0.0)
     }
 
-    fn one() -> DoubleField {
+    fn one(&self) -> DoubleField {
         DoubleField::new(1.0)
     }
 
@@ -117,6 +117,10 @@ impl IOrdered for DoubleField {
 
     fn ge(&self, o: &DoubleField) -> bool {
         self.d >= o.d
+    }
+
+    fn eq(&self, o: &DoubleField) -> bool {
+        self.d == o.d
     }
 }
 

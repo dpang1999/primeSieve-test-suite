@@ -8,12 +8,12 @@ pub trait IField: {
     fn d(&self, o: &Self) -> Self;
     fn de(&mut self, o: &Self);
 
-    fn coerce(&self) -> f64;
+    //fn coerce(&self) -> f64;
 
     fn is_zero(&self) -> bool;
     fn is_one(&self) -> bool;
-    fn zero() -> Self;
-    fn one() -> Self;
+    fn zero(&self) -> Self;
+    fn one(&self) -> Self;
 
     fn copy(&self) -> Self;
 }

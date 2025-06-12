@@ -67,9 +67,9 @@ impl IField for SingleField {
         self.f /= o.f;
     }
 
-    fn coerce(&self) -> f64 {
+    /*fn coerce(&self) -> f64 {
         self.f as f64
-    }
+    }*/
 
     fn is_zero(&self) -> bool {
         self.f == 0.0
@@ -79,11 +79,11 @@ impl IField for SingleField {
         self.f == 1.0
     }
 
-    fn zero() -> SingleField {
+    fn zero(&self) -> SingleField {
         SingleField::new(0.0)
     }
 
-    fn one() -> SingleField {
+    fn one(&self) -> SingleField {
         SingleField::new(1.0)
     }
 
@@ -117,6 +117,10 @@ impl IOrdered for SingleField {
 
     fn ge(&self, o: &SingleField) -> bool {
         self.f >= o.f
+    }
+
+    fn eq(&self, o: &SingleField) -> bool {
+        self.f == o.f
     }
 }
 
