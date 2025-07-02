@@ -143,3 +143,9 @@ impl fmt::Display for SingleField {
         }
     }
 }
+
+impl Clone for SingleField {
+    fn clone(&self) -> Self {
+        SingleField::new(self.f)
+    }
+}

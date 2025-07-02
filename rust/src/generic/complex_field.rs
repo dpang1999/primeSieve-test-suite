@@ -1,5 +1,8 @@
+use core::fmt;
+
 use crate::generic::i_field::IField;
 use crate::generic::i_ordered::IOrdered;
+use crate::generic::i_math::IMath;
 
 pub struct ComplexField<T> {
     pub re: T,
@@ -104,5 +107,45 @@ impl<T: IField + IOrdered> IOrdered for ComplexField<T> {
 
     fn eq(&self, o: &ComplexField<T>) -> bool {
         self.re.eq(&o.re) && self.im.eq(&o.im)
+    }
+}
+
+impl<T: IField + IOrdered + fmt::Display> fmt::Display for ComplexField<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.im.is_zero() {
+            write!(f, "{}", self.re)
+        } else if self.re.is_zero() {
+            write!(f, "{}i", self.im)
+        } else {
+            write!(
+                f,
+                "{}{}{}i",
+                self.re,
+                if self.im.lt(&T::zero(&self.im)) { "" } else { "+" },
+                self.im
+            )
+        }
+    }
+}
+
+impl<T: IField + IOrdered> IMath for ComplexField<T> {
+    fn abs(&self) -> Self {
+        let re = self.re.coerce();
+        let im = self.im.coerce();
+        (re * re + im * im).sqrt()
+    }
+
+    fn sqrt(&mut self) {
+        // Square root of a complex number is not straightforward and is not implemented here.
+        panic!("Square root not implemented for ComplexField");
+    }
+}
+
+impl<T> Clone for ComplexField<T>
+where
+    T: IField + IOrdered + Clone,
+{
+    fn clone(&self) -> Self {
+        ComplexField::new(self.re.clone(), self.im.clone())
     }
 }

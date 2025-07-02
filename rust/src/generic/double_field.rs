@@ -143,3 +143,9 @@ impl fmt::Display for DoubleField {
         }
     }
 }
+
+impl Clone for DoubleField {
+    fn clone(&self) -> Self {
+        DoubleField::new(self.d)
+    }
+}

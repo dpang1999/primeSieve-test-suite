@@ -3,10 +3,10 @@ import java.util.Formatter;
 
 public class DoubleField implements IField<DoubleField>,
 		ITrigonometric<DoubleField>, IInvertible<DoubleField>, IMath<DoubleField>,
-		IOrdered<DoubleField> {
+		IOrdered<DoubleField>, ICopiable<DoubleField> {
 	double d;
 
-	public boolean printShort = true;
+	public boolean printShort = false;
 
 	//public static int fCount;
 
@@ -99,12 +99,12 @@ public class DoubleField implements IField<DoubleField>,
 		d = Math.sqrt(d);
 	}
 
-	public void sin() {
-		d = Math.sin(d);
+	public DoubleField sin() {
+		return new DoubleField(Math.sin(d));
 	}
 
-	public void cos() {
-		d = Math.cos(d);
+	public DoubleField cos() {
+		return new DoubleField(Math.cos(d));
 	}
 
  	public String toString() {
@@ -173,6 +173,12 @@ public class DoubleField implements IField<DoubleField>,
 
 	public boolean ge(DoubleField o) {
 		if (d >= o.d)
+			return true;
+		return false;
+	}
+
+	public boolean eq(DoubleField o) {
+		if (d == o.d)
 			return true;
 		return false;
 	}

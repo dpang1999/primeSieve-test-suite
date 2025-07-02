@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "GenFFT",
+            "request": "launch",
+            "mainClass": "generic.GenFFT",
+            "projectName": "primeSieve-test-suite_455806c7"
+        },
+        {
+            "type": "java",
+            "name": "SOR",
+            "request": "launch",
+            "mainClass": "specialized.SOR",
+            "projectName": "primeSieve-test-suite_455806c7"
+        },
+        {
+            "type": "java",
             "name": "LU",
             "request": "launch",
             "mainClass": "specialized.LU",

@@ -13,5 +13,11 @@ path = "src/specialized/LU.rs"
 name = "genlu"
 path = "src/GenLU.rs"
 [[bin]]
+name = "sor"
+path = "src/specialized/SOR.rs"
+[[bin]]
+name = "gensor"
+path = "src/GenSOR.rs"
+[[bin]]
 name = "test"
 path = "src/test.rs"

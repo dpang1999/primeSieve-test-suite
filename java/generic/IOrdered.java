@@ -6,4 +6,5 @@ interface IOrdered<T extends IField<T>> {
 	boolean le(T o);
 	boolean gt(T o);
 	boolean ge(T o);
+	boolean eq(T o);
 }

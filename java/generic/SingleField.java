@@ -99,12 +99,12 @@ public class SingleField implements IField<SingleField>,
 		f = (float) Math.sqrt(f);
 	}
 
-	public void sin() {
-		f = (float) Math.sin(f);
+	public SingleField sin() {
+		return new SingleField((float) Math.sin(f));
 	}
 
-	public void cos() {
-		f = (float) Math.cos(f);
+	public SingleField cos() {
+		return new SingleField((float) Math.cos(f));
 	}
 
  	public String toString() {
@@ -173,6 +173,12 @@ public class SingleField implements IField<SingleField>,
 
 	public boolean ge(SingleField o) {
 		if (f >= o.f)
+			return true;
+		return false;
+	}
+
+	public boolean eq(SingleField o) {
+		if (f == o.f)
 			return true;
 		return false;
 	}

@@ -69,7 +69,6 @@ impl IField for IntModP {
         self.i = (self.i * o.i).rem_euclid(self.p);
     }
 
-    //TODO: division
     fn d(&self, o: &IntModP) -> IntModP {
         if o.i == 0 {
             panic!("Division by zero in IntModP");
@@ -151,5 +150,11 @@ impl fmt::Display for IntModP {
         } else {
             write!(f, "IntModP({}, {})", self.i, self.p)
         }
+    }
+}
+
+impl Clone for IntModP {
+    fn clone(&self) -> Self {
+        self.copy()
     }
 }

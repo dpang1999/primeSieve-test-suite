@@ -137,5 +137,11 @@ public class IntModP implements IField<IntModP>,
             return false;
         return d >= o.d;
     }
+
+    public boolean eq(IntModP o) {
+        if (o == null)
+            return false;
+        return d == o.d && p == o.p;
+    }
        
 }

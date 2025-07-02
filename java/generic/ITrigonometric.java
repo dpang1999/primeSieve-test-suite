@@ -2,8 +2,8 @@ package generic;
 
 interface ITrigonometric<T> {
 
-	void sin();
+	T sin();
 
-	void cos();
+	T cos();
 
 }
