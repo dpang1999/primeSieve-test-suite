@@ -6,7 +6,7 @@ public class DoubleField implements IField<DoubleField>,
 		IOrdered<DoubleField>, ICopiable<DoubleField> {
 	double d;
 
-	public boolean printShort = false;
+	public boolean printShort = true;
 
 	//public static int fCount;
 

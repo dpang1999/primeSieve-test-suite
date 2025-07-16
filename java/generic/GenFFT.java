@@ -72,7 +72,12 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 		// System.arraycopy(data,0,copy,0,nd);
 		// Transform & invert
 		transform(data);
+
+		System.out.println("After transform:" + Arrays.toString(data));
+
 		inverse(data);
+
+		System.out.println("After inverse:" + Arrays.toString(data));
 		// Compute RMS difference.
 		/*
 		 * cannot have static methods in interfaces.
@@ -128,11 +133,20 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 				num, num);
 		if (args.length == 0) {
 			int n = 1024;
-			System.out.println("n=" + n + " => RMS Error="
-					+ fft.test(fft.makeRandom(n)));
+			ComplexField<DoubleField>[] data = fft.makeRandom(n);
+
+			/*ComplexField<DoubleField>[] data2 = (ComplexField<DoubleField>[]) java.lang.reflect.Array.newInstance(ComplexField.class, 4);
+			data2[0] = new ComplexField<DoubleField>(new DoubleField(2), new DoubleField(0));
+			data2[1] = new ComplexField<DoubleField>(new DoubleField(2), new DoubleField(0));
+			data2[2] = new ComplexField<DoubleField>(new DoubleField(2), new DoubleField(0));
+			data2[3] = new ComplexField<DoubleField>(new DoubleField(2), new DoubleField(0));*/
+			System.out.println(Arrays.toString(data));
+			System.out.println("n=" + n + " => RMS Error="+ fft.test(data));
 		}
 		for (int i = 0; i < args.length; i++) {
 			int n = Integer.parseInt(args[i]);
+			ComplexField<DoubleField>[] data = fft.makeRandom(n);
+			System.out.println(Arrays.toString(data));
 			System.out.println("n=" + n + " => RMS Error="
 					+ fft.test(fft.makeRandom(n)));
 		}

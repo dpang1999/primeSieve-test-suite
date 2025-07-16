@@ -70,6 +70,9 @@ impl IField for DoubleField {
     /*fn coerce(&self) -> f64 {
         self.d
     }*/
+    fn coerce(&self, value: f64) -> DoubleField {
+        DoubleField::new(value)
+    }
 
     fn is_zero(&self) -> bool {
         self.d == 0.0
@@ -94,8 +97,8 @@ impl IField for DoubleField {
 
 
 impl IMath for DoubleField {
-    fn abs(&self) -> DoubleField {
-        DoubleField::new(self.d.abs())
+    fn abs(&self) -> f64 {
+        self.d.abs()
     }
     fn sqrt(&mut self) {
         self.d = self.d.sqrt();

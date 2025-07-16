@@ -19,5 +19,8 @@ path = "src/specialized/SOR.rs"
 name = "gensor"
 path = "src/GenSOR.rs"
 [[bin]]
+name = "genfft"
+path = "src/GenFFT.rs"
+[[bin]]
 name = "test"
 path = "src/test.rs"

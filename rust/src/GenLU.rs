@@ -72,10 +72,10 @@ pub fn factor<U: IField + IMath>(
     for j in 0..min_mn {
         // Find pivot in column j and test for singularity
         let mut jp = j;
-        let mut t: U = a[j][j].abs();
+        let mut t = a[j][j].abs();
         for i in (j + 1)..m {
             let ab = a[i][j].abs();
-            if ab.gt(&t) {
+            if ab > t {
                 jp = i;
                 t = ab;
             }

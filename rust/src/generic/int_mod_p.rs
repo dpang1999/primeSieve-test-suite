@@ -90,6 +90,10 @@ impl IField for IntModP {
         
     }
  
+    fn coerce(&self, value: f64) -> IntModP {
+        IntModP::new(value as i32, self.p)
+    }
+
     fn is_zero(&self) -> bool {
         self.i == 0
     }
@@ -133,8 +137,8 @@ impl IOrdered for IntModP {
 }
 
 impl IMath for IntModP {
-    fn abs(&self) -> IntModP {
-        self.copy()
+    fn abs(&self) -> f64 {
+        self.i as f64
     }
 
     fn sqrt(&mut self) {

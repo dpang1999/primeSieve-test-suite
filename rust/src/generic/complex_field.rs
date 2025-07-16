@@ -73,6 +73,9 @@ impl <T: IField + IOrdered> IField for ComplexField<T> {
     /*fn coerce(&self) -> f64 {
         (self.re.coerce().powi(2) + self.im.coerce().powi(2)).sqrt()
     }*/
+    fn coerce(&self, value: f64) -> ComplexField<T> {
+        ComplexField::new(self.re.coerce(value), self.im.coerce(0.0))
+    }
 
     fn is_zero(&self) -> bool {
         self.re.is_zero() && self.im.is_zero()
@@ -128,11 +131,13 @@ impl<T: IField + IOrdered + fmt::Display> fmt::Display for ComplexField<T> {
     }
 }
 
-impl<T: IField + IOrdered> IMath for ComplexField<T> {
-    fn abs(&self) -> Self {
-        let re = self.re.coerce();
-        let im = self.im.coerce();
-        (re * re + im * im).sqrt()
+impl<T: IField + IOrdered + IMath> IMath for ComplexField<T> {
+    fn abs(&self) -> f64 {
+        let re = self.re.copy();
+        let im = self.im.copy();
+        let mut temp = (re.m(&re).a(&im.m(&im)));
+        temp.sqrt();
+        temp.abs()
     }
 
     fn sqrt(&mut self) {

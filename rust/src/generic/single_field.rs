@@ -70,6 +70,9 @@ impl IField for SingleField {
     /*fn coerce(&self) -> f64 {
         self.f as f64
     }*/
+    fn coerce(&self, value: f64) -> SingleField {
+        SingleField::new(value as f32)
+    }
 
     fn is_zero(&self) -> bool {
         self.f == 0.0
@@ -94,8 +97,8 @@ impl IField for SingleField {
 
 
 impl IMath for SingleField {
-    fn abs(&self) -> SingleField {
-        SingleField::new(self.f.abs())
+    fn abs(&self) -> f64 {
+        self.f.abs() as f64
     }
     fn sqrt(&mut self) {
         self.f = self.f.sqrt();

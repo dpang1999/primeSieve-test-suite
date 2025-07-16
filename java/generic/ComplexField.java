@@ -204,5 +204,9 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> impl
         return new ComplexField<T>(real, imag);
     }
 
+    @Override
+    public String toString() {
+        return "(" + re.toString() + (im.isZero() ? "" : (im.coerce() >= 0 ? "+" : "") + im.toString() + "i") + ")";
+    }
    
 }

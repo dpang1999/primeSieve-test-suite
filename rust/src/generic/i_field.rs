@@ -9,6 +9,7 @@ pub trait IField: {
     fn de(&mut self, o: &Self);
 
     //fn coerce(&self) -> f64;
+    fn coerce(&self, value: f64) -> Self;
 
     fn is_zero(&self) -> bool;
     fn is_one(&self) -> bool;
