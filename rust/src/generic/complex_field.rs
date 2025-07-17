@@ -135,7 +135,7 @@ impl<T: IField + IOrdered + IMath> IMath for ComplexField<T> {
     fn abs(&self) -> f64 {
         let re = self.re.copy();
         let im = self.im.copy();
-        let mut temp = (re.m(&re).a(&im.m(&im)));
+        let mut temp = re.m(&re).a(&im.m(&im));
         temp.sqrt();
         temp.abs()
     }

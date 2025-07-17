@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 rand = "0.9.1"
+seeded-random = "0.6"
 
 [[bin]]
 name = "lu"
@@ -19,8 +20,17 @@ path = "src/specialized/SOR.rs"
 name = "gensor"
 path = "src/GenSOR.rs"
 [[bin]]
+name = "fft"
+path = "src/specialized/FFT.rs"
+[[bin]]
 name = "genfft"
 path = "src/GenFFT.rs"
 [[bin]]
 name = "test"
 path = "src/test.rs"
+[[bin]]
+name = "montecarlo"
+path = "src/specialized/MonteCarlo.rs"
+[[bin]]
+name = "genmontecarlo"
+path = "src/GenMonteCarlo.rs"
