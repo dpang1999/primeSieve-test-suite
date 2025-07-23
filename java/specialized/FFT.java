@@ -1,4 +1,6 @@
 package specialized;
+import java.util.Arrays;
+import java.util.Random;
 
 /** Computes FFT's of complex, double precision data where n is an integer power of 2.
   * This appears to be slower than the Radix2 method,
@@ -48,27 +50,34 @@ public class FFT {
     System.arraycopy(data,0,copy,0,nd);
     // Transform & invert
     transform(data);
+    System.out.println("After transform:" + Arrays.toString(data));
     inverse(data);
+    System.out.println("After inverse:" + Arrays.toString(data));
     // Compute RMS difference.
     double diff = 0.0;
     for(int i=0; i<nd; i++) {
       double d = data[i]-copy[i];
-      diff += d*d; }
+      diff += d*d; 
+    }
+
     return Math.sqrt(diff/nd); }
 
   /** Make a random array of n (complex) elements. */
   public static double[] makeRandom(int n){
+    Random random = new Random(12345);
     int nd = 2*n;
     double data[] = new double[nd];
     for(int i=0; i<nd; i++)
-      data[i]= Math.random();
+      data[i]= random.nextDouble();
     return data; }
 
   /** Simple Test routine. */
   public static void main(String args[]){
     if (args.length == 0) {
-      int n = 1024;
-      System.out.println("n="+n+" => RMS Error="+test(makeRandom(n))); }
+      int n = 4;
+      double[] data = makeRandom(n);
+      System.out.println(Arrays.toString(data));
+      System.out.println("n="+n+" => RMS Error="+test(data)); }
     for(int i=0; i<args.length; i++) {
       int n = Integer.parseInt(args[i]);
       System.out.println("n="+n+" => RMS Error="+test(makeRandom(n))); }

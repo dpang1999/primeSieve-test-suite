@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "FFT",
+            "request": "launch",
+            "mainClass": "specialized.FFT",
+            "projectName": "primeSieve-test-suite_455806c7"
+        },
+        {
+            "type": "java",
             "name": "GenMonteCarlo",
             "request": "launch",
             "mainClass": "generic.GenMonteCarlo",

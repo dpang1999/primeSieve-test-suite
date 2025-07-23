@@ -1,6 +1,7 @@
 package generic;
 import java.util.*;
 import java.lang.reflect.*;
+import java.util.Random;
 
 /**
  * Computes FFT's of complex, double precision data where n is an integer power
@@ -61,7 +62,7 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 	 * Accuracy check on FFT of data. Make a copy of data, Compute the FFT, then
 	 * the inverse and compare to the original. Returns the rms difference.
 	 */
-	public N test(ComplexField<N>[] data) {
+	public double test(ComplexField<N>[] data) {
 		int nd = data.length;
 		// Make duplicate for comparison
 		ArrayList<ComplexField<N>> copy = new ArrayList<ComplexField<N>>(nd);
@@ -98,29 +99,33 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 		diff.sqrt();
 		return diff;*/
 
-		// I do not know if this is wholly correct - Daniel Pang
-		N diff = c.re.zero();
+
+		double diff = 0.0;
 		for (int i = 0; i < nd; i++) {
 			ComplexField<N> d = data[i].copy();
-			d.se(copy.get(i));         // d = d - copy[i]
-			N mag2 = c.re.coerce(d.abs());         // mag2 = |d|^2, a method of ComplexField<T>
-			diff.ae(mag2);             // diff += mag2
+			double real = d.re.coerce();
+			double imag = d.im.coerce();
+			double realDiff = real - copy.get(i).re.coerce();
+			double imagDiff = imag - copy.get(i).im.coerce();
+			diff += realDiff * realDiff + imagDiff * imagDiff;
 		}
-		diff.de(c.re.coerce(nd));       // diff /= n
-		diff.sqrt();                   // diff = sqrt(diff)
-		return diff; 
+
+		return Math.sqrt(diff/(nd*2)); // nd*2 as the original had double array size for imaginary and complex components separately
+
+		
 	}
 
 	/** Make a random array of n (complex) elements. */
 	@SuppressWarnings("unchecked")
 	public ComplexField<N>[] makeRandom(int n) {
+		Random random = new Random(12345);
 		// int nd = 2*n;
 		// ArrayList<C> data = new ArrayList<C>(nd);
 		// for(int i=0; i<nd; i++)
 		ComplexField<N>[] data = (ComplexField<N>[]) Array.newInstance(c.getClass(), n);
 		for (int i = 0; i < n; i++)
-			data[i] = new ComplexField<N>(c.re.coerce(Math.random()),
-					c.re.coerce(Math.random()));
+			data[i] = new ComplexField<N>(c.re.coerce(random.nextDouble()),
+					c.re.coerce(random.nextDouble()));
 		return data;
 	}
 
@@ -132,7 +137,7 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 		GenFFT<DoubleField> fft = new GenFFT<DoubleField>(
 				num, num);
 		if (args.length == 0) {
-			int n = 1024;
+			int n = 4;
 			ComplexField<DoubleField>[] data = fft.makeRandom(n);
 
 			/*ComplexField<DoubleField>[] data2 = (ComplexField<DoubleField>[]) java.lang.reflect.Array.newInstance(ComplexField.class, 4);
@@ -148,7 +153,7 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 			ComplexField<DoubleField>[] data = fft.makeRandom(n);
 			System.out.println(Arrays.toString(data));
 			System.out.println("n=" + n + " => RMS Error="
-					+ fft.test(fft.makeRandom(n)));
+					+ fft.test(data));
 		}
 	}
 
