@@ -12,7 +12,7 @@ impl DoubleField {
     //pub static mut FCOUNT: i32 = 0;
 
     pub fn new(d: f64) -> Self {
-        DoubleField { d, print_short: true }
+        DoubleField { d, print_short: false }
     }
 
     pub fn copy(&self) -> DoubleField {
@@ -67,9 +67,9 @@ impl IField for DoubleField {
         self.d /= o.d;
     }
 
-    /*fn coerce(&self) -> f64 {
+    fn coerce_to_f64(&self) -> f64 {
         self.d
-    }*/
+    }
     fn coerce(&self, value: f64) -> DoubleField {
         DoubleField::new(value)
     }

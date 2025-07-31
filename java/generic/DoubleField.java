@@ -142,6 +142,8 @@ public class DoubleField implements IField<DoubleField>,
 		return new DoubleField(1);
 	}
 
+
+
 	public DoubleField invert() {
 		//fCount++;
 		return new DoubleField(1 / d);

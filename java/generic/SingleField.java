@@ -3,7 +3,7 @@ import java.util.Formatter;
 
 public class SingleField implements IField<SingleField>,
 		ITrigonometric<SingleField>, IInvertible<SingleField>, IMath<SingleField>,
-		IOrdered<SingleField> {
+		IOrdered<SingleField>, ICopiable<SingleField> {
 	float f;
 
 	public boolean printShort = true;
@@ -141,6 +141,7 @@ public class SingleField implements IField<SingleField>,
 	public SingleField one() {
 		return new SingleField(1);
 	}
+
 
 	public SingleField invert() {
 		//fCount++;

@@ -39,7 +39,7 @@ where
         }
     }
 
-    pub fn test(&self, data: &mut [ComplexField<N>]) -> N {
+    pub fn test(&self, data: &mut [ComplexField<N>]) -> f64 {
         let nd = data.len();
         let mut copy: Vec<ComplexField<N>> = data.iter().map(|x| x.copy()).collect();
 
@@ -49,16 +49,18 @@ where
         self.inverse(data);
         //println!("After inverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
-        let mut diff = self.c.re.zero();
+      
+        let mut diff = 0.0;
         for i in 0..nd {
-            let mut d = data[i].copy();
-            d.se(&copy[i]);
-            let mag2 = self.c.re.coerce(d.abs());
-            diff.ae(&mag2);
+            let d = data[i].copy();
+            let real = d.re.coerce_to_f64();
+            let imag = d.im.coerce_to_f64();
+            let realDiff = real - copy[i].re.coerce_to_f64();
+            let imagDiff = imag - copy[i].im.coerce_to_f64();
+            diff += realDiff * realDiff + imagDiff * imagDiff;
         }
-        diff.de(&self.c.re.coerce(nd as f64));
-        diff.sqrt();
-        diff
+        (diff / (nd*2) as f64).sqrt()
+
     }
 
     pub fn make_random(&self, n: usize) -> Vec<ComplexField<N>> {
@@ -95,6 +97,7 @@ where
         let logn = Self::log2(n);
 
         Self::bitreverse(data);
+        //println!("After bitreverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         let n1 = self.c.re.coerce(1.0);
         let n2 = self.c.re.coerce(2.0);
@@ -137,6 +140,7 @@ where
                 }
             }
             dual *= 2;
+            println!("{}", data[bit]);
         }
     }
 
@@ -162,7 +166,7 @@ where
 fn main() {
     let c = ComplexField::new(DoubleField::new(0.0), DoubleField::new(0.0));
     let fft = GenFFT::new(DoubleField::new(0.0), DoubleField::new(0.0));
-    let n = 1024;
+    let n = 4;
     let mut data = fft.make_random(n);
     let mut data2 = Vec::with_capacity(4);
     for i in 0..4 {
@@ -171,6 +175,23 @@ fn main() {
             DoubleField::new(0 as f64),
         ));
     }
-    println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-    println!("n={} => RMS Error={}", n, fft.test(&mut data));
+    let mut data3 = Vec::with_capacity(4);
+    data3.push(ComplexField::new(
+        DoubleField::new(0.3618031071604718),
+        DoubleField::new(0.932993485288541),
+    ));
+    data3.push(ComplexField::new(
+        DoubleField::new(0.8330913489710237),
+        DoubleField::new(0.32647575623792624),
+    ));
+    data3.push(ComplexField::new(
+        DoubleField::new(0.2355237906476252),
+        DoubleField::new(0.34911535662488336),
+    ));
+    data3.push(ComplexField::new(
+        DoubleField::new(0.4480776326931518),
+        DoubleField::new(0.6381529437838686),
+    ));
+    println!("{}", data3.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+    println!("n={} => RMS Error={}", n, fft.test(&mut data3));
 }

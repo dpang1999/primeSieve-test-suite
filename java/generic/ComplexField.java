@@ -113,6 +113,69 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> impl
         return new ComplexField<>(re.one(), im.zero());
     }
 
+    @SuppressWarnings("unchecked")
+    public ComplexField<T> primitiveRoot(int n) {
+        if (n <= 0) {
+            throw new IllegalArgumentException("n must be positive");
+        }
+
+        // Check if the base field supports trigonometric functions
+        if (re instanceof ITrigonometric) {
+            // Cast re to ITrigonometric<T>
+            System.out.println("Using ITrigonometric for primitive root calculation");
+            System.out.println(re.coerce());
+
+            // Compute the angle for the primitive root of unity
+            T angle = re.coerce(2.0 * Math.PI / n);
+            System.out.println(angle);
+            
+            // Cast realPart and imagPart to ITrigonometric<T> before calling cos() and sin()
+            T realPart = ((ITrigonometric<T>) angle).cos(); 
+            T imagPart = ((ITrigonometric<T>) angle).sin(); 
+
+            return new ComplexField<T>(realPart, imagPart);
+        } else if (re instanceof IntModP) {
+            System.out.println("Using IntModP for primitive root calculation");
+            // For finite fields, compute the primitive root algebraically
+            IntModP finiteRe = (IntModP) re;
+            IntModP finiteRoot = finiteRe.primitiveRoot(n); // Base field must implement primitiveRoot
+            T imagPart = re.zero();          // Imaginary part is zero in finite fields
+            T realPart = (T) finiteRoot.copy(); // Ensure we return a copy
+            return (ComplexField<T>) new ComplexField<>(realPart, imagPart);
+        }
+        throw new UnsupportedOperationException("Unsupported field type for primitive root calculation");
+    }
+  
+
+   public ComplexField<T> pow(int exponent) {
+        if (exponent == 0) {
+            return one(); // Any number to the power of 0 is 1
+        }
+        if (exponent < 0) {
+            return this.inverse().pow(-exponent); // Handle negative exponents
+        }
+
+        // Convert to polar form
+        double r = this.abs(); // Modulus
+        double theta = Math.atan2(im.coerce(), re.coerce()); // Argument (angle)
+
+        // Compute new modulus and argument
+        double newR = Math.pow(r, exponent); // r^exponent
+        double newTheta = theta * exponent;  // theta * exponent
+
+        // Convert back to rectangular form
+        T real = re.coerce(newR * Math.cos(newTheta));
+        T imag = im.coerce(newR * Math.sin(newTheta));
+        return new ComplexField<>(real, imag);
+    }
+
+    public ComplexField<T> inverse() {
+        T denom = re.m(re).a(im.m(im)); // re^2 + im^2
+        T real = re.d(denom);           // re / (re^2 + im^2)
+        T imag = re.coerce(-1).m(im.d(denom));     // -im / (re^2 + im^2)
+        return new ComplexField<>(real, imag);
+    }
+
     public boolean eq(ComplexField<T> o) {
         if (o == null) {
             return false;

@@ -42,6 +42,53 @@ impl IntModP {
     pub fn coerce(&self) -> i32 {
         self.i
     }
+
+
+     pub fn primitive_root(n: usize, p: i32) -> Option<Self> {
+        if n == 0 || n >= p as usize {
+            panic!("n must be in range [1, p-1]");
+        }
+
+        // Iterate through potential primitive roots
+        for g in 2..p {
+            let mut is_root = true;
+
+            // Check if g^k mod p != 1 for 0 < k < n
+            for k in 1..n {
+                if Self::mod_pow(g, k as i32, p) == 1 {
+                    is_root = false;
+                    break;
+                }
+            }
+
+            // If g is a primitive root, return it
+            if is_root {
+                return Some(Self::new(g, p));
+            }
+        }
+
+        None // No primitive root found
+    }
+
+    fn mod_pow(base: i32, exp: i32, modulus: i32) -> i32 {
+        if modulus <= 0 {
+            panic!("Modulus must be positive");
+        }
+
+        let mut result = 1;
+        let mut base = base % modulus;
+        let mut exp = exp;
+
+        while exp > 0 {
+            if exp % 2 == 1 {
+                result = (result * base) % modulus;
+            }
+            base = (base * base) % modulus;
+            exp /= 2;
+        }
+
+        result
+    }
 }
 
 impl IField for IntModP {
@@ -88,6 +135,10 @@ impl IField for IntModP {
             self.i = (self.i * inv).rem_euclid(self.p);
         }
         
+    }
+
+    fn coerce_to_f64(&self) -> f64 {
+        self.i as f64
     }
  
     fn coerce(&self, value: f64) -> IntModP {
@@ -162,3 +213,4 @@ impl Clone for IntModP {
         self.copy()
     }
 }
+

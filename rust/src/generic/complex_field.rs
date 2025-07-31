@@ -1,5 +1,5 @@
 use core::fmt;
-
+use std::f64::consts::PI;
 use crate::generic::i_field::IField;
 use crate::generic::i_ordered::IOrdered;
 use crate::generic::i_math::IMath;
@@ -70,9 +70,9 @@ impl <T: IField + IOrdered> IField for ComplexField<T> {
         self.im = temp_im;
     }
 
-    /*fn coerce(&self) -> f64 {
-        (self.re.coerce().powi(2) + self.im.coerce().powi(2)).sqrt()
-    }*/
+    fn coerce_to_f64(&self) -> f64 {
+        (self.re.coerce_to_f64().powi(2) + self.im.coerce_to_f64().powi(2)).sqrt()
+    }
     fn coerce(&self, value: f64) -> ComplexField<T> {
         ComplexField::new(self.re.coerce(value), self.im.coerce(0.0))
     }
@@ -152,5 +152,46 @@ where
 {
     fn clone(&self) -> Self {
         ComplexField::new(self.re.clone(), self.im.clone())
+    }
+}
+
+// Define a trait for primitive root calculation
+pub trait PrimitiveRoot {
+    fn primitive_root(n: usize) -> Self;
+}
+
+// Implement PrimitiveRoot for floating-point numbers
+impl PrimitiveRoot for ComplexField<f64> {
+    fn primitive_root(n: usize) -> Self {
+        if n == 0 {
+            panic!("n must be positive");
+        }
+
+        // Compute the angle for the primitive root of unity
+        let angle = 2.0 * PI / n as f64;
+
+        // Compute real and imaginary parts
+        let real = angle.cos();
+        let imag = angle.sin();
+
+        ComplexField::new(real, imag)
+    }
+}
+
+// Implement PrimitiveRoot for finite fields
+impl<T> PrimitiveRoot for ComplexField<T>
+where
+    T: IField + Clone,
+{
+    fn primitive_root(n: usize) -> Self {
+        if n == 0 {
+            panic!("n must be positive");
+        }
+
+        // For finite fields, compute the primitive root algebraically
+        let real = T::primitive_root(n); // Assuming T has a primitive_root method
+        let imag = T::zero();
+
+        ComplexField::new(real, imag)
     }
 }

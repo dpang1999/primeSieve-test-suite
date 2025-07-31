@@ -19,5 +19,6 @@ interface IField<T> {
 	boolean isOne();
 	T zero();
 	T one();
+
 }
 

@@ -8,7 +8,7 @@ pub trait IField: {
     fn d(&self, o: &Self) -> Self;
     fn de(&mut self, o: &Self);
 
-    //fn coerce(&self) -> f64;
+    fn coerce_to_f64(&self) -> f64;
     fn coerce(&self, value: f64) -> Self;
 
     fn is_zero(&self) -> bool;

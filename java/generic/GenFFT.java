@@ -1,7 +1,6 @@
 package generic;
 import java.util.*;
 import java.lang.reflect.*;
-import java.util.Random;
 
 /**
  * Computes FFT's of complex, double precision data where n is an integer power
@@ -168,6 +167,17 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 		return log;
 	}
 
+	private ComplexField<N>[] precomputeRootsOfUnity(int n, int direction) {
+		ComplexField<N>[] roots = (ComplexField<N>[]) Array.newInstance(c.getClass(), n);
+		for (int k = 0; k < n; k++) {
+			double angle = 2.0 * Math.PI * k * direction / n;
+			N realPart = c.re.coerce(Math.cos(angle));
+			N imagPart = c.re.coerce(Math.sin(angle));
+			roots[k] = new ComplexField<>(realPart, imagPart);
+		}
+		return roots;
+	}
+
 	protected void transform_internal(ComplexField<N>[] data, int direction) {
 		if (data.length == 0)
 			return;
@@ -188,8 +198,9 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 		N theta, s, t, s2;
 		ComplexField<N> w;
 		int dual = 1;
+		ComplexField<N>[] roots = precomputeRootsOfUnity(n, direction);
 		for (int bit = 0; bit < logn; bit++, dual *= 2) {
-			if (MUTABLE) {
+			/*if (MUTABLE) {
 				w = c10.copy();
 				theta = c.re.coerce(2.0 * direction * 
 					Math.PI / (2.0 * (double) dual));
@@ -214,7 +225,7 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 				s2.me(n2);
 			}
 
-			/* a = 0 */
+			// a = 0 
 			for (int b = 0; b < n; b += 2 * dual) {
 				int i = b;
 				int j = (b + (int) dual);
@@ -233,9 +244,9 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 				}
 			}
 
-			/* a = 1 .. (dual-1) */
+			// a = 1 .. (dual-1) 
 			for (int a = 1; a < dual; a++) {
-				/* trig recurrence for w-> exp(i theta) w */
+				// trig recurrence for w-> exp(i theta) w 
 				{
 					if (MUTABLE) {
 						N nn = n1;
@@ -267,8 +278,24 @@ public class GenFFT<N extends IField<N> & ITrigonometric<N> & IMath<N> & IOrdere
 						data[i].ae(wd);
 					}
 				}
+			}*/
+
+
+			// Roots of unity variant
+			for (int a = 0; a < dual; a++) {
+				w = roots[a * (n / (2 * dual))]; // Use precomputed root
+				for (int b = 0; b < n; b += 2 * dual) {
+					int i = b + a;
+					int j = b + a + dual;
+
+					ComplexField<N> z1 = data[j].m(w); // Twiddle factor multiplication
+					data[j] = data[i].s(z1);          // Subtract
+					data[i] = data[i].a(z1);          // Add
+				}
 			}
 		}
+		
+
 	}
 
 	protected void bitreverse(ComplexField<N>[] data) {

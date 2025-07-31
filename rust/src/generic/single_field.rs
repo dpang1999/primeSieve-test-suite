@@ -67,9 +67,9 @@ impl IField for SingleField {
         self.f /= o.f;
     }
 
-    /*fn coerce(&self) -> f64 {
+    fn coerce_to_f64(&self) -> f64 {
         self.f as f64
-    }*/
+    }
     fn coerce(&self, value: f64) -> SingleField {
         SingleField::new(value as f32)
     }

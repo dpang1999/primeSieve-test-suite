@@ -99,6 +99,7 @@ public class FFT {
 
     /* bit reverse the input data for decimation in time algorithm */
     bitreverse(data) ;
+    //System.out.println("Java bit reverse: "+Arrays.toString(data));
 
     /* apply fft recursion */
 	/* this loop executed log2(N) times */
