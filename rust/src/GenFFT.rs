@@ -45,9 +45,9 @@ where
 
         self.transform(data);
 
-        //println!("After transform: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("After transform: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         self.inverse(data);
-        //println!("After inverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("After inverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
       
         let mut diff = 0.0;
@@ -89,6 +89,18 @@ where
         log
     }
 
+    fn precompute_roots_of_unity(&self, n: usize, direction: i32) -> Vec<ComplexField<N>> {
+        let mut roots = Vec::with_capacity(n);
+        for k in 0..n {
+            let angle = direction as f64 * 2.0 * std::f64::consts::PI * (k as f64 / n as f64);
+            roots.push(ComplexField::new(
+                self.c.re.coerce(angle.cos()),
+                self.c.im.coerce(angle.sin()),
+            ));
+        }
+        roots
+    }
+
     fn transform_internal(&self, data: &mut [ComplexField<N>], direction: i32) {
         let n = data.len();
         if n == 0 || n == 1 {
@@ -99,48 +111,24 @@ where
         Self::bitreverse(data);
         //println!("After bitreverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
-        let n1 = self.c.re.coerce(1.0);
-        let n2 = self.c.re.coerce(2.0);
-        let c10 = ComplexField::new(self.c.re.coerce(1.0), self.c.re.coerce(0.0));
+        // Precompute roots of unity
+        let roots = self.precompute_roots_of_unity(n, direction);
+
         let mut dual = 1;
         for bit in 0..logn {
-            let mut w = c10.copy();
-            let mut theta = self.c.re.coerce(
-                2.0 * direction as f64 * std::f64::consts::PI / (2.0 * dual as f64),
-            );
-            let mut s = theta.copy();
-            s.sin();
-            let mut t = theta.copy();
-            t.de(&n2);
-            t.sin();
-            
-            let mut s2 = t.copy();
-            let temp = s2.copy();
-            s2.me(&temp);
-            s2.me(&n2);
-
-            for b in (0..n).step_by(2 * dual) {
-                let i = b;
-                let j = b + dual;
-                let wd = data[j].copy();
-                let mut tmp = data[i].copy();
-                tmp.se(&wd);
-                data[j] = tmp;
-                data[i].ae(&wd);
-            }
-
-            for a in 1..dual {
-                w.me(&ComplexField::new(n1.s(&s2), s.clone()));
+            for a in 0..dual {
+                let w = roots[a * (n / (2 * dual))].clone(); // Use precomputed root
                 for b in (0..n).step_by(2 * dual) {
                     let i = b + a;
                     let j = b + a + dual;
-                    let wd = w.m(&data[j]);
-                    data[j] = data[i].s(&wd);
-                    data[i].ae(&wd);
+
+                    let wd = w.m(&data[j]); // Twiddle factor multiplication
+                    data[j] = data[i].s(&wd); // Subtract
+                    data[i] = data[i].a(&wd); // Add
                 }
             }
             dual *= 2;
-            println!("{}", data[bit]);
+            //println!("{}", data[bit]);
         }
     }
 

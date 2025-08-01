@@ -2,6 +2,8 @@ use crate::generic::int_mod_p::IntModP;
 use crate::generic::i_field::IField;
 use crate::generic::double_field::DoubleField;
 use crate::generic::complex_field::ComplexField;
+use crate::generic::single_field::SingleField;
+use crate::generic::complex_field::PrimitiveRoot; // Bring the trait into scope
 use rand::Rng;
 use rand::seq::IndexedRandom;
 
@@ -12,7 +14,11 @@ pub static PRIME_NUMBERS: &[i32]  = &[2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,5
 
 fn main() {
    //test_int_mod_p(); 
-   test_complex();
+   //test_complex();
+    test_primitive_root_double_field();
+    test_primitive_root_int_mod_p();
+    test_primitive_root_single_field();
+   
    
 }
 
@@ -52,4 +58,54 @@ fn test_complex() {
     println!("{}+{}={}", a_complex, b_complex, sum);
     let diff = a_complex.s(&b_complex);
     println!("{}-{}={}", a_complex, b_complex, diff);
+}
+
+
+fn test_primitive_root_int_mod_p() {
+    let modulus = 7;
+    let int_mod_p = IntModP::new(0, modulus);
+    let root = int_mod_p.primitive_root(3);
+    println!("Primitive root in finite field (IntModP): {}", root);
+}
+
+
+fn test_primitive_root_double_field() {
+    let re = DoubleField::new(0.0);
+    let im = DoubleField::new(0.0);
+    let complex_field = ComplexField::new(re, im);
+    let root = complex_field.primitive_root(4);
+    println!("Primitive root in floating-point (DoubleField): {}", root);
+
+    // Verify the result by raising it to the 4th power
+    
+    let result = root.pow(4);
+    assert!(
+        result.re.coerce_to_f64().abs() - 1.0 < 1e-9,
+        "Real part of result is not close to 1"
+    );
+    assert!(
+        result.im.coerce_to_f64().abs() < 1e-9,
+        "Imaginary part of result is not close to 0"
+    );
+    println!("Root raised to the 4th power: {}", result);
+}
+
+fn test_primitive_root_single_field() {
+    let re = SingleField::new(0.0);
+    let im = SingleField::new(0.0);
+    let complex_field = ComplexField::new(re, im);
+    let root = complex_field.primitive_root(4);
+    println!("Primitive root in single-precision (SingleField): {}", root);
+
+    // Verify the result by raising it to the 4th power
+    let result = root.pow(4);
+    assert!(
+        result.re.coerce_to_f64().abs() - 1.0 < 1e-6,
+        "Real part of result is not close to 1"
+    );
+    assert!(
+        result.im.coerce_to_f64().abs() < 1e-6,
+        "Imaginary part of result is not close to 0"
+    );
+    println!("Root raised to the 4th power: {}", result);
 }

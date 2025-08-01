@@ -44,18 +44,18 @@ impl IntModP {
     }
 
 
-     pub fn primitive_root(n: usize, p: i32) -> Option<Self> {
-        if n == 0 || n >= p as usize {
+     pub fn primitive_root(&self, n: usize) -> Self {
+        if n == 0 || n >= self.p as usize {
             panic!("n must be in range [1, p-1]");
         }
 
         // Iterate through potential primitive roots
-        for g in 2..p {
+        for g in 2..self.p {
             let mut is_root = true;
 
             // Check if g^k mod p != 1 for 0 < k < n
             for k in 1..n {
-                if Self::mod_pow(g, k as i32, p) == 1 {
+                if Self::mod_pow(g, k as i32, self.p) == 1 {
                     is_root = false;
                     break;
                 }
@@ -63,11 +63,11 @@ impl IntModP {
 
             // If g is a primitive root, return it
             if is_root {
-                return Some(Self::new(g, p));
+                return Self::new(g, self.p);
             }
         }
 
-        None // No primitive root found
+        Self::new(0, self.p) // No primitive root found
     }
 
     fn mod_pow(base: i32, exp: i32, modulus: i32) -> i32 {

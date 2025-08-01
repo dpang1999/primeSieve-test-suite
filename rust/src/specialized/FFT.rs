@@ -31,9 +31,9 @@ impl FFT
 
         self.transform(data);
 
-        //println!("After transform: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("After transform: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         self.inverse(data);
-        //println!("After inverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("After inverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         let mut diff = 0.0;
         for i in 0..nd {
@@ -134,7 +134,7 @@ impl FFT
                     data[i + 1] += wd_imag;
                 }
             }
-            println!("{}", data[bit])
+            //println!("{} {}", data[bit], data[bit + 1]);
         }
     }
 

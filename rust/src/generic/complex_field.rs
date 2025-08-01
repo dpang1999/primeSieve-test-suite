@@ -3,6 +3,9 @@ use std::f64::consts::PI;
 use crate::generic::i_field::IField;
 use crate::generic::i_ordered::IOrdered;
 use crate::generic::i_math::IMath;
+use crate::generic::single_field::SingleField;
+use crate::generic::double_field::DoubleField;
+use crate::generic::int_mod_p::IntModP;
 
 pub struct ComplexField<T> {
     pub re: T,
@@ -154,15 +157,48 @@ where
         ComplexField::new(self.re.clone(), self.im.clone())
     }
 }
+impl<T> ComplexField<T>
+where
+    T: IField + IOrdered + IMath + Clone,
+{
+    pub fn pow(&self, exponent: i32) -> Self {
+        if exponent == 0 {
+            return self.one(); // Any number to the power of 0 is 1
+        }
+        if exponent < 0 {
+            return self.inverse().pow(-exponent); // Handle negative exponents
+        }
 
+        // Convert to polar form
+        let r = self.abs(); // Modulus
+        let theta = self.im.coerce_to_f64().atan2(self.re.coerce_to_f64()); // Argument (angle)
+
+        // Compute new modulus and argument
+        let new_r = r.powi(exponent); // r^exponent
+        let new_theta = theta * exponent as f64; // theta * exponent
+
+        // Convert back to rectangular form
+        let real = self.re.coerce(new_r * new_theta.cos());
+        let imag = self.im.coerce(new_r * new_theta.sin());
+        ComplexField::new(real, imag)
+    }
+    
+    pub fn inverse(&self) -> Self {
+        let denom = self.re.m(&self.re).a(&self.im.m(&self.im));
+        ComplexField::new(
+            self.re.d(&denom),
+            self.im.d(&denom),
+        )
+    }
+}
 // Define a trait for primitive root calculation
 pub trait PrimitiveRoot {
-    fn primitive_root(n: usize) -> Self;
+    fn primitive_root(&self, n: usize) -> Self;
 }
 
-// Implement PrimitiveRoot for floating-point numbers
-impl PrimitiveRoot for ComplexField<f64> {
-    fn primitive_root(n: usize) -> Self {
+// Implement PrimitiveRoot for SingleField numbers
+impl PrimitiveRoot for ComplexField<SingleField> {
+    fn primitive_root(&self, n: usize) -> Self {
         if n == 0 {
             panic!("n must be positive");
         }
@@ -171,26 +207,41 @@ impl PrimitiveRoot for ComplexField<f64> {
         let angle = 2.0 * PI / n as f64;
 
         // Compute real and imaginary parts
-        let real = angle.cos();
-        let imag = angle.sin();
+        let real = SingleField::new(angle.cos() as f32);
+        let imag = SingleField::new(angle.sin() as f32);
+
+        ComplexField::new(real, imag)
+    }
+}
+
+// Implement PrimitiveRoot for DoubleField numbers
+impl PrimitiveRoot for ComplexField<DoubleField> {
+    fn primitive_root(&self, n: usize) -> Self {
+        if n == 0 {
+            panic!("n must be positive");
+        }
+
+        // Compute the angle for the primitive root of unity
+        let angle = 2.0 * PI / n as f64;
+
+        // Compute real and imaginary parts
+        let real = DoubleField::new(angle.cos());
+        let imag = DoubleField::new(angle.sin());
 
         ComplexField::new(real, imag)
     }
 }
 
 // Implement PrimitiveRoot for finite fields
-impl<T> PrimitiveRoot for ComplexField<T>
-where
-    T: IField + Clone,
-{
-    fn primitive_root(n: usize) -> Self {
+impl PrimitiveRoot for ComplexField<IntModP> {
+    fn primitive_root(&self, n: usize) -> Self {
         if n == 0 {
             panic!("n must be positive");
         }
 
         // For finite fields, compute the primitive root algebraically
-        let real = T::primitive_root(n); // Assuming T has a primitive_root method
-        let imag = T::zero();
+        let real = self.re.primitive_root(n); // Assuming T has a primitive_root method
+        let imag = self.im.zero();
 
         ComplexField::new(real, imag)
     }
