@@ -2,7 +2,7 @@ package generic;
 import java.util.Formatter;
 
 public class IntModP implements IField<IntModP>,
-		IOrdered<IntModP>, ICopiable<IntModP> {
+		IOrdered<IntModP>, ICopiable<IntModP>, IPrimitiveRoots<IntModP> {
 	int d;
     int p;
 
@@ -57,25 +57,50 @@ public class IntModP implements IField<IntModP>,
             d = (d * o.d) % p;
     }
 
-    //divisin in int mod p is not rigorous so I don't want to do it rn
     public IntModP d(IntModP o) {
-        //fCount++;
-        if (o != null) {
-            if (o.d == 0)
-                throw new ArithmeticException("Division by zero in IntModP");
-            //return new IntModP((d * modInverse(o.d, p)) % p, p);
-            return o;
-        } else
-            return new IntModP(0, p);
-    }
-    public void de(IntModP o) {
-        //fCount++;
-        if (o != null) {
-            if (o.d == 0)
-                throw new ArithmeticException("Division by zero in IntModP");
-            //d = (d * modInverse(o.d, p)) % p;
+        if (o == null || o.d == 0) {
+            throw new ArithmeticException("Division by zero in IntModP");
         }
+        int inverse = modInverse(o.d, p); // Compute modular inverse of o.d
+        return new IntModP((d * inverse) % p, p); // Multiply by the inverse modulo p
     }
+    
+    public void de(IntModP o) {
+        if (o == null || o.d == 0) {
+            throw new ArithmeticException("Division by zero in IntModP");
+        }
+        int inverse = modInverse(o.d, p); // Compute modular inverse of o.d
+        d = (d * inverse) % p; // Update the current value
+    }
+
+    private static int modInverse(int b, int p) {
+        int t = 0, newT = 1;
+        int r = p, newR = b;
+
+        while (newR != 0) {
+            int quotient = r / newR;
+
+            // Update t and r
+            int tempT = t;
+            t = newT;
+            newT = tempT - quotient * newT;
+
+            int tempR = r;
+            r = newR;
+            newR = tempR - quotient * newR;
+        }
+
+        if (r > 1) {
+            throw new ArithmeticException("b is not invertible modulo p");
+        }
+        if (t < 0) {
+            t += p;
+        }
+
+        return t;
+    }
+
+
     public IntModP coerce(int i) {
         return new IntModP(i % p, p);
     }
@@ -116,6 +141,39 @@ public class IntModP implements IField<IntModP>,
         }
         return null; // No primitive root found
     }
+
+    public IntModP pow(int exp) {
+        if (exp < 0) {
+            throw new IllegalArgumentException("Exponent must be non-negative");
+        }
+        return new IntModP(modPow(d, exp, p), p);
+    }
+
+    public IntModP[] precomputeRootsOfUnity(int n, int direction) {
+		// Ensure n divides (p - 1)
+		if ((p - 1) % n != 0) {
+			throw new IllegalArgumentException("n must divide p-1 for roots of unity to exist");
+		}
+
+		// Find a primitive root modulo p
+		IntModP primitiveRoot = primitiveRoot(p - 1);
+
+		// Compute the primitive n-th root of unity
+		IntModP omega = primitiveRoot.pow((p - 1) / n);
+
+		// Generate all n-th roots of unity
+		IntModP[] roots = new IntModP[n];
+		for (int k = 0; k < n; k++) {
+			// Compute omega^k * direction
+			int exponent = (k * direction) % (p - 1);
+			if (exponent < 0) {
+				exponent += (p - 1); // Ensure positive exponent
+			}
+			roots[k] = omega.pow(exponent);
+		}
+
+		return roots;
+	}
 
     public int compareTo(IntModP o) {
         if (o == null)

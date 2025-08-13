@@ -164,7 +164,7 @@ impl FFT
 fn main() {
     let fft = FFT::new();
     let n = 1024;
-    //let mut data = fft.make_random(n);
+    let mut data = fft.make_random(n);
     let mut data2: Vec<f64> = Vec::with_capacity(8);
     data2.push(0.3618031071604718);
     data2.push(0.932993485288541);
@@ -175,6 +175,6 @@ fn main() {
     data2.push(0.4480776326931518);
     data2.push(0.6381529437838686);
 
-    println!("{}", data2.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-    println!("n={} => RMS Error={}", n, fft.test(&mut data2));
+    //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+    println!("n={} => RMS Error={}", n, fft.test(&mut data));
 }

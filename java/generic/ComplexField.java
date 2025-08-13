@@ -1,6 +1,6 @@
 package generic;
 
-public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> implements IField<ComplexField<T>>, IOrdered<ComplexField<T>>, ICopiable<ComplexField<T>> {
+public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> implements IField<ComplexField<T>>, IOrdered<ComplexField<T>>, ICopiable<ComplexField<T>>, IPrimitiveRoots<ComplexField<T>> {
     public T re;
     public T im;
 
@@ -168,6 +168,17 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> impl
         T imag = im.coerce(newR * Math.sin(newTheta));
         return new ComplexField<>(real, imag);
     }
+
+    public ComplexField<T>[] precomputeRootsOfUnity(int n, int direction) {
+		ComplexField<T>[] roots = (ComplexField<T>[]) new ComplexField[n];
+		for (int k = 0; k < n; k++) {
+			double angle = 2.0 * Math.PI * k * direction / n;
+			T realPart = re.coerce(Math.cos(angle));
+			T imagPart = im.coerce(Math.sin(angle));
+			roots[k] = new ComplexField<>(realPart, imagPart);
+		}
+		return roots;
+	}
 
     public ComplexField<T> inverse() {
         T denom = re.m(re).a(im.m(im)); // re^2 + im^2

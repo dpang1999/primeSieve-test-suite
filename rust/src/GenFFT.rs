@@ -154,7 +154,7 @@ where
 fn main() {
     let c = ComplexField::new(DoubleField::new(0.0), DoubleField::new(0.0));
     let fft = GenFFT::new(DoubleField::new(0.0), DoubleField::new(0.0));
-    let n = 4;
+    let n = 1024;
     let mut data = fft.make_random(n);
     let mut data2 = Vec::with_capacity(4);
     for i in 0..4 {
@@ -180,6 +180,6 @@ fn main() {
         DoubleField::new(0.4480776326931518),
         DoubleField::new(0.6381529437838686),
     ));
-    println!("{}", data3.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-    println!("n={} => RMS Error={}", n, fft.test(&mut data3));
+    println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+    println!("n={} => RMS Error={}", n, fft.test(&mut data));
 }

@@ -76,8 +76,30 @@ public class FFT {
     if (args.length == 0) {
       int n = 4;
       double[] data = makeRandom(n);
+      
       System.out.println(Arrays.toString(data));
       System.out.println("n="+n+" => RMS Error="+test(data)); }
+
+      double[] in1 = {38.0,  0.0, 44.0, 87.0,  6.0, 45.0, 22.0, 93.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+      double[] in2 = {80.0, 18.0, 62.0, 90.0, 17.0, 96.0, 27.0, 97.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+      transform(in1);
+      System.out.println("Transformed in1: " + Arrays.toString(in1));
+      transform(in2);
+      System.out.println("Transformed in2: " + Arrays.toString(in2));
+      
+      double[] product = new double[in1.length];
+      // multiply the complex numbers
+      for (int i = 0; i < in1.length; i += 2) {
+        product[i] = in1[i] * in2[i] - in1[i + 1] * in2[i + 1];
+        product[i + 1] = in1[i] * in2[i + 1] + in1[i + 1] * in2[i];
+      }
+      System.out.println("Product: " + Arrays.toString(product));
+      inverse(product);
+      System.out.println("Inverse Product: " + Arrays.toString(product));
+      inverse(in1);
+      System.out.println("Inverse in1: " + Arrays.toString(in1));
+      inverse(in2);
+      System.out.println("Inverse in2: " + Arrays.toString(in2));
     for(int i=0; i<args.length; i++) {
       int n = Integer.parseInt(args[i]);
       System.out.println("n="+n+" => RMS Error="+test(makeRandom(n))); }
