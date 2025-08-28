@@ -11,7 +11,7 @@ import java.lang.reflect.*;
  * 
  * 
  */
-public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>> {
+public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R> & ICopiable<R>> {
 	/**
 	 * Returns a <em>copy</em> of the compact LU factorization. (useful mainly
 	 * for debugging.)
@@ -155,7 +155,7 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 	 * 
 	 * @return 0, if OK, nozero value, othewise.
 	 */
-	public static <U extends IField<U> & IInvertible<U> & IOrdered<U> & IMath<U>> int factor(U A[][], int pivot[]) {
+	public static <U extends IField<U> & IInvertible<U> & IOrdered<U> & IMath<U> & ICopiable<U>> int factor(U A[][], int pivot[]) {
 		int N = A.length;
 		int M = A[0].length;
 
@@ -166,9 +166,12 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 
 			int jp = j;
 
-			U t = A[j][j].abs();
+			U t = A[j][j].copy();
+			t.abs();
+
 			for (int i = j + 1; i < M; i++) {
-				U ab = A[i][j].abs();
+				U ab = A[i][j].copy();
+				ab.abs();
 				if (ab.coerce() > t.coerce()) {
 					jp = i;
 					t = ab;
@@ -278,15 +281,24 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 				A[i][j] = new DoubleField(Math.random()*1000);
 			b[i] = new DoubleField(Math.random()*1000);
 		}
+
 		printMatrix(A);
+		DoubleField ACopy[][] = new_copy(A);
 
 		factor(A, pivot);
 		
 		System.out.println("b: ");
 		printVector(b);
-		//solve(A, pivot, b); //only needed for debugging
+		DoubleField BCopy[] = new_copy(b);
+		solve(A, pivot, b); //only needed for debugging
 		System.out.println("Solution: ");
 		printVector(b);
+
+		DoubleField product[] = multiplyMatrices(ACopy, b);
+		//printVector(product);
+
+		System.out.println("RMS Difference: " + RMSDiff(BCopy, product));
+
 		System.exit(0);
 	}
 
@@ -309,6 +321,39 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 			System.out.print(B[i].toString() + " ");
 		System.out.println();
 		System.out.println();
+	}
+
+	static DoubleField[] multiplyMatrices(DoubleField A[][], DoubleField B[]) {
+		int M = A.length;
+		int N = A[0].length;
+		int P = B.length;
+
+		if (N != P) {
+			throw new IllegalArgumentException("Incompatible matrix dimensions");
+		}
+
+		// Multiply an NxN matrix by an Nx1 vector
+		DoubleField C[] = new DoubleField[M];
+		for (int i = 0; i < M; i++) {
+			C[i] = new DoubleField(0);
+			for (int j = 0; j < N; j++) {
+				C[i] = C[i].a(A[i][j].m(B[j]));
+			}
+		}
+		return C;
+	}
+
+	static double RMSDiff(DoubleField A[], DoubleField B[]) {
+		if (A.length != B.length) {
+			throw new IllegalArgumentException("Incompatible vector dimensions");
+		}
+
+		double sum = 0;
+		for (int i = 0; i < A.length; i++) {
+			double diff = A[i].coerce() - B[i].coerce();
+			sum += diff * diff;
+		}
+		return Math.sqrt(sum / A.length);
 	}
 }
 

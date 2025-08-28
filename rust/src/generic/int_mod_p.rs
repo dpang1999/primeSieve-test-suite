@@ -2,14 +2,15 @@ use std::fmt;
 use crate::generic::i_field::IField;
 use crate::generic::i_ordered::IOrdered;
 use crate::generic::i_math::IMath;
+use crate::generic::i_primitive_roots::IPrimitiveRoots;
 
 pub struct IntModP {
-    pub i: i32,
-    pub p: i32,
+    pub i: u128,
+    pub p: u128,
     pub print_short: bool,
 }
 
-fn mod_inverse(a: i32, p: i32) -> i32 {
+fn mod_inverse(a: u128, p: u128) -> u128 {
     let (mut t, mut new_t) = (0, 1);
     let (mut r, mut new_r) = (p, a.rem_euclid(p));
     while new_r != 0 {
@@ -31,7 +32,7 @@ fn mod_inverse(a: i32, p: i32) -> i32 {
 }
 
 impl IntModP {
-    pub fn new(i: i32, p: i32) -> Self {
+    pub fn new(i: u128, p: u128) -> Self {
         IntModP { i: i.rem_euclid(p), p, print_short: true }
     }
 
@@ -39,56 +40,16 @@ impl IntModP {
         IntModP::new(self.i, self.p)
     }
 
-    pub fn coerce(&self) -> i32 {
-        self.i
+    pub fn coerce(&self, value: f64) -> IntModP {
+        IntModP::new(value as u128, self.p)
+    }
+
+    pub fn coerce_to_f64(&self) -> f64 {
+        self.i as f64
     }
 
 
-     pub fn primitive_root(&self, n: usize) -> Self {
-        if n == 0 || n >= self.p as usize {
-            panic!("n must be in range [1, p-1]");
-        }
-
-        // Iterate through potential primitive roots
-        for g in 2..self.p {
-            let mut is_root = true;
-
-            // Check if g^k mod p != 1 for 0 < k < n
-            for k in 1..n {
-                if Self::mod_pow(g, k as i32, self.p) == 1 {
-                    is_root = false;
-                    break;
-                }
-            }
-
-            // If g is a primitive root, return it
-            if is_root {
-                return Self::new(g, self.p);
-            }
-        }
-
-        Self::new(0, self.p) // No primitive root found
-    }
-
-    fn mod_pow(base: i32, exp: i32, modulus: i32) -> i32 {
-        if modulus <= 0 {
-            panic!("Modulus must be positive");
-        }
-
-        let mut result = 1;
-        let mut base = base % modulus;
-        let mut exp = exp;
-
-        while exp > 0 {
-            if exp % 2 == 1 {
-                result = (result * base) % modulus;
-            }
-            base = (base * base) % modulus;
-            exp /= 2;
-        }
-
-        result
-    }
+     
 }
 
 impl IField for IntModP {
@@ -142,7 +103,7 @@ impl IField for IntModP {
     }
  
     fn coerce(&self, value: f64) -> IntModP {
-        IntModP::new(value as i32, self.p)
+        IntModP::new(value as u128, self.p)
     }
 
     fn is_zero(&self) -> bool {
@@ -214,3 +175,84 @@ impl Clone for IntModP {
     }
 }
 
+// Factorize a number
+fn factorize(mut n: u64) -> Vec<u64> {
+    let mut factors = Vec::new();
+    let mut i = 2;
+    while i * i <= n {
+        if n % i == 0 {
+            factors.push(i);
+            while n % i == 0 {
+                n /= i;
+            }
+        }
+        i += 1;
+    }
+    if n > 1 {
+        factors.push(n);
+    }
+    factors
+}
+
+ fn mod_pow(base: u128, exp: u128, modulus: u128) -> u128 {
+        if modulus <= 0 {
+            panic!("Modulus must be positive");
+        }
+
+        let mut result = 1;
+        let mut base = base % modulus;
+        let mut exp = exp;
+
+        while exp > 0 {
+            if exp % 2 == 1 {
+                result = (result * base) % modulus;
+            }
+            base = (base * base) % modulus;
+            exp /= 2;
+        }
+
+        result
+    }
+
+
+impl IPrimitiveRoots<IntModP> for IntModP {
+    // Primitive Root
+    fn primitive_root(&self, n: u64) -> Self {
+        if n == 0 || n >= self.p as u64 {
+            panic!("n must be in range [1, p-1]");
+        }
+
+        // Iterate through potential primitive roots
+        for g in 2..self.p {
+            let mut is_root = true;
+
+            // Check if g^k mod p != 1 for 0 < k < n
+            for k in 1..n {
+                if mod_pow(g, k as u128, self.p) == 1 {
+                    is_root = false;
+                    break;
+                }
+            }
+
+            // If g is a primitive root, return it
+            if is_root {
+                return Self::new(g, self.p);
+            }
+        }
+
+        Self::new(0, self.p) // No primitive root found
+    }
+
+   
+
+    
+
+    fn pow(&self, exp: i32) -> IntModP {
+        IntModP::new(mod_pow(self.i, exp as u128, self.p), self.p)
+    }
+
+    fn precomputeRootsOfUnity(&self, n: u64, direction: i32) -> Vec<IntModP> {
+        // This method is not implemented for IntModP
+        panic!("precomputeRootsOfUnity not implemented for IntModP");
+    }
+}

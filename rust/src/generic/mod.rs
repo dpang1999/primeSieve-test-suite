@@ -7,3 +7,4 @@ pub mod i_trigonometric;
 pub mod single_field;
 pub mod int_mod_p;
 pub mod complex_field;
+pub mod i_primitive_roots;

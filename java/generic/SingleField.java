@@ -148,10 +148,9 @@ public class SingleField implements IField<SingleField>,
 		return new SingleField(1 / f);
 	}
 
-	public SingleField abs() {
+	public void abs() {
 		if (f < 0)
-			return new SingleField(-f);
-		return new SingleField(f);
+			f = -f;
 	}
 
 	public boolean lt(SingleField o) {

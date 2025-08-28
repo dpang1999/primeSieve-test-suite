@@ -7,6 +7,7 @@ use crate::generic::i_math::IMath;
 use crate::generic::i_ordered::IOrdered;
 pub mod generic;
 use crate::generic::double_field::DoubleField;
+use crate::generic::int_mod_p::IntModP;
 
 pub struct GenFFT<N>
 where
@@ -155,31 +156,19 @@ fn main() {
     let c = ComplexField::new(DoubleField::new(0.0), DoubleField::new(0.0));
     let fft = GenFFT::new(DoubleField::new(0.0), DoubleField::new(0.0));
     let n = 1024;
-    let mut data = fft.make_random(n);
-    let mut data2 = Vec::with_capacity(4);
-    for i in 0..4 {
-        data2.push(ComplexField::new(
-            DoubleField::new(2 as f64),
-            DoubleField::new(0 as f64),
-        ));
+    
+    //let mut data1;
+    //let mut data2;
+  
+
+    let in1 = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0];
+    let in2 = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
+    let out = [3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0];
+    let prime = 40961;
+
+    for i in 0..16 {
     }
-    let mut data3 = Vec::with_capacity(4);
-    data3.push(ComplexField::new(
-        DoubleField::new(0.3618031071604718),
-        DoubleField::new(0.932993485288541),
-    ));
-    data3.push(ComplexField::new(
-        DoubleField::new(0.8330913489710237),
-        DoubleField::new(0.32647575623792624),
-    ));
-    data3.push(ComplexField::new(
-        DoubleField::new(0.2355237906476252),
-        DoubleField::new(0.34911535662488336),
-    ));
-    data3.push(ComplexField::new(
-        DoubleField::new(0.4480776326931518),
-        DoubleField::new(0.6381529437838686),
-    ));
-    println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-    println!("n={} => RMS Error={}", n, fft.test(&mut data));
+
+    //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+    //println!("n={} => RMS Error={}", n, fft.test(&mut data));
 }

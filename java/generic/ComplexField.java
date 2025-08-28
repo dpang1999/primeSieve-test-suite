@@ -1,6 +1,6 @@
 package generic;
 
-public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> implements IField<ComplexField<T>>, IOrdered<ComplexField<T>>, ICopiable<ComplexField<T>>, IPrimitiveRoots<ComplexField<T>> {
+public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMath<T>> implements IField<ComplexField<T>>, IOrdered<ComplexField<T>>, ICopiable<ComplexField<T>>, IPrimitiveRoots<ComplexField<T>>, IMath<ComplexField<T>> {
     public T re;
     public T im;
 
@@ -114,7 +114,7 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> impl
     }
 
     @SuppressWarnings("unchecked")
-    public ComplexField<T> primitiveRoot(int n) {
+    public ComplexField<T> primitiveRoot(long n) {
         if (n <= 0) {
             throw new IllegalArgumentException("n must be positive");
         }
@@ -147,7 +147,7 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> impl
     }
   
 
-   public ComplexField<T> pow(int exponent) {
+   public ComplexField<T> pow(long exponent) {
         if (exponent == 0) {
             return one(); // Any number to the power of 0 is 1
         }
@@ -156,7 +156,9 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> impl
         }
 
         // Convert to polar form
-        double r = this.abs(); // Modulus
+        ComplexField<T> copy = this.copy();
+        copy.abs();
+        double r = copy.coerce();
         double theta = Math.atan2(im.coerce(), re.coerce()); // Argument (angle)
 
         // Compute new modulus and argument
@@ -246,14 +248,26 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> impl
         return false;
     }
 
-    
-   
 
-    // Optional: absolute value (modulus) as double, if T can be coerced to double
-    public double abs() {
+    public void abs() {
         double reVal = re.coerce();
         double imVal = im.coerce();
-        return Math.sqrt(reVal * reVal + imVal * imVal);
+        re = re.coerce(Math.sqrt(reVal * reVal + imVal * imVal));
+        im = im.zero();
+    }
+
+    public void sqrt() {
+        T modulus = re.m(re).a(im.m(im)); // re^2 + im^2
+        T realPart = modulus.a(re).d(re.coerce(2));
+        realPart.sqrt();
+        T imagPart = modulus.s(re).d(re.coerce(2));
+        imagPart.sqrt();
+        if (im.coerce() < 0) {
+            imagPart = imagPart.m(re.coerce(-1)); // Negate if b < 0
+        }
+
+        re = realPart;
+        im = imagPart;
     }
 
     @Override
@@ -271,7 +285,7 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T>> impl
         return new ComplexField<>(re.coerce(value), im.zero());
     }
 
-    public static <T extends IField<T> & IOrdered<T> &ITrigonometric<T> & ICopiable<T>> ComplexField<T> fromPolar(T r, T theta) {
+    public static <T extends IField<T> & IOrdered<T> & ITrigonometric<T> & ICopiable<T> & IMath<T>> ComplexField<T> fromPolar(T r, T theta) {
         // Convert polar coordinates to rectangular form
         T real = r.m(theta.cos());
         T imag = r.m(theta.sin());

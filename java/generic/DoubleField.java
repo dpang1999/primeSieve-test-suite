@@ -149,10 +149,9 @@ public class DoubleField implements IField<DoubleField>,
 		return new DoubleField(1 / d);
 	}
 
-	public DoubleField abs() {
+	public void abs() {
 		if (d < 0)
-			return new DoubleField(-d);
-		return new DoubleField(d);
+			d = -d;
 	}
 
 	public boolean lt(DoubleField o) {

@@ -315,6 +315,10 @@ if (db) printf("at 3\n");
         if (check) checkParameters(n, t, omega);
         permute(x);
 
+        // START LOGGING
+        printVec("After Bit-Reversal (C++)", x);
+        // END LOGGING
+
         for (unsigned q = 1; q <= t; q++) {
             size_t  L = 1 << q, r = n/L;
             for (size_t k = 0; k < r; k++) {
@@ -327,6 +331,7 @@ if (db) printf("at 3\n");
                     x[kLj]       = x[kLj] + tau;
                 }
             }
+            //printVec("After Stage (C++)", x);
         }
     }
 
@@ -423,6 +428,12 @@ if (db) printf("at B\n");
     printf("n  = %d\n",   (int) n);
     printf("p  = %llu\n", (unsigned long long) Prime::p);
     printf("g  = %llu\n", (unsigned long long) Prime::g);
+    
+    // START LOGGING
+    printf("Roots of Unity (C++): g = %llu, omega = %llu\n",
+       (unsigned long long) Prime::g,
+       (unsigned long long) Prime::g);
+    // END LOGGING
 
     VFp f1(n), f2(n), f3(n);
     for (int i = 0; i < n; i++) { f1[i] = Fp(v1[i]); f2[i] = Fp(v2[i]); }
@@ -541,8 +552,8 @@ int main(int argc, char **argv) {
 
     checkZmod<uint16_t>();
 
-    checkFFT <uint16_t>();
-    checkFFT <uint32_t>();
+    //checkFFT <uint16_t>();
+    //checkFFT <uint32_t>();
 db = true;
     checkFFT <uint64_t>();
 

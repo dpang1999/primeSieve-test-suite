@@ -3,32 +3,22 @@ import java.util.*;
 import java.lang.reflect.*;
 
 /**
- * Computes FFT's of complex, double precision data where n is an integer power
- * of 2. This appears to be slower than the Radix2 method, but the code is
- * smaller and simpler, and it requires no extra storage.
- * <P>
+ * A generic FFT computation for complex fields or finite fields 
+ * where the basefield of the complex fields can be any generic field
  * 
- * @author Laurentiu Dragan ldragan@scl.csd.uwo.ca,
- * @author Bruce R. Miller bruce.miller@nist.gov,
- * @author Derived from GSL (Gnu Scientific Library),
- * @author GSL's FFT Code by Brian Gough bjg@vvv.lanl.gov
+ * @author Daniel Pang daniel.pang@uwaterloo.ca,
+ * @author Derived from Laurentiu Dragan (ldragan@scl.csd.uwo.ca) 2005 Thesis
  */
 
-/*
- * See {@link ComplexDoubleFFT ComplexDoubleFFT} for details of data layout.
- */
 
-public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiveRoots<N>> {
+
+public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiveRoots<N> & IMath<N>> {
 
 	private N c;
 
 	final static boolean DEBUG = false;
 	final static boolean MUTABLE = false;
 
-	/*GenFFT(N num, ComplexField<N> c) {
-		this.num = num;
-		this.c = c;
-	}*/
 	GenFFT (N data)
 	{
 		this.c = data;
@@ -51,9 +41,12 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		transform_internal(data, +1);
 		// Normalize
 		int nd = data.length;
-		N test = c.coerce(nd);
-		for (int i = 0; i < nd; i++)
-			data[i].de(test);
+		N norm = c.coerce(nd);
+		for (int i = 0; i < nd; i++) {
+			//System.out.print(data[i]);
+			data[i].de(norm);
+			//System.out.println(" => " + data[i]);
+		}
 	}
 
 	/**
@@ -67,8 +60,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		for (int i = 0; i < nd; i++) {
 			copy.add(data[i].copy());
 		}
-		// double copy[] = new double[nd];
-		// System.arraycopy(data,0,copy,0,nd);
+
 		// Transform & invert
 		transform(data);
 
@@ -77,16 +69,14 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		inverse(data);
 
 		System.out.println("After inverse:" + Arrays.toString(data));
-		// Compute RMS difference. TODO or not idk
+		// Compute RMS difference. 
 		double diff = 0.0;
-		/*for (int i = 0; i < nd; i++) {
+		for (int i = 0; i < nd; i++) {
 			N d = data[i].copy();
-			double real = d.re.coerce();
-			double imag = d.im.coerce();
-			double realDiff = real - copy.get(i).re.coerce();
-			double imagDiff = imag - copy.get(i).im.coerce();
-			diff += realDiff * realDiff + imagDiff * imagDiff;
-		}*/
+			N difference = d.s(copy.get(i));
+			difference.abs();
+			diff += difference.coerce()*difference.coerce();
+		}
 
 		return Math.sqrt(diff/(nd*2)); // nd*2 as the original had double array size for imaginary and complex components separately
 
@@ -113,16 +103,11 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		DoubleField num = new DoubleField(0);
 		GenFFT<ComplexField<DoubleField>> fft = new GenFFT<ComplexField<DoubleField>>(
 				c);
-		int type = 0;
+		int type = 1;
 		if (args.length == 0 && type == 0) {
 			int n = 16;
 			ComplexField<DoubleField>[] data = fft.makeRandom(n);
 
-			/*ComplexField<DoubleField>[] data2 = (ComplexField<DoubleField>[]) java.lang.reflect.Array.newInstance(ComplexField.class, 4);
-			data2[0] = new ComplexField<DoubleField>(new DoubleField(2), new DoubleField(0));
-			data2[1] = new ComplexField<DoubleField>(new DoubleField(2), new DoubleField(0));
-			data2[2] = new ComplexField<DoubleField>(new DoubleField(2), new DoubleField(0));
-			data2[3] = new ComplexField<DoubleField>(new DoubleField(2), new DoubleField(0));*/
 			System.out.println(Arrays.toString(data));
 			System.out.println("n=" + n + " => RMS Error="+ fft.test(data));
 
@@ -165,18 +150,56 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			for(int i = 0; i < basic.length; i ++) {
 				basicData[i] = basicNum.coerce(basic[i]);
 			}
+			System.out.println("n=" + basic.length + " => RMS Error="+ basicFft.test(basicData));
+
+
 			System.out.println("Basic Data: " + Arrays.toString(basicData));
 			basicFft.transform(basicData);
 			System.out.println("Transformed Basic Data: " + Arrays.toString(basicData));
 			basicFft.inverse(basicData);
 			System.out.println("Inverse Basic Data: " + Arrays.toString(basicData));
 
-
-			int[] in1 = {38,  0, 44, 87,  6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0};
-			int[] in2 = {80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0};
-			int[] out = { 3040,    684,  5876, 11172,  5420, 16710, 12546, 20555,
-                      16730, 15704, 21665,  5490, 13887,  4645,  9021,0 };
-			IntModP finiteNum = new IntModP(1, 40961);
+			
+			int[] in1 = {
+				38,  0, 44, 87,  6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0
+			};
+			int[] in2 = {
+				80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0
+			};
+			long[] out = {3040, 684, 5876, 11172,  5420, 16710, 12546, 20555,16730, 15704, 21665,  5490, 13887,  4645,  9021,0};
+			long prime = 40961;
+			
+			
+			/*
+			int[] in1 = {11400, 28374, 23152, 9576, 29511, 20787, 13067, 14015, 0, 0, 0, 0, 0, 0, 0, 0
+			};
+			int[] in2 = {30268, 20788, 8033, 15446, 26275, 11619, 2494, 7016, 0, 0, 0, 0, 0, 0, 0, 0
+			};
+			long[] out = { 345055200L, 1095807432L, 1382179648L, 1175142886L, 2016084656L, 2555168834L, 2179032777L, 1990011337L, 1860865174L, 1389799087L, 942120918L, 778961552L, 341270975L, 126631482L, 98329240L, 0L };
+			long prime = 3221225473L;
+			*/
+			
+			
+			/*
+			int[] in1 = {33243586, 638827078, 767661659, 778933286, 790244973, 910208076, 425757125,
+				478004096, 153380495, 205851834, 668901196, 15731080, 899763115, 551605421,
+				181279081, 600279047, 711828654, 483031418, 737709105, 20544909, 609397212,
+				201989947, 215952988, 206613081, 471852626, 889775274, 992608567, 947438771,
+				969970961, 676943009, 934992634, 922939225, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+			int[] in2 = {194132110, 219972873, 66644114, 902841100, 565039275, 540721923, 810650854,
+				702680360, 147944788, 859947137, 59055854, 288190067, 537655879, 836782561,
+				308822170, 315498953, 417177801, 640439652, 198304612, 525827778, 115633328,
+				285831984, 136721026, 203065689, 884961191, 222965182, 735241234, 746745227,
+				667772468, 739110962, 610860398, 965331182, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+			long prime = 4179340454199820289L;
+			*/
+					
+				
+			
+			
+			IntModP finiteNum = new IntModP(1, prime);
 			GenFFT finiteFft = new GenFFT(finiteNum);
 			IntModP[] data1 = new IntModP[in1.length];
 			IntModP[] data2 = new IntModP[in2.length];
@@ -224,43 +247,6 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		return log;
 	}
 
-	
-	/*private ComplexField<N>[] precomputeRootsOfUnity(int n, int direction) {
-		ComplexField<N>[] roots = (ComplexField<N>[]) Array.newInstance(c.getClass(), n);
-		for (int k = 0; k < n; k++) {
-			double angle = 2.0 * Math.PI * k * direction / n;
-			N realPart = c.re.coerce(Math.cos(angle));
-			N imagPart = c.re.coerce(Math.sin(angle));
-			roots[k] = new ComplexField<>(realPart, imagPart);
-		}
-		return roots;
-	}
-	private IntModP[] precomputeRootsOfUnity(int n, int direction, IntModP num) {
-		// Ensure n divides (p - 1)
-		if ((num.p - 1) % n != 0) {
-			throw new IllegalArgumentException("n must divide p-1 for roots of unity to exist");
-		}
-
-		// Find a primitive root modulo p
-		IntModP primitiveRoot = num.primitiveRoot(num.p - 1);
-
-		// Compute the primitive n-th root of unity
-		IntModP omega = primitiveRoot.pow((num.p - 1) / n);
-
-		// Generate all n-th roots of unity
-		IntModP[] roots = new IntModP[n];
-		for (int k = 0; k < n; k++) {
-			// Compute omega^k * direction
-			int exponent = (k * direction) % (num.p - 1);
-			if (exponent < 0) {
-				exponent += (num.p - 1); // Ensure positive exponent
-			}
-			roots[k] = omega.pow(exponent);
-		}
-
-		return roots;
-	}*/
-
 
 	protected void transform_internal(N[] data, int direction) {
 		if (data.length == 0)
@@ -272,13 +258,14 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 
 		// bit reverse
 		bitreverse(data);
+		//System.out.println("After Bit-Reversal (Java): " + Arrays.toString(data));
 
 		// apply fft recursion
 		// this loop is executed log2(N) times
 		N w;
 		int dual = 1;
 		N[] roots = data[0].precomputeRootsOfUnity(n, direction);
-		//System.out.println("Roots: " + Arrays.toString(roots));
+		System.out.println("Roots: " + Arrays.toString(roots));
 		for (int bit = 0; bit < logn; bit++, dual *= 2) {
 			for (int a = 0; a < dual; a++) {
 				w = roots[a * (n / (2 * dual))]; // Use precomputed root
@@ -294,116 +281,12 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 					data[i] = tempI.a(z1);   // Add
 					data[j] = tempI.s(z1);   // Subtract
 				}
-				//System.out.println("After a=" + a + ": " + Arrays.toString(data));
 			}
+			//System.out.println("After Stage " + bit + " (Java): " + Arrays.toString(data));
 		}
 
 
 	}
-/* 
-	protected void transform_internal(ComplexField<N>[] data, int direction) {
-		if (data.length == 0)
-			return;
-		int n = data.length;
-		if (n == 1)
-			return; // Identity operation!
-		int logn = log2(n);
-
-		// bit reverse the input data for decimation in time algorithm 
-		bitreverse(data);
-
-		// apply fft recursion 
-		// this loop executed log2(N) times 
-		final N n1 = c.re.coerce(1);
-		final N n0 = c.re.coerce(0);
-		final ComplexField<N> c10 = new ComplexField<N>(c.re.coerce(1), c.re.coerce(0));
-		final N n2 = c.re.coerce(2);
-		N theta, s, t, s2;
-		ComplexField<N> w;
-		int dual = 1;
-		ComplexField<N>[] roots = precomputeRootsOfUnity(n, direction);
-		for (int bit = 0; bit < logn; bit++, dual *= 2) {
-			// Roots of unity variant
-			for (int a = 0; a < dual; a++) {
-				w = roots[a * (n / (2 * dual))]; // Use precomputed root
-				for (int b = 0; b < n; b += 2 * dual) {
-					int i = b + a;
-					int j = b + a + dual;
-
-					ComplexField<N> z1 = data[j].m(w); // Twiddle factor multiplication
-					data[j] = data[i].s(z1);          // Subtract
-					data[i] = data[i].a(z1);          // Add
-				}
-			}
-		}
-		
-
-	}
-	protected void transform_internal(IntModP[] data, int direction) {
-		if (data.length == 0)
-			return;
-		int n = data.length;
-		if (n == 1)
-			return; // Identity operation!
-		int logn = log2(n);
-
-		// bit reverse the input data for decimation in time algorithm
-		bitreverse(data);
-		//System.out.println("After reverse:" + Arrays.toString(data));
-
-		// apply fft recursion 
-		IntModP w;
-		int dual = 1;
-		IntModP[] roots = precomputeRootsOfUnity(n, direction, num);
-		//System.out.println("Roots: " + Arrays.toString(roots));
-		for (int bit = 0; bit < logn; bit++, dual *= 2) {
-			for (int a = 0; a < dual; a++) {
-				w = roots[a * (n / (2 * dual))]; // Use precomputed root
-				for (int b = 0; b < n; b += 2 * dual) {
-					int i = b + a;
-					int j = b + a + dual;
-
-					// Twiddle factor multiplication
-					IntModP z1 = data[j].m(w);
-
-					// Butterfly operation
-					IntModP tempI = data[i];
-					data[i] = tempI.a(z1);   // Add
-					data[j] = tempI.s(z1);   // Subtract
-				}
-				//System.out.println("After a=" + a + ": " + Arrays.toString(data));
-			}
-		}
-			
-	}
-	 */
-	/*
-	protected void bitreverse(ComplexField<N>[] data) {
-		// This is the Goldrader bit-reversal algorithm 
-		int n = data.length;
-		int nm1 = n - 1;
-		int i = 0;
-		int j = 0;
-		for (; i < nm1; i++) {
-
-			int k = n >> 1;
-
-			if (i < j) {
-				ComplexField<N> tmp = data[i];
-				data[i] = data[j];
-				data[j] = tmp;
-			}
-
-			while (k <= j) {
-				// j = j - k ;
-				j -= k;
-
-				// k = k / 2 ;
-				k >>= 1;
-			}
-			j += k;
-		}
-	}*/
 
 	protected void bitreverse(N[] data) {
 		/* This is the Goldrader bit-reversal algorithm */

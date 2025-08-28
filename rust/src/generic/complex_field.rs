@@ -6,6 +6,7 @@ use crate::generic::i_math::IMath;
 use crate::generic::single_field::SingleField;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
+use crate::generic::i_primitive_roots::IPrimitiveRoots;
 
 pub struct ComplexField<T> {
     pub re: T,
@@ -191,14 +192,11 @@ where
         )
     }
 }
-// Define a trait for primitive root calculation
-pub trait PrimitiveRoot {
-    fn primitive_root(&self, n: usize) -> Self;
-}
+
 
 // Implement PrimitiveRoot for SingleField numbers
-impl PrimitiveRoot for ComplexField<SingleField> {
-    fn primitive_root(&self, n: usize) -> Self {
+impl IPrimitiveRoots<ComplexField<SingleField>> for ComplexField<SingleField> {
+    fn primitive_root(&self, n: u64) -> Self {
         if n == 0 {
             panic!("n must be positive");
         }
@@ -212,11 +210,44 @@ impl PrimitiveRoot for ComplexField<SingleField> {
 
         ComplexField::new(real, imag)
     }
+
+    fn pow(&self, exponent: i32) -> Self {
+        if exponent == 0 {
+            return self.one(); // Any number to the power of 0 is 1
+        }
+        if exponent < 0 {
+            return self.inverse().pow(-exponent); // Handle negative exponents
+        }
+
+        // Convert to polar form
+        let r = self.abs(); // Modulus
+        let theta = self.im.coerce_to_f64().atan2(self.re.coerce_to_f64()); // Argument (angle)
+
+        // Compute new modulus and argument
+        let new_r = r.powi(exponent); // r^exponent
+        let new_theta = theta * exponent as f64; // theta * exponent
+
+        // Convert back to rectangular form
+        let real = self.re.coerce(new_r * new_theta.cos());
+        let imag = self.im.coerce(new_r * new_theta.sin());
+        ComplexField::new(real, imag)
+    }
+
+    fn precomputeRootsOfUnity(&self, n: u64, direction: i32) -> Vec<ComplexField<SingleField>> {
+        let mut roots = Vec::new();
+        for k in 0..n {
+            let angle = 2.0 * PI * k as f64 / n as f64 * direction as f64;
+            let real = SingleField::new(angle.cos() as f32);
+            let imag = SingleField::new(angle.sin() as f32);
+            roots.push(ComplexField::new(real, imag));
+        }
+        roots
+    }
 }
 
 // Implement PrimitiveRoot for DoubleField numbers
-impl PrimitiveRoot for ComplexField<DoubleField> {
-    fn primitive_root(&self, n: usize) -> Self {
+impl IPrimitiveRoots<ComplexField<DoubleField>> for ComplexField<DoubleField> {
+    fn primitive_root(&self, n: u64) -> Self {
         if n == 0 {
             panic!("n must be positive");
         }
@@ -230,11 +261,45 @@ impl PrimitiveRoot for ComplexField<DoubleField> {
 
         ComplexField::new(real, imag)
     }
+
+    //Polar form exponentiation
+    fn pow(&self, exponent: i32) -> Self {
+        if exponent == 0 {
+            return self.one(); // Any number to the power of 0 is 1
+        }
+        if exponent < 0 {
+            return self.inverse().pow(-exponent); // Handle negative exponents
+        }
+
+        // Convert to polar form
+        let r = self.abs(); // Modulus
+        let theta = self.im.coerce_to_f64().atan2(self.re.coerce_to_f64()); // Argument (angle)
+
+        // Compute new modulus and argument
+        let new_r = r.powi(exponent); // r^exponent
+        let new_theta = theta * exponent as f64; // theta * exponent
+
+        // Convert back to rectangular form
+        let real = self.re.coerce(new_r * new_theta.cos());
+        let imag = self.im.coerce(new_r * new_theta.sin());
+        ComplexField::new(real, imag)
+    }
+
+    fn precomputeRootsOfUnity(&self, n: u64, direction: i32) -> Vec<ComplexField<DoubleField>> {
+        let mut roots = Vec::new();
+        for k in 0..n {
+            let angle = 2.0 * PI * k as f64 / n as f64 * direction as f64;
+            let real = self.re.coerce(angle.cos());
+            let imag = self.im.coerce(angle.sin());
+            roots.push(ComplexField::new(real, imag));
+        }
+        roots
+    }
 }
 
 // Implement PrimitiveRoot for finite fields
-impl PrimitiveRoot for ComplexField<IntModP> {
-    fn primitive_root(&self, n: usize) -> Self {
+impl IPrimitiveRoots<ComplexField<IntModP>> for ComplexField<IntModP> {
+    fn primitive_root(&self, n: u64) -> Self {
         if n == 0 {
             panic!("n must be positive");
         }
@@ -244,5 +309,38 @@ impl PrimitiveRoot for ComplexField<IntModP> {
         let imag = self.im.zero();
 
         ComplexField::new(real, imag)
+    }
+
+    fn pow(&self, exponent: i32) -> Self {
+        if exponent == 0 {
+            return self.one(); // Any number to the power of 0 is 1
+        }
+        if exponent < 0 {
+            return self.inverse().pow(-exponent); // Handle negative exponents
+        }
+
+        // Convert to polar form
+        let r = self.abs(); // Modulus
+        let theta = self.im.coerce_to_f64().atan2(self.re.coerce_to_f64()); // Argument (angle)
+
+        // Compute new modulus and argument
+        let new_r = r.powi(exponent); // r^exponent
+        let new_theta = theta * exponent as f64; // theta * exponent
+
+        // Convert back to rectangular form
+        let real = self.re.coerce(new_r * new_theta.cos());
+        let imag = self.im.coerce(new_r * new_theta.sin());
+        ComplexField::new(real, imag)
+    }
+
+    fn precomputeRootsOfUnity(&self, n: u64, direction: i32) -> Vec<ComplexField<IntModP>> {
+        let mut roots = Vec::new();
+        for k in 0..n {
+            let angle = 2.0 * PI * k as f64 / n as f64 * direction as f64;
+            let real = self.re.coerce(angle.cos());
+            let imag = self.im.coerce(angle.sin());
+            roots.push(ComplexField::new(real, imag));
+        }
+        roots
     }
 }
