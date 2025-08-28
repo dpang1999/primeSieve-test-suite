@@ -11,8 +11,8 @@ pub struct IntModP {
 }
 
 fn mod_inverse(a: u128, p: u128) -> u128 {
-    let (mut t, mut new_t) = (0, 1);
-    let (mut r, mut new_r) = (p, a.rem_euclid(p));
+    let (mut t, mut new_t) = (0 as i128, 1 as i128);
+    let (mut r, mut new_r) = (p as i128, a.rem_euclid(p) as i128);
     while new_r != 0 {
         let quotient = r / new_r;
         let temp_t = t - quotient * new_t;
@@ -26,9 +26,9 @@ fn mod_inverse(a: u128, p: u128) -> u128 {
         panic!("No modular inverse exists for {} mod {}", a, p);
     }
     if t < 0 {
-        t += p;
+        t += p as i128;
     }
-    t
+    t as u128
 }
 
 impl IntModP {
@@ -62,11 +62,12 @@ impl IField for IntModP {
     }
 
     fn s(&self, o: &IntModP) -> IntModP {
-        IntModP::new(self.i - o.i + self.p, self.p)
+
+        IntModP::new(self.i + self.p - o.i, self.p)
     }
 
     fn se(&mut self, o: &IntModP) {
-        self.i = (self.i - o.i + self.p).rem_euclid(self.p);
+        self.i = (self.i + self.p - o.i).rem_euclid(self.p);
     }
 
     fn m(&self, o: &IntModP) -> IntModP {
@@ -222,13 +223,14 @@ impl IPrimitiveRoots<IntModP> for IntModP {
             panic!("n must be in range [1, p-1]");
         }
 
+        // Factorize p-1
+        let factors = factorize(self.p as u64 - 1);
+
         // Iterate through potential primitive roots
         for g in 2..self.p {
             let mut is_root = true;
-
-            // Check if g^k mod p != 1 for 0 < k < n
-            for k in 1..n {
-                if mod_pow(g, k as u128, self.p) == 1 {
+            for &factor in &factors {
+                if mod_pow(g, (self.p - 1) / factor as u128, self.p) == 1 {
                     is_root = false;
                     break;
                 }
@@ -251,8 +253,27 @@ impl IPrimitiveRoots<IntModP> for IntModP {
         IntModP::new(mod_pow(self.i, exp as u128, self.p), self.p)
     }
 
-    fn precomputeRootsOfUnity(&self, n: u64, direction: i32) -> Vec<IntModP> {
-        // This method is not implemented for IntModP
-        panic!("precomputeRootsOfUnity not implemented for IntModP");
+    fn precomputeRootsOfUnity(&self, n: u64, direction: u64) -> Vec<IntModP> {
+        // Ensure n divides (p - 1)
+        if (self.p - 1) as u64 % n != 0 {
+            panic!("n must divide p-1 for roots of unity to exist in IntModP");
+        }
+
+        // Find a primitive root modulo p
+        let g = self.primitive_root((self.p - 1) as u64);
+        println!("Primitive root: {}", g);
+
+        let omega = g.pow(((self.p - 1) as u64 / n) as i32);
+        println!("n-th root of unity (omega): {}", omega);
+
+        let mut roots = Vec::with_capacity(n as usize);
+        for k in 0..n {
+            let mut exponent: u128 = (k as u128 * direction as u128) % (self.p - 1) as u128;
+            if (exponent < 0) {
+                exponent += (self.p - 1) as u128;
+            }
+            roots.push(omega.pow(exponent as i32));
+        }
+        roots
     }
 }

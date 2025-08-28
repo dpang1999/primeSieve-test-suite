@@ -3,7 +3,7 @@ use crate::generic::i_field::IField;
 use crate::generic::double_field::DoubleField;
 use crate::generic::complex_field::ComplexField;
 use crate::generic::single_field::SingleField;
-use crate::generic::complex_field::PrimitiveRoot; // Bring the trait into scope
+use crate::generic::i_primitive_roots::IPrimitiveRoots; // Bring the trait into scope
 use rand::Rng;
 use rand::seq::IndexedRandom;
 
@@ -24,22 +24,24 @@ fn main() {
 
 fn test_int_mod_p() {
     let mut rng = rand::rng();
-    let prime_num = match PRIME_NUMBERS.choose(&mut rng) {
+    let p = match PRIME_NUMBERS.choose(&mut rng) {
         Some(&p) => p,
         None => 7,
     };
+    let prime_num = p as u128;
+ 
     let a = IntModP::new(rng.random_range(1000..10000), prime_num);
     let b = IntModP::new(rng.random_range(1000..10000), prime_num);
     let result = a.d(&b);
-    println!("{}/{}={}", a.coerce(), b.coerce(), result); 
+    println!("{}/{}={}", a.coerce_to_f64(), b.coerce_to_f64(), result.coerce_to_f64()); 
     let verify = b.m(&result);
-    println!("Verification: {}*{}={}", b.coerce(), result.coerce(), verify);
+    println!("Verification: {}*{}={}", b.coerce_to_f64(), result.coerce_to_f64(), verify.coerce_to_f64());
 
 
     let sum = a.a(&b);
-    println!("{}+{}={}", a.coerce(), b.coerce(), sum.coerce());
+    println!("{}+{}={}", a.coerce_to_f64(), b.coerce_to_f64(), sum.coerce_to_f64());
     let diff = a.s(&b);
-    println!("{}-{}={}", a.coerce(), b.coerce(), diff.coerce());
+    println!("{}-{}={}", a.coerce_to_f64(), b.coerce_to_f64(), diff.coerce_to_f64());
 }
 
 fn test_complex() {

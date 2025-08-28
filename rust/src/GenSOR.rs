@@ -129,7 +129,7 @@ fn main() {
             let primes = prime_sieve(rng.random_range(10000..46340)); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last().expect("No prime found in the range");
 
-            let omega = IntModP::new(3, *prime).d(&IntModP::new(2, *prime)); // 1.5 mod 449
+            let omega = IntModP::new(3, *prime as u128).d(&IntModP::new(2, *prime as u128)); // 1.5 mod 449
             let mut g = vec![vec![omega.zero(); n]; m];
 
             // Set boundary conditions
@@ -138,7 +138,7 @@ fn main() {
                 g[i][n - 1] = omega.zero();     // Right edge
             }
             for j in 0..n {
-                g[0][j] = IntModP::new(100, *prime);       // Top edge (hot)
+                g[0][j] = IntModP::new(100, *prime as u128);       // Top edge (hot)
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 
@@ -204,7 +204,7 @@ fn main() {
             let primes = prime_sieve(rng.random_range(10000..46340)); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last().expect("No prime found in the range");
 
-            let omega = ComplexField::new(IntModP::new(3, *prime).d(&IntModP::new(2, *prime)),IntModP::new(0,*prime)); // 1.5 mod 449
+            let omega = ComplexField::new(IntModP::new(3, *prime as u128).d(&IntModP::new(2, *prime as u128)),IntModP::new(0,*prime as u128)); // 1.5 mod 449
             let mut g = vec![vec![omega.zero(); n]; m];
 
             // Set boundary conditions
@@ -213,7 +213,7 @@ fn main() {
                 g[i][n - 1] = omega.zero();     // Right edge
             }
             for j in 0..n {
-                g[0][j] = ComplexField::new(IntModP::new(100, *prime), IntModP::new(1,*prime));       // Top edge (hot)
+                g[0][j] = ComplexField::new(IntModP::new(100, *prime as u128), IntModP::new(1,*prime as u128));       // Top edge (hot)
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 

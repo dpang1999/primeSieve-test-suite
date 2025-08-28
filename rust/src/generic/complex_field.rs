@@ -233,7 +233,7 @@ impl IPrimitiveRoots<ComplexField<SingleField>> for ComplexField<SingleField> {
         ComplexField::new(real, imag)
     }
 
-    fn precomputeRootsOfUnity(&self, n: u64, direction: i32) -> Vec<ComplexField<SingleField>> {
+    fn precomputeRootsOfUnity(&self, n: u64, direction: u64) -> Vec<ComplexField<SingleField>> {
         let mut roots = Vec::new();
         for k in 0..n {
             let angle = 2.0 * PI * k as f64 / n as f64 * direction as f64;
@@ -285,7 +285,7 @@ impl IPrimitiveRoots<ComplexField<DoubleField>> for ComplexField<DoubleField> {
         ComplexField::new(real, imag)
     }
 
-    fn precomputeRootsOfUnity(&self, n: u64, direction: i32) -> Vec<ComplexField<DoubleField>> {
+    fn precomputeRootsOfUnity(&self, n: u64, direction: u64) -> Vec<ComplexField<DoubleField>> {
         let mut roots = Vec::new();
         for k in 0..n {
             let angle = 2.0 * PI * k as f64 / n as f64 * direction as f64;
@@ -333,7 +333,7 @@ impl IPrimitiveRoots<ComplexField<IntModP>> for ComplexField<IntModP> {
         ComplexField::new(real, imag)
     }
 
-    fn precomputeRootsOfUnity(&self, n: u64, direction: i32) -> Vec<ComplexField<IntModP>> {
+    fn precomputeRootsOfUnity(&self, n: u64, direction: u64) -> Vec<ComplexField<IntModP>> {
         let mut roots = Vec::new();
         for k in 0..n {
             let angle = 2.0 * PI * k as f64 / n as f64 * direction as f64;

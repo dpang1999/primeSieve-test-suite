@@ -171,10 +171,10 @@ fn main() {
             let prime = primes.last()
                 .expect("No prime found in the range");
             let a: Vec<Vec<IntModP>> = (0..n)
-                .map(|_| (0..n).map(|_| IntModP::new(rand::random::<i32>(), *prime)).collect())
+                .map(|_| (0..n).map(|_| IntModP::new(rand::random::<u128>(), *prime as u128)).collect())
                 .collect();
             let b: Vec<IntModP> = (0..n)
-                .map(|_| IntModP::new(rand::random::<i32>(), *prime))
+                .map(|_| IntModP::new(rand::random::<u128>(), *prime as u128))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
@@ -217,10 +217,10 @@ fn main() {
             let prime = primes.last()
                 .expect("No prime found in the range");
             let a: Vec<Vec<IntModP>> = (0..n)
-                .map(|_| (0..n).map(|_| IntModP::new(rand::random::<i32>(), *prime)).collect())
+                .map(|_| (0..n).map(|_| IntModP::new(rand::random::<u128>(), *prime as u128)).collect())
                 .collect();
             let b: Vec<IntModP> = (0..n)
-                .map(|_| IntModP::new(rand::random::<i32>(), *prime))
+                .map(|_| IntModP::new(rand::random::<u128>(), *prime as u128))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
