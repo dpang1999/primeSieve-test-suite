@@ -68,7 +68,7 @@ public class IntModP implements IField<IntModP>,
         if (o == null) {
             return new IntModP(0, p);
         }
-        if (d != 0 && Long.MAX_VALUE / d < o.d) {
+        if (d != 0 && (Long.MAX_VALUE / d) + 1 < o.d) { // Add 1 to compensate for edge case with integer division
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
             BigInteger bigP = BigInteger.valueOf(p);
@@ -81,7 +81,7 @@ public class IntModP implements IField<IntModP>,
     }
     public void me(IntModP o) {
         //fCount++;
-        if (d != 0 && Long.MAX_VALUE / d < o.d) {
+        if (d != 0 && (Long.MAX_VALUE / d) + 1 < o.d) { // Add 1 to compensate for edge case with integer division
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
             BigInteger bigP = BigInteger.valueOf(p);
@@ -96,7 +96,7 @@ public class IntModP implements IField<IntModP>,
             throw new ArithmeticException("Division by zero in IntModP");
         }
         long inverse = modInverse(o.d, p); // Compute modular inverse of o.d
-        if (d != 0 && Long.MAX_VALUE / d < inverse)
+        if (d != 0 && (Long.MAX_VALUE / d) + 1 < inverse) // Add 1 to compensate for edge case with integer division
         {
             System.out.println("OVERFLOW: d=" + d + ", inverse=" + inverse);
             BigInteger bigD = BigInteger.valueOf(d);
@@ -115,7 +115,7 @@ public class IntModP implements IField<IntModP>,
         long inverse = modInverse(o.d, p); // Compute modular inverse of o.d
         long temp = d;
         d = (d * inverse) % p; // Update the current value
-        if (d != 0 && Long.MAX_VALUE / temp < inverse)
+        if (d != 0 && (Long.MAX_VALUE / temp) + 1 < inverse) // Add 1 to compensate for edge case with integer division
         {
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigInverse = BigInteger.valueOf(modInverse(o.d, p));
@@ -232,11 +232,11 @@ public class IntModP implements IField<IntModP>,
 
 		// Find a primitive root modulo p
 		IntModP primitiveRoot = primitiveRoot(p - 1);
-        System.out.println("Primitive root: " + primitiveRoot);
+        //System.out.println("Primitive root: " + primitiveRoot);
 
 		// Compute the primitive n-th root of unity
 		IntModP omega = primitiveRoot.pow((p - 1) / n);
-        System.out.println("Omega: " + omega + " p: " + p + " n: " + n + " p-1/n= " + (p - 1) / n);
+        //System.out.println("Omega: " + omega + " p: " + p + " n: " + n + " p-1/n= " + (p - 1) / n);
 
 		// Generate all n-th roots of unity
 		IntModP[] roots = new IntModP[n];
@@ -247,7 +247,7 @@ public class IntModP implements IField<IntModP>,
 				exponent += (p - 1); // Ensure positive exponent
 			}
 			roots[k] = omega.pow(exponent);
-            System.out.println("Root " + k + ": " + roots[k] + " exponent: " + exponent);
+            //System.out.println("Root " + k + ": " + roots[k] + " exponent: " + exponent);
 		}
 
 		return roots;

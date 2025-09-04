@@ -103,9 +103,9 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		DoubleField num = new DoubleField(0);
 		GenFFT<ComplexField<DoubleField>> fft = new GenFFT<ComplexField<DoubleField>>(
 				c);
-		int type = 1;
+		int type = 0;
 		if (args.length == 0 && type == 0) {
-			int n = 16;
+			int n = 4;
 			ComplexField<DoubleField>[] data = fft.makeRandom(n);
 
 			System.out.println(Arrays.toString(data));
@@ -158,7 +158,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			System.out.println("Transformed Basic Data: " + Arrays.toString(basicData));
 			basicFft.inverse(basicData);
 			System.out.println("Inverse Basic Data: " + Arrays.toString(basicData));
-
+/*
 			
 			int[] in1 = {
 				38,  0, 44, 87,  6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0
@@ -167,7 +167,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 				80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0
 			};
 			long[] out = {3040, 684, 5876, 11172,  5420, 16710, 12546, 20555,16730, 15704, 21665,  5490, 13887,  4645,  9021,0};
-			long prime = 40961;
+			long prime = 40961;*/
 			
 			
 			/*
@@ -180,7 +180,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			*/
 			
 			
-			/*
+			
 			int[] in1 = {33243586, 638827078, 767661659, 778933286, 790244973, 910208076, 425757125,
 				478004096, 153380495, 205851834, 668901196, 15731080, 899763115, 551605421,
 				181279081, 600279047, 711828654, 483031418, 737709105, 20544909, 609397212,
@@ -194,7 +194,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 				667772468, 739110962, 610860398, 965331182, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 			long prime = 4179340454199820289L;
-			*/
+			
 					
 				
 			
@@ -265,7 +265,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		N w;
 		int dual = 1;
 		N[] roots = data[0].precomputeRootsOfUnity(n, direction);
-		System.out.println("Roots: " + Arrays.toString(roots));
+		//System.out.println("Roots: " + Arrays.toString(roots));
 		for (int bit = 0; bit < logn; bit++, dual *= 2) {
 			for (int a = 0; a < dual; a++) {
 				w = roots[a * (n / (2 * dual))]; // Use precomputed root

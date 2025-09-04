@@ -218,8 +218,8 @@ fn factorize(mut n: u64) -> Vec<u64> {
 
 impl IPrimitiveRoots<IntModP> for IntModP {
     // Primitive Root
-    fn primitive_root(&self, n: u64) -> Self {
-        if n == 0 || n >= self.p as u64 {
+    fn primitive_root(&self, n: u128) -> Self {
+        if n == 0 || n >= self.p{
             panic!("n must be in range [1, p-1]");
         }
 
@@ -249,21 +249,21 @@ impl IPrimitiveRoots<IntModP> for IntModP {
 
     
 
-    fn pow(&self, exp: i32) -> IntModP {
+    fn pow(&self, exp: u128) -> IntModP {
         IntModP::new(mod_pow(self.i, exp as u128, self.p), self.p)
     }
 
-    fn precomputeRootsOfUnity(&self, n: u64, direction: u64) -> Vec<IntModP> {
+    fn precomputeRootsOfUnity(&self, n: u32, direction: i32) -> Vec<IntModP> {
         // Ensure n divides (p - 1)
-        if (self.p - 1) as u64 % n != 0 {
+        if (self.p - 1)  % n as u128 != 0 {
             panic!("n must divide p-1 for roots of unity to exist in IntModP");
         }
 
         // Find a primitive root modulo p
-        let g = self.primitive_root((self.p - 1) as u64);
+        let g = self.primitive_root(self.p - 1);
         println!("Primitive root: {}", g);
 
-        let omega = g.pow(((self.p - 1) as u64 / n) as i32);
+        let omega = g.pow(((self.p - 1) / (n as u128)));
         println!("n-th root of unity (omega): {}", omega);
 
         let mut roots = Vec::with_capacity(n as usize);
@@ -272,7 +272,7 @@ impl IPrimitiveRoots<IntModP> for IntModP {
             if (exponent < 0) {
                 exponent += (self.p - 1) as u128;
             }
-            roots.push(omega.pow(exponent as i32));
+            roots.push(omega.pow(exponent));
         }
         roots
     }

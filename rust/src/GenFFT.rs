@@ -114,7 +114,8 @@ where
         //println!("After bitreverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         // Precompute roots of unity
-        let roots = self.c.precomputeRootsOfUnity(n as u64, direction as u64);
+        let roots = self.c.precomputeRootsOfUnity(n as u32, direction);
+        //println!("Roots: {}", roots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         let mut dual = 1;
         for _bit in 0..logn {
@@ -154,46 +155,132 @@ where
     }
 }
 fn main() {
-    let c = ComplexField::new(DoubleField::new(0.0), DoubleField::new(0.0));
-    let fft = GenFFT::new(c);
-    let n = 1024;
-    
-    //let mut data1;
-    //let mut data2;
-    
-    
 
-    let in1 = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0];
-    let in2 = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
-    let out = [3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0];
-    let prime = 40961;
+    // mode: 0 for finite field, else complex field
+    let mode = 1;    
+    if (mode == 0) {
+        /*
+        let in1 = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0];
+        let in2 = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
+        let out = [3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0];
+        let prime = 40961;
+        */
 
-    let finite = IntModP::new(0, prime);
-    let finiteFFT = GenFFT::new(finite);
-    let mut data1 = Vec::with_capacity(in1.len());
-    let mut data2 = Vec::with_capacity(in2.len());
-    for i in 0..in1.len() {
-        data1.push(IntModP::new(in1[i], prime));
-        data2.push(IntModP::new(in2[i], prime));
+        let in1: [u128; 16] = [
+            11400, 28374, 23152, 9576, 29511, 20787, 13067, 14015, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let in2: [u128; 16] = [
+            30268, 20788, 8033, 15446, 26275, 11619, 2494, 7016, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let out: [u128; 16] = [
+            345055200, 1095807432, 1382179648, 1175142886, 2016084656, 2555168834,
+            2179032777, 1990011337, 1860865174, 1389799087, 942120918, 778961552,
+            341270975, 126631482, 98329240, 0
+        ];
+        let prime: u128 = 3221225473;
+    /*
+        let in1: [u128; 64] = [33243586, 638827078, 767661659, 778933286, 790244973, 910208076, 425757125,
+            478004096, 153380495, 205851834, 668901196, 15731080, 899763115, 551605421,
+            181279081, 600279047, 711828654, 483031418, 737709105, 20544909, 609397212,
+            201989947, 215952988, 206613081, 471852626, 889775274, 992608567, 947438771,
+            969970961, 676943009, 934992634, 922939225, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let in2: [u128; 64] = [194132110, 219972873, 66644114, 902841100, 565039275, 540721923, 810650854,
+            702680360, 147944788, 859947137, 59055854, 288190067, 537655879, 836782561,
+            308822170, 315498953, 417177801, 640439652, 198304612, 525827778, 115633328,
+            285831984, 136721026, 203065689, 884961191, 222965182, 735241234, 746745227,
+            667772468, 739110962, 610860398, 965331182, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let out: [u128; 64] = [6453647494146460, 131329535698517158, 291767894660778388, 392668443347293259,
+            971459521481104784, 1474458811520325621, 1844928110064910283, 2357021332184901128,
+            2928892267161886295, 2725517850003984528, 3202505799926570519, 2918543444592941968,
+            2772488376791744089, 3248633108357294538, 3254615389814072180, 3638020871734883400,
+            55160505208503622, 3969469665294621400, 439789777768675993, 916737048670338429,
+            157193402339279849, 1030499289809835368, 534708807109284987, 462608833776141716,
+            518270737313306417, 990302136704222252, 862673986833243374, 1706781055673683080,
+            2148213235654123180, 4027029548560043607, 3715706394243238489, 966330325631268533,
+            724857759400778139, 1014165568394318451, 978244158856038395, 3518954508900415555,
+            3481727912868647859, 2905676401026905092, 1913454655595000205, 2281030150295966751,
+            2048468707271352286, 1955651308030723278, 1936345891479581000, 2116568874488615349,
+            1964776204460631657, 594938508019154838, 665031798826217600, 435270820221219547,
+            3944115800695200119, 3877068415832542765, 3375534600145876311, 3739051895812367546,
+            3787681810231019302, 3846806706428246918, 215267241912496193, 433277273552403593,
+            32647322247915044, 4082693161306839314, 3321007834415954245, 2657237599459774692,
+            1906778666014199420, 1466364566853824938, 890942012983413950, 0];
+        let prime: u128 = 4179340454199820289;*/
+
+        let finite = IntModP::new(0, prime);
+        let finiteFFT = GenFFT::new(finite);
+        let mut data1 = Vec::with_capacity(in1.len());
+        let mut data2 = Vec::with_capacity(in2.len());
+        for i in 0..in1.len() {
+            data1.push(IntModP::new(in1[i], prime));
+            data2.push(IntModP::new(in2[i], prime));
+        }
+        finiteFFT.transform(&mut data1);
+        finiteFFT.transform(&mut data2);
+
+        // Print data1 and data2 after transformation
+        println!("data1: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("data2: {}", data2.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+
+        let mut product = Vec::with_capacity(data1.len());
+        for i in 0..data1.len() {
+            product.push(data1[i].m(&data2[i]));
+        }
+        // Print product
+        println!("product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+
+        // Invert and print product
+        finiteFFT.inverse(&mut product);
+        println!("product (after inverse): {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
     }
-    finiteFFT.transform(&mut data1);
-    finiteFFT.transform(&mut data2);
+    else {
+        let c = ComplexField::new(DoubleField::new(0.0), DoubleField::new(0.0));
+        let fft = GenFFT::new(c);
+        let n = 4;
 
-    // Print data1 and data2 after transformation
-    println!("data1: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-    println!("data2: {}", data2.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        let mut data1 = Vec::<ComplexField<DoubleField>>::with_capacity(n);
+        let mut data2 = Vec::<ComplexField<DoubleField>>::with_capacity(n);
 
-    let mut product = Vec::with_capacity(data1.len());
-    for i in 0..data1.len() {
-        product.push(data1[i].m(&data2[i]));
+        data1.push(ComplexField::new(DoubleField::new(0.3618031071604718), DoubleField::new(0.932993485288541)));
+        data1.push(ComplexField::new(DoubleField::new(0.8330913489710237), DoubleField::new(0.32647575623792624)));
+        data1.push(ComplexField::new(DoubleField::new(0.2355237906476252), DoubleField::new(0.34911535662488336)));
+        data1.push(ComplexField::new(DoubleField::new(0.4480776326931518), DoubleField::new(0.6381529437838686)));
+
+
+        println!("{}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("n={} => RMS Error={}", n, fft.test(&mut data1));
+
+        let in1 = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0];
+        let in2 = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
+        let mut data1 = Vec::with_capacity(in1.len() / 2);
+        let mut data2 = Vec::with_capacity(in2.len() / 2);
+        for i in (0..in1.len()).step_by(2) {
+            data1.push(ComplexField::new(DoubleField::new(in1[i] as f64), DoubleField::new(in1[i+1] as f64)));
+            data2.push(ComplexField::new(DoubleField::new(in2[i] as f64), DoubleField::new(in2[i+1] as f64)));
+        }
+        // Print data1 and data2 before transformation
+        println!("data1 (before transform): {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("data2 (before transform): {}", data2.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        fft.transform(&mut data1);
+        fft.transform(&mut data2);
+
+        // Print data1 and data2 after transformation
+        println!("data1 (after transform): {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("data2 (after transform): {}", data2.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+
+        let mut product = Vec::with_capacity(data1.len());
+        for i in 0..data1.len() {
+            product.push(data1[i].m(&data2[i]));
+        }
+        // Print product
+        println!("product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+
+        // Invert and print product
+        fft.inverse(&mut product);
+        println!("product (after inverse): {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
     }
-    // Print product
-    println!("product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
-    // Invert and print product
-    finiteFFT.inverse(&mut product);
-    println!("product (after inverse): {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-
-    //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-    //println!("n={} => RMS Error={}", n, fft.test(&mut data));
+ 
 }
