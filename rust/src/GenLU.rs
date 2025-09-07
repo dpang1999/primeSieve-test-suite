@@ -113,24 +113,28 @@ pub fn factor<U: IField + IMath>(
     0
 }
 
-fn run<T: IField + IMath + Display>(
+fn run<T: IField + IMath + Clone + Display>(
     mut a: Vec<Vec<T>>,
     mut b: Vec<T>,
     mut pivot: Vec<usize>,
 ) {
     print_matrix(&a);
+    let a_copy = a.clone();
     factor(&mut a, &mut pivot);
     println!("b: ");
     print_vector(&b);
+    let b_copy = b.clone();
     solve(&a, &pivot, &mut b);
     println!("Solution: ");
     print_vector(&b);
+    let product = multiplyMatrices(a_copy, b);
+    print_vector(&product);
 }
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mut n = 4;
-    let mut mode = 0;
+    let mut mode = 4;
     let mut rng = rand::rng();
     let mut complex_bool = 0;
     if args.len() > 1 {
@@ -233,7 +237,21 @@ fn main() {
 
 }
 
+fn multiplyMatrices<U: IField + IMath + Display + Clone>(a: Vec<Vec<U>>, b: Vec<U>) -> Vec<U> {
+    let m = a.len();
+    let n = a[0].len();
+    let mut product: Vec<U> = vec![U::zero(&a[0][0]); m];
 
+    for i in 0..m {
+        let mut sum = U::zero(&a[0][0]);
+        for j in 0..n {
+            sum = sum.a(&a[i][j].m(&b[j]));
+        }
+        product[i] = sum;
+    }
+
+    product
+}
 
 
 fn prime_sieve(num:usize) -> Vec<i32> {

@@ -155,7 +155,7 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 	 * 
 	 * @return 0, if OK, nozero value, othewise.
 	 */
-	public static <U extends IField<U> & IInvertible<U> & IOrdered<U> & IMath<U> & ICopiable<U>> int factor(U A[][], int pivot[]) {
+	public static <U extends IField<U> & IOrdered<U> & IMath<U> & ICopiable<U>> int factor(U A[][], int pivot[]) {
 		int N = A.length;
 		int M = A[0].length;
 
@@ -236,7 +236,7 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 	 *            (in/out) On input, the right-hand side. On output, the
 	 *            solution vector.
 	 */
-	public static <U extends IField<U> & IInvertible<U>> void solve(U LU[][], int pvt[], U b[]) {
+	public static <U extends IField<U>> void solve(U LU[][], int pvt[], U b[]) {
 		int M = LU.length;
 		int N = LU[0].length;
 		int ii = 0;
@@ -258,7 +258,7 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 			U sum = b[i];
 			for (int j = i + 1; j < N; j++)
 				sum = sum.s(LU[i][j].m(b[j]));
-			b[i] = sum.m(LU[i][i].invert());
+			b[i] = sum.d(LU[i][i]);
 		}
 	}
 
@@ -271,50 +271,81 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 		if (args.length > 0)
 			N = Integer.parseInt(args[0]);
 
-		DoubleField A[][] = new DoubleField[N][N];
-		DoubleField b[] = new DoubleField[N];
-		int pivot[] = new int[N];
-		
+		int mode = 1;
+		if (mode == 0) {
 
-		for (int i = 0; i < N; i++) {
-			for (int j = 0; j < N; j++)
-				A[i][j] = new DoubleField(Math.random()*1000);
-			b[i] = new DoubleField(Math.random()*1000);
+			DoubleField A[][] = new DoubleField[N][N];
+			DoubleField b[] = new DoubleField[N];
+			int pivot[] = new int[N];
+			
+
+			for (int i = 0; i < N; i++) {
+				for (int j = 0; j < N; j++)
+					A[i][j] = new DoubleField(Math.random()*1000);
+				b[i] = new DoubleField(Math.random()*1000);
+			}
+
+			printMatrix(A);
+			DoubleField ACopy[][] = new_copy(A);
+
+			factor(A, pivot);
+			
+			System.out.println("b: ");
+			printVector(b);
+			DoubleField BCopy[] = new_copy(b);
+			solve(A, pivot, b); //only needed for debugging
+			System.out.println("Solution: ");
+			printVector(b);
+
+			DoubleField product[] = multiplyMatrices(ACopy, b);
+			//printVector(product);
+
+			System.out.println("RMS Difference: " + RMSDiff(BCopy, product));
 		}
+		else {
+			IntModP A[][] = new IntModP[N][N];
+			IntModP b[] = new IntModP[N];
+			int pivot[] = new int[N];
+			long p = 3221225473L;
 
-		printMatrix(A);
-		DoubleField ACopy[][] = new_copy(A);
+			for (int i = 0; i < N; i++) {
+				for (int j = 0; j < N; j++)
+					A[i][j] = new IntModP((long)(Math.random()*10000), p);
+				b[i] = new IntModP((long)(Math.random()*10000), p);
+			}
 
-		factor(A, pivot);
-		
-		System.out.println("b: ");
-		printVector(b);
-		DoubleField BCopy[] = new_copy(b);
-		solve(A, pivot, b); //only needed for debugging
-		System.out.println("Solution: ");
-		printVector(b);
+			printMatrix(A);
+			IntModP ACopy[][] = new_copy(A);
 
-		DoubleField product[] = multiplyMatrices(ACopy, b);
-		//printVector(product);
+			factor(A, pivot);
+			System.out.println("b: ");
+			printVector(b);
+			IntModP BCopy[] = new_copy(b);
+			solve(A, pivot, b); //only needed for debugging
+			System.out.println("Solution: ");
+			printVector(b);
 
-		System.out.println("RMS Difference: " + RMSDiff(BCopy, product));
+			IntModP product[] = multiplyMatrices(ACopy, b);
+			printVector(product);
 
-		System.exit(0);
+			System.out.println("RMS Difference: " + RMSDiff(BCopy, product));
+		}
 	}
 
-	static void printMatrix(DoubleField A[][]) {
+	static <U> void printMatrix(U A[][]) {
 		int M = A.length;
 		int N = A[0].length;
 
 		for (int i = 0; i < M; i++) {
-			DoubleField Ai[] = A[i];
+			U Ai[] = A[i];
 			for (int j = 0; j < N; j++)
 				System.out.print(Ai[j].toString() + " ");
 			System.out.println();
 		}
 		System.out.println();
 	}
-	static void printVector(DoubleField B[]) {
+
+	static <U> void printVector(U B[]) {
 		int M = B.length;
 
 		for (int i = 0; i < M; i++)
@@ -323,7 +354,7 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 		System.out.println();
 	}
 
-	static DoubleField[] multiplyMatrices(DoubleField A[][], DoubleField B[]) {
+	static <U extends IField<U>> U[] multiplyMatrices(U A[][], U B[]) {
 		int M = A.length;
 		int N = A[0].length;
 		int P = B.length;
@@ -333,9 +364,9 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 		}
 
 		// Multiply an NxN matrix by an Nx1 vector
-		DoubleField C[] = new DoubleField[M];
+		U C[] = (U[]) Array.newInstance(A[0][0].getClass(), M);
 		for (int i = 0; i < M; i++) {
-			C[i] = new DoubleField(0);
+			C[i] = B[0].zero();
 			for (int j = 0; j < N; j++) {
 				C[i] = C[i].a(A[i][j].m(B[j]));
 			}
@@ -343,7 +374,7 @@ public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R>
 		return C;
 	}
 
-	static double RMSDiff(DoubleField A[], DoubleField B[]) {
+	static <U extends IField<U>> double RMSDiff(U A[], U B[]) {
 		if (A.length != B.length) {
 			throw new IllegalArgumentException("Incompatible vector dimensions");
 		}

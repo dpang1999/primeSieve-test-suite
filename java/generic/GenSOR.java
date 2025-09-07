@@ -15,7 +15,7 @@ public class GenSOR
 		int M = G.length;
 		int N = G[0].length;
 
-		R omega_over_four = omega.m(omega.coerce(0.25));
+		R omega_over_four = omega.d(omega.coerce(4));
 		R one_minus_omega = omega.coerce(1.0).s(omega);
 
 		// update interior points
@@ -38,39 +38,71 @@ public class GenSOR
 	// Main
 	public static void main(String[] args)
 	{
-		int M = 10;
-		int N = 10;
-		int num_iterations = 100;
+		int mode = 0;
+		if (mode == 0) {
+			int M = 10;
+			int N = 10;
+			int num_iterations = 100;
 
-		DoubleField omega = new DoubleField(1.5);
-		DoubleField G[][] = new DoubleField[M][N];
-		for (int i=0; i<M; i++)
-			for (int j=0; j<N; j++)
-			{
-				if (i == 0) {
-					G[i][j] = new DoubleField(1.0); // Top edge is hot
+			DoubleField omega = new DoubleField(1.5);
+			DoubleField G[][] = new DoubleField[M][N];
+			for (int i=0; i<M; i++)
+				for (int j=0; j<N; j++)
+				{
+					if (i == 0) {
+						G[i][j] = new DoubleField(1.0); // Top edge is hot
+					}
+					else {
+						G[i][j] = new DoubleField(0.0);
+					}
 				}
-				else {
-					G[i][j] = new DoubleField(0.0);
+			System.out.println("Initial grid:");
+			printMatrix(G);
+					
+
+			//System.out.println("Num flops: " + num_flops(M, N, num_iterations));
+			execute(omega, G, num_iterations);
+
+			System.out.println("Resulting grid:");
+			printMatrix(G);
+		}
+		else {
+			int M = 10;
+			int N = 10;
+			int num_iterations = 100;
+			int prime = 40961;
+
+			IntModP omega = new IntModP(2, prime);
+			IntModP G[][] = new IntModP[M][N];
+			for (int i=0; i<M; i++)
+				for (int j=0; j<N; j++)
+				{
+					if (i == 0) {
+						G[i][j] = new IntModP(1000, prime); // Top edge is hot
+					}
+					else {
+						G[i][j] = new IntModP(0, prime);
+					}
 				}
-			}
-		System.out.println("Initial grid:");
-		printMatrix(G);
-				
 
-		//System.out.println("Num flops: " + num_flops(M, N, num_iterations));
-		execute(omega, G, num_iterations);
+			System.out.println("Initial grid:");
+			printMatrix(G);
+					
 
-		System.out.println("Resulting grid:");
-		printMatrix(G);
+			//System.out.println("Num flops: " + num_flops(M, N, num_iterations));
+			execute(omega, G, num_iterations);
+
+			System.out.println("Resulting grid:");
+			printMatrix(G);
+		}
 	}
 
-	static void printMatrix(DoubleField A[][]) {
+	static <U> void printMatrix(U A[][]) {
 		int M = A.length;
 		int N = A[0].length;
 
 		for (int i = 0; i < M; i++) {
-			DoubleField Ai[] = A[i];
+			U Ai[] = A[i];
 			for (int j = 0; j < N; j++)
 				System.out.print(Ai[j].toString() + " ");
 			System.out.println();

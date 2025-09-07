@@ -261,10 +261,10 @@ impl IPrimitiveRoots<IntModP> for IntModP {
 
         // Find a primitive root modulo p
         let g = self.primitive_root(self.p - 1);
-        println!("Primitive root: {}", g);
+        //println!("Primitive root: {}", g);
 
         let omega = g.pow(((self.p - 1) / (n as u128)));
-        println!("n-th root of unity (omega): {}", omega);
+        //println!("n-th root of unity (omega): {}", omega);
 
         let mut roots = Vec::with_capacity(n as usize);
         for k in 0..n {

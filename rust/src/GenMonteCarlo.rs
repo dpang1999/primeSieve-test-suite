@@ -30,7 +30,7 @@ fn integrate<T: IField + IOrdered>(t: &T, num_samples: usize) -> f64 {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mut num_samples = 1_000_000;
-    let mut mode = 1; // 1 for SingleField, else for DoubleField. Don't think IntModP makes much sense here
+    let mut mode = 0; // 1 for SingleField, else for DoubleField. Don't think IntModP makes much sense here
     let mut complex_bool = 0; // 0 for non-complex, 1 for complex. Doesn't make much sense to use complex numbers here
     if args.len() > 1 {
         num_samples = args[1].parse().unwrap_or(1000000);
@@ -43,8 +43,12 @@ fn main() {
         let temp = SingleField::new(0.0);
         pi = integrate(&temp, num_samples);
     }
-    else {
+    else if (mode == 2) {
         let temp = DoubleField::new(0.0);
+        pi = integrate(&temp, num_samples);
+    }
+    else {
+        let temp = IntModP::new(0, 1_000_000_007);
         pi = integrate(&temp, num_samples);
     }
     println!("Pi is approximately: {}", pi);

@@ -34,15 +34,29 @@ public class GenMonteCarlo
 	}
 
 	public static void main(String[] args) {
-		int Num_samples = 1000000;
-		if (args.length > 0)
-			Num_samples = Integer.parseInt(args[0]);
-		DoubleField t = new DoubleField(0.0);
-		DoubleField pi = integrate(t,Num_samples);
-		System.out.println("Pi is approximately: " + pi);
-		System.out.println("Num samples: " + Num_samples);
-		System.out.println("Num flops: " + num_flops(Num_samples));
-		System.out.println("RMS Error: " + Math.abs(Math.PI - pi.coerce()));
+		int mode = 0;
+		if (mode == 0) {
+			int Num_samples = 1000000;
+			if (args.length > 0)
+				Num_samples = Integer.parseInt(args[0]);
+			DoubleField t = new DoubleField(0.0);
+			DoubleField pi = integrate(t,Num_samples);
+			System.out.println("Pi is approximately: " + pi);
+			System.out.println("Num samples: " + Num_samples);
+			System.out.println("Num flops: " + num_flops(Num_samples));
+			System.out.println("RMS Error: " + Math.abs(Math.PI - pi.coerce()));
+		}
+		else {
+			int Num_samples = 1000000;
+			if (args.length > 0)
+				Num_samples = Integer.parseInt(args[0]);
+			IntModP t = new IntModP(0, 1009);
+			IntModP pi = integrate(t,Num_samples);
+			System.out.println("Pi is approximately: " + pi);
+			System.out.println("Num samples: " + Num_samples);
+			System.out.println("Num flops: " + num_flops(Num_samples));
+			System.out.println("RMS Error: " + Math.abs(Math.PI - pi.coerce()));
+		}
 	}
 
 }
