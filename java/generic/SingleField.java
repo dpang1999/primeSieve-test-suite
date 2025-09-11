@@ -2,7 +2,7 @@ package generic;
 import java.util.Formatter;
 
 public class SingleField implements IField<SingleField>,
-		ITrigonometric<SingleField>, IInvertible<SingleField>, IMath<SingleField>,
+		ITrigonometric<SingleField>, IMath<SingleField>,
 		IOrdered<SingleField>, ICopiable<SingleField> {
 	float f;
 
@@ -142,11 +142,6 @@ public class SingleField implements IField<SingleField>,
 		return new SingleField(1);
 	}
 
-
-	public SingleField invert() {
-		//fCount++;
-		return new SingleField(1 / f);
-	}
 
 	public void abs() {
 		if (f < 0)

@@ -136,7 +136,7 @@ fn main() {
     let mut n = 4;
     let mut mode = 4;
     let mut rng = rand::rng();
-    let mut complex_bool = 0;
+    let mut complex_bool = 3;
     if args.len() > 1 {
         n = args[1].parse().unwrap_or(4);
     }
@@ -230,6 +230,40 @@ fn main() {
             run(a, b, pivot);
         }
     } else {
+          let a: Vec<Vec<DoubleField>> = vec![
+                vec![
+                    DoubleField::new(1.0),
+                    DoubleField::new(2.0),
+                    DoubleField::new(3.0),
+                    DoubleField::new(4.0),
+                ],
+                vec![
+                    DoubleField::new(2.0),
+                    DoubleField::new(3.0),
+                    DoubleField::new(4.0),
+                    DoubleField::new(5.0),
+                ],
+                vec![
+                    DoubleField::new(3.0),
+                    DoubleField::new(4.0),
+                    DoubleField::new(5.0),
+                    DoubleField::new(6.0),
+                ],
+                vec![
+                    DoubleField::new(4.0),
+                    DoubleField::new(5.0),
+                    DoubleField::new(6.0),
+                    DoubleField::new(7.0),
+                ],
+            ];
+            let b: Vec<DoubleField> = vec![
+                DoubleField::new(1.0),
+                DoubleField::new(2.0),
+                DoubleField::new(3.0),
+                DoubleField::new(4.0),
+            ];
+            let pivot: Vec<usize> = vec![0; 4];
+            run(a, b, pivot);
         println!("Invalid complex_bool value. Use 0 for non-complex and 1 for complex.");
     }
     

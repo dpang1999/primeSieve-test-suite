@@ -11,7 +11,7 @@ import java.lang.reflect.*;
  * 
  * 
  */
-public class GenLU<R extends IField<R> & IInvertible<R> & IOrdered<R> & IMath<R> & ICopiable<R>> {
+public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> {
 	/**
 	 * Returns a <em>copy</em> of the compact LU factorization. (useful mainly
 	 * for debugging.)

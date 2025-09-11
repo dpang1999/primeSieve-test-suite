@@ -1,4 +1,4 @@
-package main
+package specialized
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ func primeSieve(num int) []bool {
 	return primes
 }
 
-func main() {
+func main4() {
 	var max int = 42
 	if len(os.Args) > 1 { // program name is always the first argument
 		max, _ = strconv.Atoi(os.Args[1])

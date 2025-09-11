@@ -2,7 +2,7 @@ package generic;
 import java.util.Formatter;
 
 public class DoubleField implements IField<DoubleField>,
-		ITrigonometric<DoubleField>, IInvertible<DoubleField>, IMath<DoubleField>,
+		ITrigonometric<DoubleField>, IMath<DoubleField>,
 		IOrdered<DoubleField>, ICopiable<DoubleField> {
 	double d;
 
@@ -144,10 +144,6 @@ public class DoubleField implements IField<DoubleField>,
 
 
 
-	public DoubleField invert() {
-		//fCount++;
-		return new DoubleField(1 / d);
-	}
 
 	public void abs() {
 		if (d < 0)
