@@ -25,11 +25,11 @@ func Factor[R interface {
 		// Find pivot in column j and test for singularity
 		jp := j
 		t := A[j][j]
-		t.abs()
+		t = t.abs()
 
 		for i := j + 1; i < M; i++ {
 			ab := A[i][j]
-			ab.abs()
+			ab = ab.abs()
 			if ab.coerceToFloat() > t.coerceToFloat() {
 				jp = i
 				t = ab
@@ -70,7 +70,10 @@ func Factor[R interface {
 }
 
 // Solve solves a linear system using a prefactored matrix in LU form
-func Solve[R IField[R]](LU [][]R, pivot []int, b []R) []R {
+func Solve[R interface {
+	IField[R]
+	IMath[R]
+}](LU [][]R, pivot []int, b []R) []R {
 	M := len(LU)
 	N := len(LU[0])
 	x := make([]R, len(b))
@@ -103,7 +106,10 @@ func Solve[R IField[R]](LU [][]R, pivot []int, b []R) []R {
 }
 
 // MultiplyMatrices multiplies a matrix by a vector
-func MultiplyMatrices[R IField[R]](A [][]R, b []R) []R {
+func MultiplyMatrices[R interface {
+	IField[R]
+	IMath[R]
+}](A [][]R, b []R) []R {
 	M := len(A)
 	N := len(A[0])
 	product := make([]R, M)
@@ -188,7 +194,6 @@ func PrintVector[R IField[R]](b []R) {
 
 func TestGenLU() {
 	n := 4
-	//mode:= 4
 	var A [][]DoubleField
 	var b []DoubleField
 	pivot := make([]int, n)

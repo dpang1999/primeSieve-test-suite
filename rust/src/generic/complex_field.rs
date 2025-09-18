@@ -158,18 +158,7 @@ where
         ComplexField::new(self.re.clone(), self.im.clone())
     }
 }
-impl<T> ComplexField<T>
-where
-    T: IField + IOrdered + IMath + Clone,
-{    
-    pub fn inverse(&self) -> Self {
-        let denom = self.re.m(&self.re).a(&self.im.m(&self.im));
-        ComplexField::new(
-            self.re.d(&denom),
-            self.im.d(&denom),
-        )
-    }
-}
+
 
 
 // Implement PrimitiveRoot for SingleField numbers

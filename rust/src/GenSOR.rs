@@ -61,7 +61,7 @@ fn main() {
     let args = std::env::args().collect::<Vec<String>>();
     let mut m = 10;
     let mut n = 10;
-    let mut mode = 4;
+    let mut mode = 2;
     let mut complex_bool = 0;
     let num_iterations = 100;
     let mut rng = rand::rng();

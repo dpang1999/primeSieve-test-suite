@@ -20,24 +20,12 @@ func (d DoubleField) a(o DoubleField) DoubleField {
 	return DoubleField{Value: d.Value + o.Value}
 }
 
-func (d DoubleField) ae(o DoubleField) {
-	d.Value += o.Value
-}
-
 func (d DoubleField) s(o DoubleField) DoubleField {
 	return DoubleField{Value: d.Value - o.Value}
 }
 
-func (d DoubleField) se(o DoubleField) {
-	d.Value -= o.Value
-}
-
 func (d DoubleField) m(o DoubleField) DoubleField {
 	return DoubleField{Value: d.Value * o.Value}
-}
-
-func (d DoubleField) me(o DoubleField) {
-	d.Value *= o.Value
 }
 
 func (d DoubleField) d(o DoubleField) DoubleField {
@@ -45,13 +33,6 @@ func (d DoubleField) d(o DoubleField) DoubleField {
 		panic("division by zero")
 	}
 	return DoubleField{Value: d.Value / o.Value}
-}
-
-func (d DoubleField) de(o DoubleField) {
-	if o.Value == 0 {
-		panic("division by zero")
-	}
-	d.Value /= o.Value
 }
 
 func (d DoubleField) coerceFromInt(i int) DoubleField {
@@ -83,15 +64,18 @@ func (d DoubleField) one() DoubleField {
 }
 
 // Implement IMath interface for DoubleField
-func (d DoubleField) abs() {
+func (d DoubleField) abs() DoubleField {
 	if d.Value < 0 {
 		d.Value = -d.Value
+		return DoubleField{Value: d.Value}
 	}
+	return d
 }
 
-func (d DoubleField) sqrt() {
+func (d DoubleField) sqrt() DoubleField {
 	if d.Value < 0 {
 		panic("square root of negative number")
 	}
 	d.Value = math.Sqrt(d.Value)
+	return DoubleField{Value: d.Value}
 }
