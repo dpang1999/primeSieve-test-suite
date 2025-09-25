@@ -79,3 +79,27 @@ func (d DoubleField) sqrt() DoubleField {
 	d.Value = math.Sqrt(d.Value)
 	return DoubleField{Value: d.Value}
 }
+
+func (d DoubleField) lt(o DoubleField) bool {
+	return d.Value < o.Value
+}
+
+func (d DoubleField) le(o DoubleField) bool {
+	return d.Value <= o.Value
+}
+
+func (d DoubleField) gt(o DoubleField) bool {
+	return d.Value > o.Value
+}
+
+func (d DoubleField) ge(o DoubleField) bool {
+	return d.Value >= o.Value
+}
+
+func (d DoubleField) eq(o DoubleField) bool {
+	return d.Value == o.Value
+}
+
+func (d DoubleField) copy() DoubleField {
+	return DoubleField{Value: d.Value}
+}

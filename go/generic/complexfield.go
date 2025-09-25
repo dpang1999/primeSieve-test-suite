@@ -100,7 +100,7 @@ func (c ComplexField[T]) primitiveRoots(n int64) ComplexField[T] {
 	return ComplexField[T]{Re: real, Im: imag}
 }
 
-func (c ComplexField[T]) Pow(exponent int) ComplexField[T] {
+func (c ComplexField[T]) pow(exponent int64) ComplexField[T] {
 	if exponent == 0 {
 		return c.one()
 	}
@@ -119,7 +119,7 @@ func (c ComplexField[T]) Pow(exponent int) ComplexField[T] {
 }
 
 // PrecomputeRootsOfUnity precomputes the roots of unity
-func (c ComplexField[T]) PrecomputeRootsOfUnity(n int, direction int) []ComplexField[T] {
+func (c ComplexField[T]) precomputeRootsOfUnity(n int, direction int) []ComplexField[T] {
 	roots := make([]ComplexField[T], n)
 	for k := 0; k < n; k++ {
 		angle := 2.0 * math.Pi * float64(k) / float64(n) * float64(direction)
@@ -128,4 +128,44 @@ func (c ComplexField[T]) PrecomputeRootsOfUnity(n int, direction int) []ComplexF
 		roots[k] = ComplexField[T]{Re: real, Im: imag}
 	}
 	return roots
+}
+
+// Implement IOrdered interface for ComplexField
+func (c ComplexField[T]) lt(o ComplexField[T]) bool {
+	if c.Re.lt(o.Re) {
+		return true
+	}
+	if c.Re.eq(o.Re) {
+		return c.Im.lt(o.Im)
+	}
+	return false
+}
+
+func (c ComplexField[T]) le(o ComplexField[T]) bool {
+	return c.lt(o) || c.eq(o)
+}
+
+func (c ComplexField[T]) gt(o ComplexField[T]) bool {
+	if c.Re.gt(o.Re) {
+		return true
+	}
+	if c.Re.eq(o.Re) {
+		return c.Im.gt(o.Im)
+	}
+	return false
+}
+
+func (c ComplexField[T]) ge(o ComplexField[T]) bool {
+	return c.gt(o) || c.eq(o)
+}
+
+func (c ComplexField[T]) eq(o ComplexField[T]) bool {
+	return c.Re.eq(o.Re) && c.Im.eq(o.Im)
+}
+
+func (c ComplexField[T]) copy() ComplexField[T] {
+	return ComplexField[T]{
+		Re: c.Re,
+		Im: c.Im,
+	}
 }

@@ -110,11 +110,11 @@ func (i IntModP) one() IntModP {
 }
 
 // Implement IMath interface for IntModP
-func (i IntModP) abs() float64 {
-	return float64(i.Value)
+func (i IntModP) abs() IntModP {
+	return NewIntModP(i.Value, i.Modulus)
 }
 
-func (i *IntModP) sqrt() {
+func (i IntModP) sqrt() IntModP {
 	panic("Square root not implemented for IntModP")
 }
 
@@ -154,8 +154,8 @@ func modPow(base, exp, modulus uint64) uint64 {
 }
 
 // Implement IPrimitiveRoots interface for IntModP
-func (i IntModP) primitiveRoot(n uint64) IntModP {
-	if n == 0 || n >= i.Modulus {
+func (i IntModP) primitiveRoots(n int64) IntModP {
+	if n == 0 || n >= int64(i.Modulus) {
 		panic("n must be in range [1, p-1]")
 	}
 
@@ -177,24 +177,23 @@ func (i IntModP) primitiveRoot(n uint64) IntModP {
 	return NewIntModP(0, i.Modulus) // No primitive root found
 }
 
-func (i IntModP) pow(exp uint64) IntModP {
-	return NewIntModP(modPow(i.Value, exp, i.Modulus), i.Modulus)
+func (i IntModP) pow(exp int64) IntModP {
+	return NewIntModP(modPow(i.Value, uint64(exp), i.Modulus), i.Modulus)
 }
 
-func (i IntModP) precomputeRootsOfUnity(n uint32, direction int32) []IntModP {
+func (i IntModP) precomputeRootsOfUnity(n int, direction int) []IntModP {
 	if (i.Modulus-1)%uint64(n) != 0 {
 		panic("n must divide p-1 for roots of unity to exist in IntModP")
 	}
 
-	g := i.primitiveRoot(i.Modulus - 1)
-	omega := g.pow((i.Modulus - 1) / uint64(n))
+	g := i.primitiveRoots(int64(i.Modulus - 1))
+	omega := g.pow(int64((i.Modulus - 1) / uint64(n)))
 
 	roots := make([]IntModP, n)
-	for k := uint32(0); k < n; k++ {
+	for k := 0; k < n; k++ {
 		exponent := uint64(k) * uint64(direction) % (i.Modulus - 1)
-		roots[k] = omega.pow(exponent)
+		roots[k] = omega.pow(int64(exponent))
 	}
-
 	return roots
 }
 
@@ -204,4 +203,33 @@ func (i IntModP) String() string {
 		return fmt.Sprintf("%d (mod %d)", i.Value, i.Modulus)
 	}
 	return fmt.Sprintf("IntModP(%d, %d)", i.Value, i.Modulus)
+}
+
+// Implement IOrdered interface for IntModP
+func (i IntModP) lt(o IntModP) bool {
+	return i.Value < o.Value
+}
+
+func (i IntModP) le(o IntModP) bool {
+	return i.Value <= o.Value
+}
+
+func (i IntModP) eq(o IntModP) bool {
+	return i.Value == o.Value
+}
+
+func (i IntModP) gt(o IntModP) bool {
+	return i.Value > o.Value
+}
+
+func (i IntModP) ge(o IntModP) bool {
+	return i.Value >= o.Value
+}
+
+func (i IntModP) copy() IntModP {
+	return IntModP{
+		Value:      i.Value,
+		Modulus:    i.Modulus,
+		PrintShort: i.PrintShort,
+	}
 }

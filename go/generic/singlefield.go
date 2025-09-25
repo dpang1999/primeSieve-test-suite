@@ -90,3 +90,29 @@ func (d SingleField) abs() {
 func (d SingleField) sqrt() {
 	d.Value = float32(math.Sqrt(float64(d.Value)))
 }
+
+// Implement IEqual interface for SingleField
+
+func (d SingleField) eq(o SingleField) bool {
+	return d.Value == o.Value
+}
+
+func (d SingleField) lt(o SingleField) bool {
+	return d.Value < o.Value
+}
+
+func (d SingleField) lte(o SingleField) bool {
+	return d.Value <= o.Value
+}
+
+func (d SingleField) gt(o SingleField) bool {
+	return d.Value > o.Value
+}
+
+func (d SingleField) gte(o SingleField) bool {
+	return d.Value >= o.Value
+}
+
+func (d SingleField) copy() SingleField {
+	return SingleField{Value: d.Value}
+}
