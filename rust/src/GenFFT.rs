@@ -1,14 +1,14 @@
 use core::fmt;
-use rand::Rng;
 use crate::generic::complex_field::ComplexField;
 use crate::generic::i_field::IField;
 use crate::generic::i_primitive_roots::IPrimitiveRoots;
-use crate::generic::i_trigonometric::ITrigonometric;
 use crate::generic::i_math::IMath;
 use crate::generic::i_ordered::IOrdered;
 pub mod generic;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
+pub mod helpers;
+use crate::helpers::lcg::lcg;
 
 pub struct GenFFT<N>
 where
@@ -43,7 +43,7 @@ where
 
     pub fn test(&self, data: &mut [N]) -> f64 {
         let nd = data.len();
-        let mut copy: Vec<N> = data.iter().map(|x| x.copy()).collect();
+        let copy: Vec<N> = data.iter().map(|x| x.copy()).collect();
 
         self.transform(data);
 
@@ -57,9 +57,9 @@ where
             let d = data[i].copy();
             let real = d.coerce_to_f64();
             let imag = d.coerce_to_f64();
-            let realDiff = real - copy[i].coerce_to_f64();
-            let imagDiff = imag - copy[i].coerce_to_f64();
-            diff += realDiff * realDiff + imagDiff * imagDiff;
+            let real_diff = real - copy[i].coerce_to_f64();
+            let imag_diff = imag - copy[i].coerce_to_f64();
+            diff += real_diff * real_diff + imag_diff * imag_diff;
         }
         (diff / (nd*2) as f64).sqrt()
 
@@ -156,13 +156,13 @@ where
 }
 fn main() {
 
-    // mode: 0 for finite field, else complex field
-    let mode = 0;    
-    if (mode == 0) {
+    // mode: 0 for finite field, 1 complex field
+    let mode = 3;    
+    if mode == 0 {
         
         let in1 = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0];
         let in2 = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
-        let out = [3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0];
+        //let out = [3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0];
         let prime = 40961;
         
         
@@ -173,11 +173,11 @@ fn main() {
         let in2: [u128; 16] = [
             30268, 20788, 8033, 15446, 26275, 11619, 2494, 7016, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        let out: [u128; 16] = [
+        /*let out: [u128; 16] = [
             345055200, 1095807432, 1382179648, 1175142886, 2016084656, 2555168834,
             2179032777, 1990011337, 1860865174, 1389799087, 942120918, 778961552,
             341270975, 126631482, 98329240, 0
-        ];
+        ];*/
         let prime: u128 = 3221225473;
         */
     /*
@@ -193,7 +193,7 @@ fn main() {
             285831984, 136721026, 203065689, 884961191, 222965182, 735241234, 746745227,
             667772468, 739110962, 610860398, 965331182, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        let out: [u128; 64] = [6453647494146460, 131329535698517158, 291767894660778388, 392668443347293259,
+        /*let out: [u128; 64] = [6453647494146460, 131329535698517158, 291767894660778388, 392668443347293259,
             971459521481104784, 1474458811520325621, 1844928110064910283, 2357021332184901128,
             2928892267161886295, 2725517850003984528, 3202505799926570519, 2918543444592941968,
             2772488376791744089, 3248633108357294538, 3254615389814072180, 3638020871734883400,
@@ -209,18 +209,19 @@ fn main() {
             3787681810231019302, 3846806706428246918, 215267241912496193, 433277273552403593,
             32647322247915044, 4082693161306839314, 3321007834415954245, 2657237599459774692,
             1906778666014199420, 1466364566853824938, 890942012983413950, 0];
+        */
         let prime: u128 = 4179340454199820289;*/
 
         let finite = IntModP::new(0, prime);
-        let finiteFFT = GenFFT::new(finite);
+        let finite_fft = GenFFT::new(finite);
         let mut data1 = Vec::with_capacity(in1.len());
         let mut data2 = Vec::with_capacity(in2.len());
         for i in 0..in1.len() {
             data1.push(IntModP::new(in1[i], prime));
             data2.push(IntModP::new(in2[i], prime));
         }
-        finiteFFT.transform(&mut data1);
-        finiteFFT.transform(&mut data2);
+        finite_fft.transform(&mut data1);
+        finite_fft.transform(&mut data2);
 
         // Print data1 and data2 after transformation
         println!("data1: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
@@ -234,10 +235,10 @@ fn main() {
         println!("product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         // Invert and print product
-        finiteFFT.inverse(&mut product);
+        finite_fft.inverse(&mut product);
         println!("product (after inverse): {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
     }
-    else {
+    else if mode == 1 {
         let c = ComplexField::new(DoubleField::new(0.0), DoubleField::new(0.0));
         let fft = GenFFT::new(c);
         let n = 4;
@@ -299,6 +300,16 @@ fn main() {
         fft.inverse(&mut product);
         println!("product (after inverse): {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
     }
-
+    else {
+        let mut rand = lcg::new(12345,1345,65,17);
+        let mut random_numbers = [0; 10];
+        let mut random_doubles = [0.0; 10];
+        for i in 0..10 {
+            random_numbers[i] = rand.next_int();
+            random_doubles[i] = rand.next_double();  
+        }
+        println!("Random Integers: {}", random_numbers.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("Random Doubles: {}", random_doubles.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+    }
  
 }

@@ -1,6 +1,7 @@
 package generic;
 import java.util.*;
 import java.lang.reflect.*;
+import helpers.LCG;
 
 /**
  * A generic FFT computation for complex fields or finite fields 
@@ -103,7 +104,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		DoubleField num = new DoubleField(0);
 		GenFFT<ComplexField<DoubleField>> fft = new GenFFT<ComplexField<DoubleField>>(
 				c);
-		int type = 1;
+		int type = 2;
 		if (args.length == 0 && type == 0) {
 			int n = 4;
 			ComplexField<DoubleField>[] data = fft.makeRandom(n);
@@ -242,6 +243,17 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			System.out.println("Inverse Data1: " + Arrays.toString(data1));
 			finiteFft.inverse(data2);
 			System.out.println("Inverse Data2: " + Arrays.toString(data2));
+		}
+		else {
+			LCG rand = new LCG(12345, 1345, 65, 17);
+			int[] randomNumbers = new int[10];
+			double[] randomDoubles = new double[10];
+			for (int i = 0; i < randomNumbers.length; i++) {
+				randomNumbers[i] = rand.nextInt();
+				randomDoubles[i] = rand.nextDouble();
+			}
+			System.out.println("Random Numbers: " + Arrays.toString(randomNumbers));
+			System.out.println("Random Doubles: " + Arrays.toString(randomDoubles));
 		}
 		for (int i = 0; i < args.length; i++) {
 			int n = Integer.parseInt(args[i]);

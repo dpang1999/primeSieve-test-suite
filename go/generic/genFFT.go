@@ -1,6 +1,7 @@
 package generic
 
 import (
+	"algos/helpers"
 	"fmt"
 	"math"
 	"math/rand"
@@ -140,6 +141,16 @@ func bitreverse[N any](data []N) {
 }
 
 func TestGenFFT() {
+	rand := helpers.NewLCG(12345, 1345, 65, 17)
+	var randomNumbers [10]int
+	var randomDoubles [10]float64
+	for i := 0; i < 10; i++ {
+		randomNumbers[i] = rand.NextInt()
+		randomDoubles[i] = rand.NextDouble()
+	}
+	fmt.Println("Random Integers:", randomNumbers)
+	fmt.Println("Random Doubles:", randomDoubles)
+
 	c := ComplexField[DoubleField]{Re: DoubleField{Value: 3.0}, Im: DoubleField{Value: 4.0}}
 	fft := NewGenFFT(c)
 	n := 4
