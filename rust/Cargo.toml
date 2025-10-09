@@ -34,3 +34,6 @@ path = "src/specialized/MonteCarlo.rs"
 [[bin]]
 name = "genmontecarlo"
 path = "src/GenMonteCarlo.rs"
+[[bin]]
+name = "grobner"
+path = "src/specialized/Grobner.rs"
