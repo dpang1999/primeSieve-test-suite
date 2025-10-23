@@ -225,7 +225,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     }
 
     println!("Begin the experiment, {}", basis.len());
-    for i in 0..2 {
+    for i in 0..2 { // This is *supposed* to go until no new polynomials are added, but for now just do 3 iterations
         let mut new_basis = Vec::new();
         for i in 0..basis.len() {
             for j in i + 1..basis.len() {
@@ -266,28 +266,67 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
 
 fn main() {
     // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
-    let test = 4;
+    let test = 0;
+    // x^2*y + y^2*z + x*z^2
     let p1 = Polynomial::new(vec![
         Term {
             coefficient: 1.0,
-            exponents: vec![2, 0],
+            exponents: vec![2, 1, 0],
         },
         Term {
-            coefficient: -1.0,
-            exponents: vec![0, 1],
+            coefficient: 1.0,
+            exponents: vec![0, 2, 1],
+        },
+        Term {
+            coefficient: 1.0,
+            exponents: vec![1, 0, 2],
         },
     ]);
 
+    // xyz-1
     let p2 = Polynomial::new(vec![
         Term {
             coefficient: 1.0,
-            exponents: vec![1, 1],
+            exponents: vec![1, 1, 1],
         },
         Term {
             coefficient: -1.0,
-            exponents: vec![0, 0],
+            exponents: vec![0, 0, 0],
         },
     ]);
+
+    // x+y+z
+    let p3 = Polynomial::new(vec![
+        Term {
+            coefficient: 1.0,
+            exponents: vec![1, 0, 0],
+        },
+        Term {
+            coefficient: 1.0,
+            exponents: vec![0, 1, 0],
+        },
+        Term {
+            coefficient: 1.0,
+            exponents: vec![0, 0, 1],
+        },
+    ]);
+
+    // x + y + z
+    let p4 = Polynomial::new(vec![
+        Term {
+            coefficient: 1.0,
+            exponents: vec![1, 0, 0],
+        },
+        Term {
+            coefficient: 1.0,
+            exponents: vec![0, 1, 0],
+        },
+        Term {
+            coefficient: 1.0,
+            exponents: vec![0, 0, 1],
+        },
+    ]);
+
     println!("Begin the experiment");
 
 
@@ -454,7 +493,8 @@ fn main() {
     }
     else {
 
-        let basis = naive_grobner_basis(vec![p1, p2]);
+        let basis = naive_grobner_basis(vec![p1, p2, p3]);
+        println!("Final Grobner Basis:");
         for poly in basis {
             println!("{:?}", poly);
         }
