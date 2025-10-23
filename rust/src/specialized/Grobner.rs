@@ -37,6 +37,12 @@ impl Polynomial {
         // Sort terms lexicographically by their exponents in descending order (leading term first)
         terms.sort_by(|a, b| b.exponents.cmp(&a.exponents));
         terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
+        // remove terms that are very close but not equal to 0 to handle floating point errors
+        terms.retain(|t| (t.coefficient - 0.0).abs() > 1e-2);
+        // round coefficients to 5 decimal places to handle floating point errors
+        for term in &mut terms {
+            term.coefficient = (term.coefficient * 1e5).round() / 1e5;
+        }   
         Polynomial { terms }
     }
 
@@ -103,7 +109,7 @@ impl Polynomial {
                         // Check if the leading term can be reduced
                         if leading_term.exponents.iter().zip(&divisor_leading_term.exponents).all(|(a, b)| a >= b) {
                             // print leading_term and divisor_leading_term
-                            println!("Leading Term: {:?}, Divisor Leading Term: {:?}", leading_term, divisor_leading_term);
+                            //println!("Leading Term: {:?}, Divisor Leading Term: {:?}", leading_term, divisor_leading_term);
 
                             // Compute the reduction factor
                             let coefficient = leading_term.coefficient / divisor_leading_term.coefficient;
@@ -137,7 +143,7 @@ impl Polynomial {
             }
         }
 
-        result
+        Polynomial::new(result.terms)
     }
 
     pub fn multiply_by_term(&self, term: &Term) -> Polynomial {
@@ -225,21 +231,21 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     }
 
     println!("Begin the experiment, {}", basis.len());
-    for i in 0..2 { // This is *supposed* to go until no new polynomials are added, but for now just do 3 iterations
-        let mut new_basis = Vec::new();
-        for i in 0..basis.len() {
-            for j in i + 1..basis.len() {
+    for i in 0..4 { // This is *supposed* to go until no new polynomials are added, but for now just do 3 iterations
+        let basis_len = basis.len();
+        let mut added = false;
+        for i in 0..basis_len {
+            for j in i + 1..basis_len {
                 let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
                 let reduced = s_poly.reduce(&basis);
                 //print basis[i], basis[j], s_poly, reduced
-                println!("Basis 1: {:?}", basis[i]);
-                println!("Basis 2: {:?}", basis[j]);
-                println!("S-Polynomial: {:?}", s_poly);
+                println!("Basis 1: {:?} | Basis 2: {:?} | S-Polynomial: {:?}", basis[i], basis[j], s_poly);
                 println!("Reduced: {:?}", reduced);
                 if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
                     println!("Adding new polynomial to basis.");
-                    new_basis.push(reduced.clone());
-                    basis_set.insert(reduced);
+                    basis_set.insert(reduced.clone());
+                    basis.push(reduced);
+                    added = true;
                 }
                 else {
                     println!("Reduced polynomial is zero or already in basis, skipping.");
@@ -247,11 +253,9 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
             }
         }
 
-        if new_basis.is_empty() {
+        if !added {
             break;
         }
-
-        basis.extend(new_basis);
 
         //print basis with new lines separating each polynomial
         println!("New basis polynomials:");
@@ -261,7 +265,18 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         println!("End of iteration {}\n", i);
     }
 
-    basis
+    //reduce basis by self
+    let mut reduced_basis = Vec::new();
+    for poly in &basis {
+        // reduce poly by basis excluding itself
+        let mut basis_excluding_self = basis.clone();
+        basis_excluding_self.retain(|p| p != poly);
+        let reduced = poly.reduce(&basis_excluding_self);
+        if !reduced.terms.is_empty() && !reduced_basis.contains(&reduced) {
+            reduced_basis.push(reduced);
+        }
+    }
+    reduced_basis
 }
 
 fn main() {
