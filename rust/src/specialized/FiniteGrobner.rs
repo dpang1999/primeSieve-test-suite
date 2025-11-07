@@ -8,10 +8,10 @@ static TERM_ORDER: Lazy<Mutex<TermOrder>> = Lazy::new(|| Mutex::new(TermOrder::L
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
-    pub coefficient: f64,
+    pub coefficient: u32,
+    pub modulus: u32,
     pub exponents: Vec<usize>, // Exponents for each variable
 }
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TermOrder {
     Lex,
@@ -40,12 +40,11 @@ impl Term {
     }
 }
 
-
 impl Eq for Term {}
 
 impl Hash for Term {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.coefficient.to_bits().hash(state);
+        self.coefficient.hash(state);
         self.exponents.hash(state);
     }
 }
@@ -65,19 +64,47 @@ impl Hash for Polynomial {
     }
 }
 
+fn mod_inverse(a: u32, m: u32) -> u32 {
+    let mut m0 = m;
+    let mut y = 0;
+    let mut x = 1;
+
+    if m == 1 {
+        return 0;
+    }
+
+    let mut a = a % m;
+    while a > 1 {
+        let q = a / m0;
+        let mut t = m0;
+
+        m0 = a % m0;
+        a = t;
+        t = y;
+
+        y = x - q * y;
+        x = t;
+    }
+
+    if x < 0 {
+        x += m;
+    }
+
+    x
+}
 impl Polynomial {
     pub fn new(mut terms: Vec<Term>) -> Self {
-        // Sort terms by sort order
         terms.sort_by(|a, b| b.compare(a));
-        terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
+        terms.retain(|t| t.coefficient != 0); // Remove zero coefficient terms
         // remove terms that are very close but not equal to 0 to handle floating point errors
-        terms.retain(|t| (t.coefficient - 0.0).abs() > 1e-2);
+        //terms.retain(|t| (t.coefficient - 0.0).abs() > 1e-2);
         // round coefficients to 5 decimal places to handle floating point errors
-        for term in &mut terms {
+        /*for term in &mut terms {
             term.coefficient = (term.coefficient * 1e5).round() / 1e5;
-        }   
+        } */  
         Polynomial { terms }
     }
+    
 
     pub fn add(&self, other: &Polynomial) -> Polynomial {
         let mut result = self.terms.clone();
@@ -85,7 +112,7 @@ impl Polynomial {
             let mut found = false;
             for res_term in &mut result {
                 if res_term.exponents == term.exponents {
-                    res_term.coefficient = res_term.coefficient + term.coefficient;
+                    res_term.coefficient = (res_term.coefficient + term.coefficient) % term.modulus;
                     found = true;
                     break;
                 }
@@ -109,14 +136,14 @@ impl Polynomial {
             let mut found = false;
             for res_term in &mut result {
                 if res_term.exponents == term.exponents {
-                    res_term.coefficient = res_term.coefficient - term.coefficient;
+                    res_term.coefficient = (res_term.coefficient - term.coefficient) % term.modulus;
                     found = true;
                     break;
                 }
             }
-            if !found {
+            if !found {// 0 - term.coefficient but in finite field we can add mod by coefficient
                 let mut neg_term = term.clone();
-                neg_term.coefficient = -term.coefficient;
+                neg_term.coefficient = (term.modulus + term.coefficient) % term.modulus;
                 result.push(neg_term);
             }
         }
@@ -142,10 +169,11 @@ impl Polynomial {
                         // Check if the leading term can be reduced
                         if leading_term.exponents.iter().zip(&divisor_leading_term.exponents).all(|(a, b)| a >= b) {
                             // print leading_term and divisor_leading_term
-                            //println!("Leading Term: {:?}, Divisor Leading Term: {:?}", leading_term, divisor_leading_term);
+                            println!("Leading Term: {:?}, Divisor Leading Term: {:?}", leading_term, divisor_leading_term);
 
                             // Compute the reduction factor
-                            let coefficient = leading_term.coefficient / divisor_leading_term.coefficient;
+                            //let coefficient = leading_term.coefficient / divisor_leading_term.coefficient;
+                            let coefficient = leading_term.coefficient * mod_inverse(divisor_leading_term.coefficient, divisor_leading_term.modulus);
                             let exponents: Vec<usize> = leading_term
                                 .exponents
                                 .iter()
@@ -156,6 +184,7 @@ impl Polynomial {
                             // Create the reduction term
                             let reduction_term = Term {
                                 coefficient,
+                                modulus: leading_term.modulus,
                                 exponents,
                             };
 
@@ -184,7 +213,8 @@ impl Polynomial {
             .terms
             .iter()
             .map(|t| Term {
-                coefficient: t.coefficient * term.coefficient,
+                coefficient: (t.coefficient * term.coefficient) % term.modulus,
+                modulus: term.modulus,
                 exponents: t
                     .exponents
                     .iter()
@@ -216,6 +246,7 @@ impl Polynomial {
                 .iter()
                 .map(|term| Term {
                     coefficient: term.coefficient,
+                    modulus: term.modulus,
                     exponents: term
                         .exponents
                         .iter()
@@ -238,6 +269,7 @@ impl Polynomial {
                 .iter()
                 .map(|term| Term {
                     coefficient: term.coefficient,
+                    modulus: term.modulus,
                     exponents: term
                         .exponents
                         .iter()
@@ -338,50 +370,60 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 fn main() {
     // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
     let test = 0;
+    let modulus = 13;
+    //Lex, GrLex, RevLex
+    *TERM_ORDER.lock().unwrap() = TermOrder::Lex;
     // x^3 + y^3 + z^3
-     //Lex, GrLex, RevLex
-    *TERM_ORDER.lock().unwrap() = TermOrder::GrLex;
     let p1 = Polynomial::new(vec![
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![3, 0, 0], // x^3
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 3, 0], // y^3
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 0, 3], // z^3
         },
     ]);
     // xy + yz + xz
     let p2 = Polynomial::new(vec![
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![1, 1, 0], // xy
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 1, 1], // yz
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![1, 0, 1], // xz
         },
     ]);
     // x+y+z
     let p3 = Polynomial::new(vec![
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![1, 0, 0], // x
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 1, 0], // y
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 0, 1], // z
         },
     ]);
@@ -389,15 +431,18 @@ fn main() {
     // x + y + z
     let p4 = Polynomial::new(vec![
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![1, 0, 0],
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 1, 0],
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 0, 1],
         },
     ]);
@@ -410,11 +455,13 @@ fn main() {
 
         let expected = Polynomial::new(vec![
             Term {
-                coefficient: -1.0,
+                coefficient: modulus - 1,    
+                modulus,
                 exponents: vec![0, 2], // Term: -y^2
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![1, 0], // Term: x
             },
         ]);
@@ -426,19 +473,23 @@ fn main() {
 
         let expected = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![2, 0],
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![1, 1],
             },
             Term {
-                coefficient: -1.0,
+                coefficient: modulus - 1,
+                modulus,
                 exponents: vec![0, 1],
             },
             Term {
-                coefficient: -1.0,
+                coefficient: modulus - 1,
+                modulus,
                 exponents: vec![0, 0],
             },
         ]);
@@ -450,19 +501,23 @@ fn main() {
 
         let expected = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![2, 0],
             },
             Term {
-                coefficient: -1.0,
+                coefficient: modulus - 1,
+                modulus,
                 exponents: vec![1, 1],
             },
             Term {
-                coefficient: -1.0,
+                coefficient: modulus - 1,
+                modulus,
                 exponents: vec![0, 1],
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 0],
             },
         ]);
@@ -473,45 +528,54 @@ fn main() {
         // x^3 + y^3 + z^3
         let p1 = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![3, 0, 0], // x^3
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 3, 0], // y^3
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 0, 3], // z^3
             },
         ]);
         // xy + yz + xz
         let p2 = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![1, 1, 0], // xy
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,    
                 exponents: vec![0, 1, 1], // yz
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![1, 0, 1], // xz
             },
         ]);
         // x+y+z
         let p3 = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![1, 0, 0], // x
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 1, 0], // y
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 0, 1], // z
             },
         ]);
@@ -520,11 +584,13 @@ fn main() {
         // xy^2 - y
         let divisor = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![1, 2] // xy^2
             },
             Term {
-                coefficient: -1.0,
+                coefficient: modulus - 1,
+                modulus,
                 exponents: vec![0, 1] // -y
             }
         ]);
@@ -559,11 +625,13 @@ fn main() {
         // Create another polynomial identical to p1 to test equality and hashing
         let p1_clone = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![2, 0],
             },
             Term {
-                coefficient: -1.0,
+                coefficient: modulus - 1,
+                modulus,
                 exponents: vec![0, 1],
             },
         ]);
@@ -592,7 +660,8 @@ fn main() {
         // z^3
         let test_poly = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 0, 3],
             },
            
@@ -601,15 +670,18 @@ fn main() {
         // y^2 + yz + z^2
         let test_poly_2 = Polynomial::new(vec![
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 2, 0],
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 1, 1],
             },
             Term {
-                coefficient: 1.0,
+                coefficient: 1,
+                modulus,
                 exponents: vec![0, 0, 2],
             },
            
@@ -618,15 +690,18 @@ fn main() {
         // z^9 -3z^6 -6z^3 - 1
         let test_poly_3 = Polynomial::new(vec![
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![1, 0, 0], // x
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 1, 0], // y
         },
         Term {
-            coefficient: 1.0,
+            coefficient: 1,
+            modulus,
             exponents: vec![0, 0, 1], // z
         },
     ]);
