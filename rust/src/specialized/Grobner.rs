@@ -2,9 +2,9 @@ use std::collections::HashSet;
 
 use std::hash::{Hash, Hasher};
 
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
-static TERM_ORDER: Lazy<Mutex<TermOrder>> = Lazy::new(|| Mutex::new(TermOrder::Lex));
+use std::sync::OnceLock;
+
+static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
@@ -21,7 +21,7 @@ pub enum TermOrder {
 
 impl Term {
     pub fn compare(&self, other: &Term) -> std::cmp::Ordering {
-        let order = TERM_ORDER.lock().unwrap().clone();
+        let order = TERM_ORDER.get().expect("TERM_ORDER not initialized");
         match order {
             TermOrder::Lex => self.exponents.cmp(&other.exponents), // Lexicographic order
             TermOrder::GrLex => { // Graded lexicographic order
@@ -264,7 +264,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     }
 
     println!("Begin the experiment, {}", basis.len());
-    for i in 0..4 { // This is *supposed* to go until no new polynomials are added, but for now just do 3 iterations
+    for i in 0..10 { // This is *supposed* to go until no new polynomials are added, but for now just do 3 iterations
         let basis_len = basis.len();
         let mut added = false;
         for i in 0..basis_len {
@@ -275,7 +275,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
                 //println!("Basis 1: {:?} | Basis 2: {:?} | S-Polynomial: {:?}", basis[i], basis[j], s_poly);
                 //println!("Reduced: {:?}", reduced);
                 if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
-                    println!("Adding new polynomial to basis.");
+                    //println!("Adding new polynomial to basis.");
                     basis_set.insert(reduced.clone());
                     basis.push(reduced);
                     added = true;
@@ -291,9 +291,9 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         }
 
         //print basis with new lines separating each polynomial
-        println!("New basis polynomials:");
+        //println!("New basis polynomials:");
         for poly in &basis {
-            println!("{:?}", poly);
+            //println!("{:?}", poly);
         }
         println!("End of iteration {}\n", i);
     }
@@ -309,9 +309,20 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
             reduced_basis.push(reduced);
         }
     }
-    reduced_basis
 
-    
+    /* I don't think this is necessary, but it does make for a nicer output
+    //if leading term of polynomial has negative coefficient flip all signs
+    for poly in &mut reduced_basis {
+        if let Some(leading_term) = poly.terms.first() {
+            if leading_term.coefficient < 0.0 {
+                for term in &mut poly.terms {
+                    term.coefficient = -term.coefficient;
+                }
+            }
+        }
+    }*/
+
+    reduced_basis
 }
 
 pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> bool {
@@ -338,37 +349,34 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 fn main() {
     // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
     let test = 0;
-    // x^3 + y^3 + z^3
      //Lex, GrLex, RevLex
-    *TERM_ORDER.lock().unwrap() = TermOrder::GrLex;
+    TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized");
+
+    // x*y - z
     let p1 = Polynomial::new(vec![
         Term {
             coefficient: 1.0,
-            exponents: vec![3, 0, 0], // x^3
+            exponents: vec![1, 1, 0], // x * y
         },
         Term {
-            coefficient: 1.0,
-            exponents: vec![0, 3, 0], // y^3
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 0, 3], // z^3
-        },
+            coefficient: -1.0,
+            exponents: vec![0, 0, 1], // -z
+        }
     ]);
-    // xy + yz + xz
+    // x^2 + y^2 -1
     let p2 = Polynomial::new(vec![
         Term {
             coefficient: 1.0,
-            exponents: vec![1, 1, 0], // xy
+            exponents: vec![2, 0, 0], // x^2
         },
         Term {
             coefficient: 1.0,
-            exponents: vec![0, 1, 1], // yz
+            exponents: vec![0, 2, 0], // y^2
         },
         Term {
-            coefficient: 1.0,
-            exponents: vec![1, 0, 1], // xz
-        },
+            coefficient: -1.0,
+            exponents: vec![0, 0, 0], // -1
+        }
     ]);
     // x+y+z
     let p3 = Polynomial::new(vec![
@@ -580,7 +588,7 @@ fn main() {
     }
     else {
 
-        let basis = naive_grobner_basis(vec![p1, p2, p3]);
+        let basis = naive_grobner_basis(vec![p1, p2]);
         // copy basis
         let mut copied_basis = basis.clone();
         println!("Final Grobner Basis:");
@@ -589,49 +597,74 @@ fn main() {
         }
         
 
-        // z^3
+        //  x^2 + y^2 -1
         let test_poly = Polynomial::new(vec![
             Term {
                 coefficient: 1.0,
-                exponents: vec![0, 0, 3],
+                exponents: vec![2, 0, 0],
             },
-           
-        ]);
-
-        // y^2 + yz + z^2
-        let test_poly_2 = Polynomial::new(vec![
             Term {
                 coefficient: 1.0,
                 exponents: vec![0, 2, 0],
             },
             Term {
+                coefficient: -1.0,
+                exponents: vec![0, 0, 0],
+            },
+        ]);
+
+        // x*y -z
+        let test_poly_2 = Polynomial::new(vec![
+            Term {
                 coefficient: 1.0,
-                exponents: vec![0, 1, 1],
+                exponents: vec![1, 1, 0],
+            },
+            Term {
+                coefficient: -1.0,
+                exponents: vec![0, 0, 1],
+            },
+           
+        ]);
+
+        // x*z +y^3 - y
+        let test_poly_3 = Polynomial::new(vec![
+            Term {
+                coefficient: 1.0,
+                exponents: vec![1, 0, 1],
+            },
+            Term {
+                coefficient: 1.0,
+                exponents: vec![0, 3, 0],
+            },
+            Term {
+                coefficient: -1.0,
+                exponents: vec![0, 1, 0],
+            },
+        ]);
+
+        // y^4 - y^2 + z^2
+        let test_poly_4 = Polynomial::new(vec![
+            Term {
+                coefficient: 1.0,
+                exponents: vec![0, 4, 0],
+            },
+            Term {
+                coefficient: -1.0,
+                exponents: vec![0, 2, 0],
             },
             Term {
                 coefficient: 1.0,
                 exponents: vec![0, 0, 2],
             },
-           
         ]);
 
-        // z^9 -3z^6 -6z^3 - 1
-        let test_poly_3 = Polynomial::new(vec![
-        Term {
-            coefficient: 1.0,
-            exponents: vec![1, 0, 0], // x
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 1, 0], // y
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 0, 1], // z
-        },
-    ]);
-
         let test_basis = vec![test_poly, test_poly_2, test_poly_3];
+
+        // print test_basis
+        println!("Test Basis Polynomials:");
+        for poly in &test_basis {
+            println!("{:?}", poly);
+        }
         let is_equivalent = are_bases_equivalent(copied_basis, test_basis);
         println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
     }

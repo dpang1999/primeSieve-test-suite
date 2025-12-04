@@ -2,9 +2,9 @@ use std::collections::HashSet;
 
 use std::hash::{Hash, Hasher};
 
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
-static TERM_ORDER: Lazy<Mutex<TermOrder>> = Lazy::new(|| Mutex::new(TermOrder::Lex));
+use std::sync::OnceLock;
+
+static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
@@ -21,7 +21,7 @@ pub enum TermOrder {
 
 impl Term {
     pub fn compare(&self, other: &Term) -> std::cmp::Ordering {
-        let order = TERM_ORDER.lock().unwrap().clone();
+        let order = TERM_ORDER.get().expect("TERM_ORDER not initialized");
         match order {
             TermOrder::Lex => self.exponents.cmp(&other.exponents), // Lexicographic order
             TermOrder::GrLex => { // Graded lexicographic order
@@ -372,7 +372,7 @@ fn main() {
     let test = 0;
     let modulus = 13;
     //Lex, GrLex, RevLex
-    *TERM_ORDER.lock().unwrap() = TermOrder::Lex;
+    TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized");
     // x^3 + y^3 + z^3
     let p1 = Polynomial::new(vec![
         Term {
