@@ -44,3 +44,6 @@ path = "src/specialized/FiniteGrobner.rs"
 [[bin]]
 name = "grobnerSmart"
 path = "src/specialized/GrobnerSmart.rs"
+[[bin]]
+name = "gengrobner"
+path = "src/GenGrobner.rs"

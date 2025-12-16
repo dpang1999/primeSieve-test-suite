@@ -3,6 +3,9 @@ use crate::generic::i_field::IField;
 use crate::generic::i_math::IMath;
 use crate::generic::i_ordered::IOrdered;
 use crate::generic::i_trigonometric::ITrigonometric;
+use std::hash::Hash;
+use std::cmp::Eq;
+#[derive(Debug)]
 pub struct SingleField {
     pub f: f32,
     pub print_short: bool,
@@ -122,7 +125,7 @@ impl IOrdered for SingleField {
         self.f >= o.f
     }
 
-    fn eq(&self, o: &SingleField) -> bool {
+    fn e(&self, o: &SingleField) -> bool {
         self.f == o.f
     }
 }
@@ -152,3 +155,18 @@ impl Clone for SingleField {
         SingleField::new(self.f)
     }
 }
+
+impl Hash for SingleField {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let bits: u32 = self.f.to_bits();
+        bits.hash(state);
+    }
+}
+
+impl PartialEq for SingleField {
+    fn eq(&self, other: &Self) -> bool {
+        self.f == other.f
+    }
+}
+
+impl Eq for SingleField {}

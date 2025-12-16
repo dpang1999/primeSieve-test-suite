@@ -3,7 +3,9 @@ use crate::generic::i_field::IField;
 use crate::generic::i_ordered::IOrdered;
 use crate::generic::i_math::IMath;
 use crate::generic::i_primitive_roots::IPrimitiveRoots;
-
+use std::hash::Hash;
+use std::cmp::Eq;
+#[derive(Debug)]
 pub struct IntModP {
     pub i: u128,
     pub p: u128,
@@ -142,7 +144,7 @@ impl IOrdered for IntModP {
         self.i >= o.i
     }
 
-    fn eq(&self, o: &IntModP) -> bool {
+    fn e(&self, o: &IntModP) -> bool {
         self.i == o.i && self.p == o.p
     }
 
@@ -277,3 +279,18 @@ impl IPrimitiveRoots<IntModP> for IntModP {
         roots
     }
 }
+
+impl Hash for IntModP {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.i.hash(state);
+        self.p.hash(state);
+    }
+}
+
+impl PartialEq for IntModP {
+    fn eq(&self, other: &Self) -> bool {
+        self.i == other.i && self.p == other.p
+    }
+}
+
+impl Eq for IntModP {}

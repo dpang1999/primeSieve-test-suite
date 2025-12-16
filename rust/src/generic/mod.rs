@@ -7,3 +7,6 @@ pub mod single_field;
 pub mod int_mod_p;
 pub mod complex_field;
 pub mod i_primitive_roots;
+pub mod i_exponent;
+pub mod vec_exponent;
+pub mod bit_packed_exponent;

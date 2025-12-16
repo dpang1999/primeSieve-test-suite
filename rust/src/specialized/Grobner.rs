@@ -352,26 +352,28 @@ fn main() {
      //Lex, GrLex, RevLex
     TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized");
 
-    // x*y - z
+    // x^2y + y^2z + z^2x
     let p1 = Polynomial::new(vec![
         Term {
             coefficient: 1.0,
-            exponents: vec![1, 1, 0], // x * y
+            exponents: vec![2, 1, 0], // x^2 * y
         },
         Term {
-            coefficient: -1.0,
-            exponents: vec![0, 0, 1], // -z
-        }
+            coefficient: 1.0,
+            exponents: vec![0, 2, 1], // y^2 * z
+        },
+        Term {
+            coefficient: 1.0,
+            exponents: vec![1, 0, 2], // z^2 * x
+        },
+        
+
     ]);
-    // x^2 + y^2 -1
+    // x*y*z -1
     let p2 = Polynomial::new(vec![
         Term {
             coefficient: 1.0,
-            exponents: vec![2, 0, 0], // x^2
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 2, 0], // y^2
+            exponents: vec![1, 1, 1], // x*y*z
         },
         Term {
             coefficient: -1.0,
@@ -588,7 +590,7 @@ fn main() {
     }
     else {
 
-        let basis = naive_grobner_basis(vec![p1, p2]);
+        let basis = naive_grobner_basis(vec![p1, p2, p3]);
         // copy basis
         let mut copied_basis = basis.clone();
         println!("Final Grobner Basis:");

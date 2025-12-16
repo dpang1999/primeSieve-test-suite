@@ -444,76 +444,59 @@ fn main() {
      //Lex, GrLex, RevLex
     TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
 
-    // x*y - z
+    // x^2 * y + y^2 * z + z^2 * x
     let p1 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [1, 1, 0, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 0, 1, 0, 0, 0]),
+        Term::from_exponents(1.0, [2, 1, 0, 0, 0, 0]),
+        Term::from_exponents(1.0, [0, 2, 1, 0, 0, 0]),
+        Term::from_exponents(1.0, [1, 0, 2, 0, 0, 0]),
     ]);
-    // x^2 + y^2 -1
+
+    // x * y * z - 1
     let p2 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [2, 0, 0, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 2, 0, 0, 0, 0]),
+        Term::from_exponents(1.0, [1, 1, 1, 0, 0, 0]),
         Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
     ]);
-      
-    // x+y+z
+
+    // x + y + z
     let p3 = Polynomial::new(vec![
         Term::from_exponents(1.0, [1, 0, 0, 0, 0, 0]),
         Term::from_exponents(1.0, [0, 1, 0, 0, 0, 0]),
         Term::from_exponents(1.0, [0, 0, 1, 0, 0, 0]),
     ]);
 
-    // x + y + z
-    let p4 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [1, 0, 0, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 1, 0, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 0, 1, 0, 0, 0]),
+    // 3*x + 2*z^7 - 7*z^4 - 7*z
+    let test_poly_1 = Polynomial::new(vec![
+        Term::from_exponents(3.0, [1, 0, 0, 0, 0, 0]),
+        Term::from_exponents(2.0, [0, 0, 7, 0, 0, 0]),
+        Term::from_exponents(-7.0, [0, 0, 4, 0, 0, 0]),
+        Term::from_exponents(-7.0, [0, 0, 1, 0, 0, 0]),
     ]);
 
-    println!("Begin the experiment");
+    // 3*y - 2*z^7 + 7*z^4 + 10*z
+    let test_poly_2 = Polynomial::new(vec![
+        Term::from_exponents(3.0, [0, 1, 0, 0, 0, 0]),
+        Term::from_exponents(-2.0, [0, 0, 7, 0, 0, 0]),
+        Term::from_exponents(7.0, [0, 0, 4, 0, 0, 0]),
+        Term::from_exponents(10.0, [0, 0, 1, 0, 0, 0]),
+    ]);
 
+    // z^9 - 3*z^6 - 6*z^3 - 1
+    let test_poly_3 = Polynomial::new(vec![
+        Term::from_exponents(1.0, [0, 0, 9, 0, 0, 0]),
+        Term::from_exponents(-3.0, [0, 0, 6, 0, 0, 0]),
+        Term::from_exponents(-6.0, [0, 0, 3, 0, 0, 0]),
+        Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
+    ]);
+    let input_basis = vec![p1, p2, p3];
+    let basis = naive_grobner_basis(input_basis);
+    let test_basis = vec![test_poly_1, test_poly_2, test_poly_3];
 
- 
-    let basis = naive_grobner_basis(vec![p1, p2]);
-    // copy basis
-    let mut copied_basis = basis.clone();
-    println!("Final Grobner Basis:");
-    for poly in basis {
+    // print computed basis
+    println!("Computed Grobner Basis Polynomials:");
+    for poly in &basis {
         poly.debug_print();
         println!("---");
     }
-    
-
-    //  x^2 + y^2 -1
-    let test_poly = Polynomial::new(vec![
-        Term::from_exponents(1.0, [2, 0, 0, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 2, 0, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
-    ]);
-
-    // x*y -z
-    let test_poly_2 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [1, 1, 0, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 0, 1, 0, 0, 0]),
-        
-    ]);
-
-    // x*z +y^3 - y
-    let test_poly_3 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [1, 0, 1, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 3, 0, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 1, 0, 0, 0, 0]),
-        
-    ]);
-
-    // y^4 - y^2 + z^2
-    let test_poly_4 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [0, 4, 0, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 2, 0, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 0, 2, 0, 0, 0]),
-    ]);
-
-    let test_basis = vec![test_poly, test_poly_2, test_poly_3, test_poly_4];
 
     // print test_basis
     println!("Test Basis Polynomials:");
@@ -521,7 +504,9 @@ fn main() {
         poly.debug_print();
         println!("---");
     }
-    let is_equivalent = are_bases_equivalent(copied_basis, test_basis);
+
+
+    let is_equivalent = are_bases_equivalent(basis, test_basis);
     println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
     
 }

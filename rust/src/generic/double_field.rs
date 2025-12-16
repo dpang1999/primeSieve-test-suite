@@ -3,7 +3,10 @@ use crate::generic::i_field::IField;
 use crate::generic::i_math::IMath;
 use crate::generic::i_ordered::IOrdered;
 use crate::generic::i_trigonometric::ITrigonometric;
-pub struct DoubleField {
+use std::hash::Hash;
+use std::cmp::Eq;
+#[derive(Debug)]
+    pub struct DoubleField {
     pub d: f64,
     pub print_short: bool,
 }
@@ -122,7 +125,7 @@ impl IOrdered for DoubleField {
         self.d >= o.d
     }
 
-    fn eq(&self, o: &DoubleField) -> bool {
+    fn e(&self, o: &DoubleField) -> bool {
         self.d == o.d
     }
 }
@@ -152,3 +155,18 @@ impl Clone for DoubleField {
         DoubleField::new(self.d)
     }
 }
+
+impl Hash for DoubleField {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let bits: u64 = self.d.to_bits();
+        bits.hash(state);
+    }
+}
+
+impl PartialEq for DoubleField {
+    fn eq(&self, other: &Self) -> bool {
+        self.d == other.d
+    }
+}
+
+impl Eq for DoubleField {}

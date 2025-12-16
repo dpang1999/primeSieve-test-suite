@@ -7,7 +7,9 @@ use crate::generic::single_field::SingleField;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
 use crate::generic::i_primitive_roots::IPrimitiveRoots;
-
+use std::hash::Hash;
+use std::cmp::Eq;
+#[derive(Debug)]
 pub struct ComplexField<T> {
     pub re: T,
     pub im: T,
@@ -97,23 +99,23 @@ impl <T: IField + IOrdered> IField for ComplexField<T> {
 
 impl<T: IField + IOrdered> IOrdered for ComplexField<T> {
     fn lt(&self, o: &ComplexField<T>) -> bool {
-        self.re.lt(&o.re) || (self.re.eq(&o.re) && self.im.lt(&o.im))
+        self.re.lt(&o.re) || (self.re.e(&o.re) && self.im.lt(&o.im))
     }
 
     fn le(&self, o: &ComplexField<T>) -> bool {
-        self.re.lt(&o.re) || (self.re.eq(&o.re) && (self.im.lt(&o.im) || self.im.eq(&o.im)))
+        self.re.lt(&o.re) || (self.re.e(&o.re) && (self.im.lt(&o.im) || self.im.e(&o.im)))
     }
 
     fn gt(&self, o: &ComplexField<T>) -> bool {
-        self.re.gt(&o.re) || (self.re.eq(&o.re) && self.im.gt(&o.im))
+        self.re.gt(&o.re) || (self.re.e(&o.re) && self.im.gt(&o.im))
     }
 
     fn ge(&self, o: &ComplexField<T>) -> bool {
-        self.re.gt(&o.re) || (self.re.eq(&o.re) && (self.im.gt(&o.im) || self.im.eq(&o.im)))
+        self.re.gt(&o.re) || (self.re.e(&o.re) && (self.im.gt(&o.im) || self.im.e(&o.im)))
     }
 
-    fn eq(&self, o: &ComplexField<T>) -> bool {
-        self.re.eq(&o.re) && self.im.eq(&o.im)
+    fn e(&self, o: &ComplexField<T>) -> bool {
+        self.re.e(&o.re) && self.im.e(&o.im)
     }
 }
 
@@ -159,7 +161,29 @@ where
     }
 }
 
+impl<T> Hash for ComplexField<T>
+where
+    T: IField + IOrdered + Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.re.hash(state);
+        self.im.hash(state);
+    }
+}
 
+impl<T> PartialEq for ComplexField<T>
+where
+    T: IField + IOrdered + PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.re.eq(&other.re) && self.im.eq(&other.im)
+    }
+}
+
+impl<T> Eq for ComplexField<T>
+where
+    T: IField + IOrdered + Eq,
+{}
 
 // Implement PrimitiveRoot for SingleField numbers
 impl IPrimitiveRoots<ComplexField<SingleField>> for ComplexField<SingleField> {
