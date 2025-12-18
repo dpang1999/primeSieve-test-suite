@@ -384,9 +384,9 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
 
         //print basis with new lines separating each polynomial
         //println!("New basis polynomials:");
-        for poly in &basis {
-            //println!("{:?}", poly);
-        }
+        /*for poly in &basis {
+            println!("{:?}", poly);
+        }*/
         println!("End of iteration {}\n", i);
     }
 
@@ -506,7 +506,8 @@ fn main() {
     // print computed basis
     println!("Computed Grobner Basis Polynomials:");
     for poly in &basis {
-        poly.debug_print();
+        //poly.debug_print();
+        println!("{:?}", poly);
         println!("---");
     }
 

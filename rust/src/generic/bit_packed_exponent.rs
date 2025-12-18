@@ -10,7 +10,7 @@ impl BitPackedExponent {
         BitPackedExponent { exponents }
     }
 
-    pub fn from_vec(exponents: &Vec<u8>) -> Self {
+    pub fn from_vec(exponents: [u8; 6]) -> Self {
         let mut packed: u64 = 0;
         
         // Pack the exponents with the first exponent at the left (bits 47..40)

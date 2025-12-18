@@ -4,6 +4,7 @@ use crate::generic::i_exponent::IExponent;
 pub mod generic;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
+use crate::generic::single_field::SingleField;
 use crate::generic::vec_exponent::VecExponent;
 use crate::generic::bit_packed_exponent::BitPackedExponent;
 pub mod helpers;
@@ -245,18 +246,29 @@ where
             break;
         }
     }
-    basis
+
+    let mut reduced_basis = Vec::new();
+    for poly in &basis {
+        let mut basis_excluding_self = basis.clone();
+        basis_excluding_self.retain(|p| p != poly);
+        let reduced = poly.reduce(&basis_excluding_self);
+        if !reduced.terms.is_empty() && !reduced_basis.contains(&reduced) {
+            reduced_basis.push(reduced);
+        }
+    }
+    reduced_basis
 }
+
 fn main() {
     println!("This is a generic Grobner basis computation module.");
     TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
     let p1 = Polynomial::new(vec![
-        Term::from_exponents(DoubleField::new(1.0), VecExponent::new(vec![2, 0])),
-        Term::from_exponents(DoubleField::new(-1.0), VecExponent::new(vec![0, 1])),
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([2, 0,0,0,0,0])),
+        Term::from_exponents(SingleField::new(-1.0), BitPackedExponent::from_vec([0, 1,0,0,0,0])),
     ]);
     let p2 = Polynomial::new(vec![
-        Term::from_exponents(DoubleField::new(1.0), VecExponent::new(vec![1, 1])),
-        Term::from_exponents(DoubleField::new(-1.0), VecExponent::new(vec![0, 0])),
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1, 1,0,0,0,0])),
+        Term::from_exponents(SingleField::new(-1.0), BitPackedExponent::from_vec([0, 0,0,0,0,0])),
     ]);
     let basis = naive_grobner_basis(vec![p1, p2]);
     println!("Computed Grobner basis with {} polynomials.", basis.len());
