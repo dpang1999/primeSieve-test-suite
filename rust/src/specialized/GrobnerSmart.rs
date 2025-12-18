@@ -464,6 +464,18 @@ fn main() {
         Term::from_exponents(1.0, [0, 0, 1, 0, 0, 0]),
     ]);
 
+    // x^2 - y
+    let p4 = Polynomial::new(vec![
+        Term::from_exponents(1.0, [2, 0, 0, 0, 0, 0]),
+        Term::from_exponents(-1.0, [0, 1, 0, 0, 0, 0]),
+    ]);
+
+    // xy - 1
+    let p5 = Polynomial::new(vec![
+        Term::from_exponents(1.0, [1, 1, 0, 0, 0, 0]),
+        Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
+    ]);
+
     // 3*x + 2*z^7 - 7*z^4 - 7*z
     let test_poly_1 = Polynomial::new(vec![
         Term::from_exponents(3.0, [1, 0, 0, 0, 0, 0]),
@@ -487,7 +499,7 @@ fn main() {
         Term::from_exponents(-6.0, [0, 0, 3, 0, 0, 0]),
         Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
     ]);
-    let input_basis = vec![p1, p2, p3];
+    let input_basis = vec![p4, p5];
     let basis = naive_grobner_basis(input_basis);
     let test_basis = vec![test_poly_1, test_poly_2, test_poly_3];
 

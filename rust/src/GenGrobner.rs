@@ -79,16 +79,16 @@ where
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Polynomial<C, E>
 where
-    C: IField + Clone + Hash + Eq,
-    E: IExponent + Clone + Hash + Eq,
+    C: IField + Clone + Hash + Eq + fmt::Debug,
+    E: IExponent + Clone + Hash + Eq + fmt::Debug,
 {
     pub terms: Vec<Term<C, E>>, // Generic terms
 }
 
 impl<C, E> Polynomial<C, E>
 where
-    C: IField + Clone + Hash + Eq,
-    E: IExponent + Clone + Hash + Eq,
+    C: IField + Clone + Hash + Eq + fmt::Debug,
+    E: IExponent + Clone + Hash + Eq + fmt::Debug,
 {
     pub fn new(mut terms: Vec<Term<C, E>>) -> Self {
         terms.sort_by(|a, b| b.compare(a));
@@ -149,7 +149,7 @@ where
                             let coefficient = leading_term
                                 .coefficient
                                 .d(&divisor_leading_term.coefficient);
-                            let exponents = leading_term.exponents.clone(); // Adjust for generic exponents
+                            let exponents = leading_term.exponents.sub(&divisor_leading_term.exponents);
 
                             let reduction_term = Term {
                                 coefficient,
@@ -180,7 +180,7 @@ where
             .iter()
             .map(|t| Term {
                 coefficient: t.coefficient.m(&term.coefficient),
-                exponents: t.exponents.clone(), // Adjust for generic exponents
+                exponents: t.exponents.add(&term.exponents),
             })
             .collect();
 
@@ -193,27 +193,28 @@ where
 
         let lcm_exponents = leading_term_p1.lcm(&leading_term_p2);
 
-        let scale_factor_p1 = Term {
+        let scale_factor_p1 = lcm_exponents.sub(&leading_term_p1.exponents);
+        let scale_factor_p2 = lcm_exponents.sub(&leading_term_p2.exponents);
+
+
+
+        let scaled_p1 = p1.multiply_by_term(&Term{
             coefficient: leading_term_p1.coefficient.one(),
-            exponents: lcm_exponents.clone(),
-        };
+            exponents: scale_factor_p1
+        });
 
-        let scale_factor_p2: Term<C, E> = Term {
+        let scaled_p2 = p2.multiply_by_term(&Term{
             coefficient: leading_term_p2.coefficient.one(),
-            exponents: lcm_exponents,
-        };
-
-        let scaled_p1 = p1.multiply_by_term(&scale_factor_p1);
-        let scaled_p2 = p2.multiply_by_term(&scale_factor_p2);
-
+            exponents: scale_factor_p2
+        });
         scaled_p1.subtract(&scaled_p2)
     }
 }
 
 pub fn naive_grobner_basis<C, E>(polynomials: Vec<Polynomial<C, E>>) -> Vec<Polynomial<C, E>>
 where
-    C: IField + Clone + Hash + Eq,
-    E: IExponent + Clone + Hash + Eq,
+    C: IField + Clone + Hash + Eq + fmt::Debug,
+    E: IExponent + Clone + Hash + Eq + fmt::Debug,
 {
     let mut basis = polynomials.clone();
     let mut basis_set: HashSet<Polynomial<C, E>> = HashSet::new();
@@ -234,6 +235,7 @@ where
                 if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
                     basis_set.insert(reduced.clone());
                     basis.push(reduced);
+                    println!("Added new polynomial to basis, total size now: {}", basis.len());
                     added = true;
                 }
             }
@@ -243,7 +245,6 @@ where
             break;
         }
     }
-
     basis
 }
 fn main() {
