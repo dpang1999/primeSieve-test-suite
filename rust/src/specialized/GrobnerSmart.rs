@@ -208,7 +208,7 @@ impl Polynomial {
     pub fn new(mut terms: Vec<Term>) -> Self {
         // Sort terms by sort order
         terms.sort_by(|a, b| b.compare(a));
-        terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
+        //terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
         // remove terms that are very close but not equal to 0 to handle floating point errors
         terms.retain(|t| (t.coefficient - 0.0).abs() > 1e-2);
         // round coefficients to 5 decimal places to handle floating point errors
@@ -356,7 +356,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     }
 
     println!("Begin the experiment, {}", basis.len());
-    for i in 0..10 { // This is *supposed* to go until no new polynomials are added, but for now just do 3 iterations
+    loop { 
         let basis_len = basis.len();
         let mut added = false;
         for i in 0..basis_len {
@@ -364,16 +364,14 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
                 let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
                 let reduced = s_poly.reduce(&basis);
                 //print basis[i], basis[j], s_poly, reduced
-                //println!("Basis 1: {:?} | Basis 2: {:?} | S-Polynomial: {:?}", basis[i], basis[j], s_poly);
-                //println!("Reduced: {:?}", reduced);
+    
                 if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
-                    //println!("Adding new polynomial to basis.");
+                    //println!("Basis 1: {:?} | Basis 2: {:?} | S-Polynomial: {:?}", basis[i], basis[j], s_poly);
+                    //println!("Reduced: {:?}", reduced);
                     basis_set.insert(reduced.clone());
                     basis.push(reduced);
+                    //println!("Adding new polynomial to basis, total size now: {}", basis.len());
                     added = true;
-                }
-                else {
-                    //println!("Reduced polynomial is zero or already in basis, skipping.");
                 }
             }
         }
@@ -387,8 +385,13 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         /*for poly in &basis {
             println!("{:?}", poly);
         }*/
-        println!("End of iteration {}\n", i);
     }
+
+    // print basis before reduction
+    /*println!("Basis before reduction:");
+    for poly in &basis {
+        println!("{:?}", poly);
+    }*/
 
     //reduce basis by self
     let mut reduced_basis = Vec::new();
@@ -499,15 +502,15 @@ fn main() {
         Term::from_exponents(-6.0, [0, 0, 3, 0, 0, 0]),
         Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
     ]);
-    let input_basis = vec![p4, p5];
+    let input_basis = vec![p1, p2,p3];
     let basis = naive_grobner_basis(input_basis);
     let test_basis = vec![test_poly_1, test_poly_2, test_poly_3];
 
     // print computed basis
     println!("Computed Grobner Basis Polynomials:");
     for poly in &basis {
-        //poly.debug_print();
-        println!("{:?}", poly);
+        poly.debug_print();
+        //println!("{:?}", poly);
         println!("---");
     }
 

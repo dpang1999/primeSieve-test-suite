@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::generic::i_exponent::IExponent;
 use crate::generic::i_ordered::IOrdered;
 use std::hash::{Hash, Hasher};
@@ -67,3 +68,14 @@ impl IExponent for VecExponent {
     }
 }
 
+
+impl fmt::Display for VecExponent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let degree: u32 = self.degree();
+        write!(f, "Degree: {:04X}, Exponents: ", degree)?;
+        for exp in &self.exponents {
+            write!(f, "{:02X} ", exp)?;
+        }
+        Ok(())
+    }
+}

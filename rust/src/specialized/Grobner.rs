@@ -4,6 +4,8 @@ use std::hash::{Hash, Hasher};
 
 use std::sync::OnceLock;
 
+use rand::rand_core::le;
+
 static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
 
 #[derive(Clone, Debug, PartialEq)]
@@ -69,7 +71,7 @@ impl Polynomial {
     pub fn new(mut terms: Vec<Term>) -> Self {
         // Sort terms by sort order
         terms.sort_by(|a, b| b.compare(a));
-        terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
+        //terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
         // remove terms that are very close but not equal to 0 to handle floating point errors
         terms.retain(|t| (t.coefficient - 0.0).abs() > 1e-2);
         // round coefficients to 5 decimal places to handle floating point errors
@@ -203,7 +205,7 @@ impl Polynomial {
         for i in 0..lcm_exponents.len() {
             lcm_exponents[i] = p1.terms[0].exponents[i].max(p2.terms[0].exponents[i]);
         }
-
+        
         // Scale p1 to the LCM
         let scale_factor_p1 = lcm_exponents
             .iter()
@@ -264,7 +266,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     }
 
     println!("Begin the experiment, {}", basis.len());
-    for i in 0..10 { // This is *supposed* to go until no new polynomials are added, but for now just do 3 iterations
+    loop { 
         let basis_len = basis.len();
         let mut added = false;
         for i in 0..basis_len {
@@ -276,6 +278,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
                 //println!("Reduced: {:?}", reduced);
                 if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
                     //println!("Adding new polynomial to basis.");
+                    //println!("Basis 1: {:?} | Basis 2: {:?} | S-Polynomial: {:?}", basis[i], basis[j], s_poly);
                     basis_set.insert(reduced.clone());
                     basis.push(reduced);
                     added = true;
@@ -291,11 +294,10 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         }
 
         //print basis with new lines separating each polynomial
-        //println!("New basis polynomials:");
+        /*println!("New basis polynomials:");
         for poly in &basis {
-            //println!("{:?}", poly);
-        }
-        println!("End of iteration {}\n", i);
+            println!("{:?}", poly);
+        }*/
     }
 
     //reduce basis by self
@@ -350,34 +352,30 @@ fn main() {
     // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
     let test = 0;
      //Lex, GrLex, RevLex
-    TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized");
+    TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
 
-    // x^2y + y^2z + z^2x
+    // x^2 - y
     let p1 = Polynomial::new(vec![
         Term {
             coefficient: 1.0,
-            exponents: vec![2, 1, 0], // x^2 * y
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 2, 1], // y^2 * z
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![1, 0, 2], // z^2 * x
-        },
-        
-
-    ]);
-    // x*y*z -1
-    let p2 = Polynomial::new(vec![
-        Term {
-            coefficient: 1.0,
-            exponents: vec![1, 1, 1], // x*y*z
+            exponents: vec![2, 0], // x^2
         },
         Term {
             coefficient: -1.0,
-            exponents: vec![0, 0, 0], // -1
+            exponents: vec![0, 1], // -y
+        }
+        
+
+    ]);
+    // xy - 1
+    let p2 = Polynomial::new(vec![
+        Term {
+            coefficient: 1.0,
+            exponents: vec![1, 1], // xy
+        },
+        Term {
+            coefficient: -1.0,
+            exponents: vec![0, 0], // -1
         }
     ]);
     // x+y+z
@@ -416,7 +414,35 @@ fn main() {
 
 
     if test == 1 {
-        let s_poly = Polynomial::s_polynomial(&p1, &p2);
+
+        // xy - 1
+        let sp1 = Polynomial::new(vec![
+            Term {
+                coefficient: 1.0,
+                exponents: vec![1, 1], // xy
+            },
+            Term {
+                coefficient: -1.0,
+                exponents: vec![0, 0], // -1
+            }
+        ]);
+        // -x -y^2
+        let sp2 = Polynomial::new(vec![
+            Term {
+                coefficient: -1.0,
+                exponents: vec![1, 0], // -x
+            },
+            Term {
+                coefficient: -1.0,
+                exponents: vec![0, 2], // -y^2
+            }
+        ]);
+
+        // print intial polynomials
+        println!("Polynomial 1: {:?}", sp1);
+        println!("Polynomial 2: {:?}", sp2);
+
+        let s_poly = Polynomial::s_polynomial(&sp1, &sp2);
 
         let expected = Polynomial::new(vec![
             Term {
@@ -428,7 +454,7 @@ fn main() {
                 exponents: vec![1, 0], // Term: x
             },
         ]);
-
+        println!("S-Polynomial: {:?}", s_poly);
         assert_eq!(s_poly, expected);
     } else if test == 2 {
         let sum = p1.add(&p2);
@@ -590,7 +616,7 @@ fn main() {
     }
     else {
 
-        let basis = naive_grobner_basis(vec![p1, p2, p3]);
+        let basis = naive_grobner_basis(vec![p1, p2]);
         // copy basis
         let mut copied_basis = basis.clone();
         println!("Final Grobner Basis:");

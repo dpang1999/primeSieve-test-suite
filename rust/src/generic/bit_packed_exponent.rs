@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::generic::i_exponent::IExponent;
 use std::hash::{Hash, Hasher};
 
@@ -98,4 +99,19 @@ impl IExponent for BitPackedExponent {
         true
     }
 
+}
+
+
+impl fmt::Display for BitPackedExponent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Extract degree (top 16 bits)
+        let degree = (self.exponents >> 48) & 0xFFFF;
+        write!(f, "Degree: {:04X}, Exponents (hex): ", degree)?;
+        // Print each 8-bit exponent in hex, left to right (e0..e5)
+        for i in (0..48).step_by(8).rev() {
+            let exp = (self.exponents >> i) & 0xFF;
+            write!(f, "{:02X} ", exp)?;
+        }
+        Ok(())
+    }
 }

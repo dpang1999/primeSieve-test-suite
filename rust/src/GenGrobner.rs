@@ -1,4 +1,5 @@
 use core::fmt;
+
 use crate::generic::i_field::IField;
 use crate::generic::i_exponent::IExponent;
 pub mod generic;
@@ -77,23 +78,41 @@ where
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Polynomial<C, E>
 where
-    C: IField + Clone + Hash + Eq + fmt::Debug,
-    E: IExponent + Clone + Hash + Eq + fmt::Debug,
+    C: IField + Clone + Hash + Eq + fmt::Display,
+    E: IExponent + Clone + Hash + Eq + fmt::Display,
 {
     pub terms: Vec<Term<C, E>>, // Generic terms
 }
 
+impl<C, E> fmt::Display for Polynomial<C, E>
+where
+    C: IField + Clone + Hash + Eq + fmt::Display,
+    E: IExponent + Clone + Hash + Eq + fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{{ ")?;
+        for (i, term) in self.terms.iter().enumerate() {
+            if i > 0 {
+                write!(f, " + ")?;
+            }
+            write!(f, "{}*{}", term.coefficient, term.exponents)?;
+        }
+        write!(f, " }}")
+    }
+}
+
 impl<C, E> Polynomial<C, E>
 where
-    C: IField + Clone + Hash + Eq + fmt::Debug,
-    E: IExponent + Clone + Hash + Eq + fmt::Debug,
+    C: IField + Clone + Hash + Eq + fmt::Display,
+    E: IExponent + Clone + Hash + Eq + fmt::Display,
 {
     pub fn new(mut terms: Vec<Term<C, E>>) -> Self {
         terms.sort_by(|a, b| b.compare(a));
-        terms.retain(|t| !t.coefficient.is_zero());
+        //terms.retain(|t| !t.coefficient.is_zero());
+        terms.retain(|t| (t.coefficient.coerce_to_f64() - 0.0).abs() > 1e-2);
         Polynomial { terms }
     }
 
@@ -128,7 +147,7 @@ where
             }
             if !found {
                 let neg_term = Term {
-                    coefficient: term.coefficient.clone().s(&term.coefficient.zero()),
+                    coefficient: term.coefficient.zero().s(&term.coefficient.clone()),
                     exponents: term.exponents.clone(),
                 };
                 result.push(neg_term);
@@ -214,8 +233,8 @@ where
 
 pub fn naive_grobner_basis<C, E>(polynomials: Vec<Polynomial<C, E>>) -> Vec<Polynomial<C, E>>
 where
-    C: IField + Clone + Hash + Eq + fmt::Debug,
-    E: IExponent + Clone + Hash + Eq + fmt::Debug,
+    C: IField + Clone + Hash + Eq + fmt::Display,
+    E: IExponent + Clone + Hash + Eq + fmt::Display,
 {
     let mut basis = polynomials.clone();
     let mut basis_set: HashSet<Polynomial<C, E>> = HashSet::new();
@@ -232,11 +251,14 @@ where
             for j in i + 1..basis_len {
                 let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
                 let reduced = s_poly.reduce(&basis);
+                //print basis i and basis j
 
                 if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
+                    //println!("Reducing S-Polynomial of basis polynomials {} and {}", &basis[i], &basis[j]);
+                    //println!("Reduced S-Polynomial: {}", &reduced);
                     basis_set.insert(reduced.clone());
                     basis.push(reduced);
-                    println!("Added new polynomial to basis, total size now: {}", basis.len());
+                    //println!("Added new polynomial to basis, total size now: {}", basis.len());
                     added = true;
                 }
             }
@@ -246,6 +268,12 @@ where
             break;
         }
     }
+
+    // print basis before reduction
+    /*println!("Basis before reduction:");
+    for poly in &basis {
+        println!("{}", poly);
+    }*/
 
     let mut reduced_basis = Vec::new();
     for poly in &basis {
@@ -262,18 +290,31 @@ where
 fn main() {
     println!("This is a generic Grobner basis computation module.");
     TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
+    //x^2*y + y^2*z + z^2*x
     let p1 = Polynomial::new(vec![
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([2, 0,0,0,0,0])),
-        Term::from_exponents(SingleField::new(-1.0), BitPackedExponent::from_vec([0, 1,0,0,0,0])),
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([2,1,0,0,0,0])),
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,2,1,0,0,0])),
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1,0,2,0,0,0])),
     ]);
+    //xyz - 1
     let p2 = Polynomial::new(vec![
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1, 1,0,0,0,0])),
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1, 1,1,0,0,0])),
         Term::from_exponents(SingleField::new(-1.0), BitPackedExponent::from_vec([0, 0,0,0,0,0])),
     ]);
-    let basis = naive_grobner_basis(vec![p1, p2]);
+    // x+ y + z
+    let p3 = Polynomial::new(vec![
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1,0,0,0,0,0])),
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,1,0,0,0,0])),
+        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,0,1,0,0,0])),
+    ]);
+    let initial_basis = vec![p1.clone(), p2.clone(), p3.clone()];
+    for(i, poly) in initial_basis.iter().enumerate() {
+        println!("Initial Polynomial {}: {}", i + 1, poly);
+    }
+    let basis = naive_grobner_basis(vec![p1, p2, p3]);
     println!("Computed Grobner basis with {} polynomials.", basis.len());
     // print basis
     for (i, poly) in basis.iter().enumerate() {
-        println!("Polynomial {}: {:?}", i + 1, poly);
+        println!("Polynomial {}: {}", i + 1, poly);
     }
 }
