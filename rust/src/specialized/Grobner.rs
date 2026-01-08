@@ -4,9 +4,9 @@ use std::hash::{Hash, Hasher};
 
 use std::sync::OnceLock;
 
-use rand::rand_core::le;
-
 static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
+
+use rust::helpers::lcg::Lcg;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
@@ -260,12 +260,12 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     let mut basis = polynomials.clone();
     let mut basis_set: HashSet<Polynomial> = HashSet::new();
     // print basis and polynomials
-    for poly in &basis {
+    /*for poly in &basis {
         println!("{:?}", poly);
         basis_set.insert(poly.clone());
-    }
+    }*/
 
-    println!("Begin the experiment, {}", basis.len());
+    //println!("Begin the experiment, {}", basis.len());
     loop { 
         let basis_len = basis.len();
         let mut added = false;
@@ -349,74 +349,67 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 }
 
 fn main() {
-    // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
-    let test = 0;
-     //Lex, GrLex, RevLex
-    TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
+    // let mode = 0 be for testing
+    let mode = 1;
+    if mode != 0 {
+        // arg1 = # of polynomials
+        // arg2 = term order (0=Lex, 1=GrLex, 2=RevLex)
+        let args: Vec<String> = std::env::args().collect();
+        let mut rand = Lcg::new(12345, 1345, 65, 17);
+        let num_polynomials: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(3);
+        let term_order: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
 
-    // x^2 - y
-    let p1 = Polynomial::new(vec![
-        Term {
-            coefficient: 1.0,
-            exponents: vec![2, 0], // x^2
-        },
-        Term {
-            coefficient: -1.0,
-            exponents: vec![0, 1], // -y
+        match term_order {
+            0 => TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"),
+            1 => TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized"),
+            2 => TERM_ORDER.set(TermOrder::RevLex).expect("TERM_ORDER already initialized"),
+            _ => TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"),
         }
-        
 
-    ]);
-    // xy - 1
-    let p2 = Polynomial::new(vec![
-        Term {
-            coefficient: 1.0,
-            exponents: vec![1, 1], // xy
-        },
-        Term {
-            coefficient: -1.0,
-            exponents: vec![0, 0], // -1
+        let mut input_basis = Vec::new();
+        for _ in 0..num_polynomials {
+            let mut terms = Vec::new();
+            for _ in 0..3 { // always 3 terms per polynomial
+                let coefficient = (rand.next_double() * 2.0 - 1.0);
+                // only working with 3 variables for now
+                let exponents = vec![(rand.next_int() % 4) as usize, (rand.next_int() % 4) as usize, (rand.next_int() % 4) as usize];
+                terms.push(Term {
+                    coefficient,
+                    exponents,
+                });
+            }
+            input_basis.push(Polynomial::new(terms));
         }
-    ]);
-    // x+y+z
-    let p3 = Polynomial::new(vec![
-        Term {
-            coefficient: 1.0,
-            exponents: vec![1, 0, 0], // x
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 1, 0], // y
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 0, 1], // z
-        },
-    ]);
 
-    // x + y + z
-    let p4 = Polynomial::new(vec![
-        Term {
-            coefficient: 1.0,
-            exponents: vec![1, 0, 0],
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 1, 0],
-        },
-        Term {
-            coefficient: 1.0,
-            exponents: vec![0, 0, 1],
-        },
-    ]);
+        let basis = naive_grobner_basis(input_basis);
+        println!("{}", basis.len());
+        /*println!("Computed Grobner Basis Polynomials:");
+        for poly in &basis {
+            println!("{:?}", poly);
+        }*/
+        return;
+    }
+    else {    
+        // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
+        let test = 0;
+        //Lex, GrLex, RevLex
+        TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
 
-    println!("Begin the experiment");
+        // x^2 - y
+        let p1 = Polynomial::new(vec![
+            Term {
+                coefficient: 1.0,
+                exponents: vec![2, 0], // x^2
+            },
+            Term {
+                coefficient: -1.0,
+                exponents: vec![0, 1], // -y
+            }
+            
 
-
-    if test == 1 {
-
+        ]);
         // xy - 1
-        let sp1 = Polynomial::new(vec![
+        let p2 = Polynomial::new(vec![
             Term {
                 coefficient: 1.0,
                 exponents: vec![1, 1], // xy
@@ -425,116 +418,6 @@ fn main() {
                 coefficient: -1.0,
                 exponents: vec![0, 0], // -1
             }
-        ]);
-        // -x -y^2
-        let sp2 = Polynomial::new(vec![
-            Term {
-                coefficient: -1.0,
-                exponents: vec![1, 0], // -x
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 2], // -y^2
-            }
-        ]);
-
-        // print intial polynomials
-        println!("Polynomial 1: {:?}", sp1);
-        println!("Polynomial 2: {:?}", sp2);
-
-        let s_poly = Polynomial::s_polynomial(&sp1, &sp2);
-
-        let expected = Polynomial::new(vec![
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 2], // Term: -y^2
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![1, 0], // Term: x
-            },
-        ]);
-        println!("S-Polynomial: {:?}", s_poly);
-        assert_eq!(s_poly, expected);
-    } else if test == 2 {
-        let sum = p1.add(&p2);
-        println!("Sum: {:?}", sum);
-
-        let expected = Polynomial::new(vec![
-            Term {
-                coefficient: 1.0,
-                exponents: vec![2, 0],
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![1, 1],
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 1],
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 0],
-            },
-        ]);
-
-        assert_eq!(sum, expected);
-    } else if test == 3 {
-        let difference = p1.subtract(&p2);
-        println!("Difference: {:?}", difference);
-
-        let expected = Polynomial::new(vec![
-            Term {
-                coefficient: 1.0,
-                exponents: vec![2, 0],
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![1, 1],
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 1],
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![0, 0],
-            },
-        ]);
-
-        assert_eq!(difference, expected);
-    }
-    else if test == 4 {
-        // x^3 + y^3 + z^3
-        let p1 = Polynomial::new(vec![
-            Term {
-                coefficient: 1.0,
-                exponents: vec![3, 0, 0], // x^3
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![0, 3, 0], // y^3
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![0, 0, 3], // z^3
-            },
-        ]);
-        // xy + yz + xz
-        let p2 = Polynomial::new(vec![
-            Term {
-                coefficient: 1.0,
-                exponents: vec![1, 1, 0], // xy
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![0, 1, 1], // yz
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![1, 0, 1], // xz
-            },
         ]);
         // x+y+z
         let p3 = Polynomial::new(vec![
@@ -551,149 +434,308 @@ fn main() {
                 exponents: vec![0, 0, 1], // z
             },
         ]);
-        let basis = vec![p1.clone(), p2.clone(), p3.clone()];
 
-        // xy^2 - y
-        let divisor = Polynomial::new(vec![
+        // x + y + z
+        let p4 = Polynomial::new(vec![
             Term {
                 coefficient: 1.0,
-                exponents: vec![1, 2] // xy^2
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 1] // -y
-            }
-        ]);
-        // basis and divisor
-        println!("Basis Polynomials:");
-        for poly in &basis {
-            println!("{:?}", poly);
-        }
-        println!("Divisor Polynomial: {:?}", divisor);
-        let reduced = divisor.reduce(&basis);
-        // print reduced
-        println!("Reduced polynomial: {:?}", reduced);
-
-    }
-    else if test == 5 {
-        let mut seen_hashes: HashSet<Polynomial> = HashSet::new();
-        let mut hasher1 = std::collections::hash_map::DefaultHasher::new();
-        p1.hash(&mut hasher1);
-        let hash1 = hasher1.finish();
-        seen_hashes.insert(p1.clone());
-
-        let mut hasher2 = std::collections::hash_map::DefaultHasher::new();
-        p2.hash(&mut hasher2);
-        let hash2 = hasher2.finish();
-        seen_hashes.insert(p2.clone());
-
-        println!("Hash of Polynomial 1: {}", hash1);
-        println!("Hash of Polynomial 2: {}", hash2);
-        //print seen_hashes
-        println!("Seen Hashes: {:?}", seen_hashes);
-
-        // Create another polynomial identical to p1 to test equality and hashing
-        let p1_clone = Polynomial::new(vec![
-            Term {
-                coefficient: 1.0,
-                exponents: vec![2, 0],
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 1],
-            },
-        ]);
-        let mut hasher3 = std::collections::hash_map::DefaultHasher::new();
-        p1_clone.hash(&mut hasher3);
-        let hash3 = hasher3.finish();
-        seen_hashes.insert(p1_clone.clone());
-
-        println!("Hash of Cloned Polynomial 1: {}", hash3);
-        println!("Seen Hashes after inserting clone: {:?}", seen_hashes);
-
-        assert_eq!(p1, p1_clone);
-        assert_eq!(hash1, hash3);
-    }
-    else {
-
-        let basis = naive_grobner_basis(vec![p1, p2]);
-        // copy basis
-        let mut copied_basis = basis.clone();
-        println!("Final Grobner Basis:");
-        for poly in basis {
-            println!("{:?}", poly);
-        }
-        
-
-        //  x^2 + y^2 -1
-        let test_poly = Polynomial::new(vec![
-            Term {
-                coefficient: 1.0,
-                exponents: vec![2, 0, 0],
+                exponents: vec![1, 0, 0],
             },
             Term {
                 coefficient: 1.0,
-                exponents: vec![0, 2, 0],
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 0, 0],
-            },
-        ]);
-
-        // x*y -z
-        let test_poly_2 = Polynomial::new(vec![
-            Term {
-                coefficient: 1.0,
-                exponents: vec![1, 1, 0],
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 0, 1],
-            },
-           
-        ]);
-
-        // x*z +y^3 - y
-        let test_poly_3 = Polynomial::new(vec![
-            Term {
-                coefficient: 1.0,
-                exponents: vec![1, 0, 1],
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![0, 3, 0],
-            },
-            Term {
-                coefficient: -1.0,
                 exponents: vec![0, 1, 0],
             },
-        ]);
-
-        // y^4 - y^2 + z^2
-        let test_poly_4 = Polynomial::new(vec![
             Term {
                 coefficient: 1.0,
-                exponents: vec![0, 4, 0],
-            },
-            Term {
-                coefficient: -1.0,
-                exponents: vec![0, 2, 0],
-            },
-            Term {
-                coefficient: 1.0,
-                exponents: vec![0, 0, 2],
+                exponents: vec![0, 0, 1],
             },
         ]);
 
-        let test_basis = vec![test_poly, test_poly_2, test_poly_3];
+        println!("Begin the experiment");
 
-        // print test_basis
-        println!("Test Basis Polynomials:");
-        for poly in &test_basis {
-            println!("{:?}", poly);
+
+        if test == 1 {
+
+            // xy - 1
+            let sp1 = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 1], // xy
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 0], // -1
+                }
+            ]);
+            // -x -y^2
+            let sp2 = Polynomial::new(vec![
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![1, 0], // -x
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 2], // -y^2
+                }
+            ]);
+
+            // print intial polynomials
+            println!("Polynomial 1: {:?}", sp1);
+            println!("Polynomial 2: {:?}", sp2);
+
+            let s_poly = Polynomial::s_polynomial(&sp1, &sp2);
+
+            let expected = Polynomial::new(vec![
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 2], // Term: -y^2
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 0], // Term: x
+                },
+            ]);
+            println!("S-Polynomial: {:?}", s_poly);
+            assert_eq!(s_poly, expected);
+        } else if test == 2 {
+            let sum = p1.add(&p2);
+            println!("Sum: {:?}", sum);
+
+            let expected = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![2, 0],
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 1],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 1],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 0],
+                },
+            ]);
+
+            assert_eq!(sum, expected);
+        } else if test == 3 {
+            let difference = p1.subtract(&p2);
+            println!("Difference: {:?}", difference);
+
+            let expected = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![2, 0],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![1, 1],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 1],
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 0],
+                },
+            ]);
+
+            assert_eq!(difference, expected);
         }
-        let is_equivalent = are_bases_equivalent(copied_basis, test_basis);
-        println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
+        else if test == 4 {
+            // x^3 + y^3 + z^3
+            let p1 = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![3, 0, 0], // x^3
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 3, 0], // y^3
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 0, 3], // z^3
+                },
+            ]);
+            // xy + yz + xz
+            let p2 = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 1, 0], // xy
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 1, 1], // yz
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 0, 1], // xz
+                },
+            ]);
+            // x+y+z
+            let p3 = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 0, 0], // x
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 1, 0], // y
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 0, 1], // z
+                },
+            ]);
+            let basis = vec![p1.clone(), p2.clone(), p3.clone()];
+
+            // xy^2 - y
+            let divisor = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 2] // xy^2
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 1] // -y
+                }
+            ]);
+            // basis and divisor
+            println!("Basis Polynomials:");
+            for poly in &basis {
+                println!("{:?}", poly);
+            }
+            println!("Divisor Polynomial: {:?}", divisor);
+            let reduced = divisor.reduce(&basis);
+            // print reduced
+            println!("Reduced polynomial: {:?}", reduced);
+
+        }
+        else if test == 5 {
+            let mut seen_hashes: HashSet<Polynomial> = HashSet::new();
+            let mut hasher1 = std::collections::hash_map::DefaultHasher::new();
+            p1.hash(&mut hasher1);
+            let hash1 = hasher1.finish();
+            seen_hashes.insert(p1.clone());
+
+            let mut hasher2 = std::collections::hash_map::DefaultHasher::new();
+            p2.hash(&mut hasher2);
+            let hash2 = hasher2.finish();
+            seen_hashes.insert(p2.clone());
+
+            println!("Hash of Polynomial 1: {}", hash1);
+            println!("Hash of Polynomial 2: {}", hash2);
+            //print seen_hashes
+            println!("Seen Hashes: {:?}", seen_hashes);
+
+            // Create another polynomial identical to p1 to test equality and hashing
+            let p1_clone = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![2, 0],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 1],
+                },
+            ]);
+            let mut hasher3 = std::collections::hash_map::DefaultHasher::new();
+            p1_clone.hash(&mut hasher3);
+            let hash3 = hasher3.finish();
+            seen_hashes.insert(p1_clone.clone());
+
+            println!("Hash of Cloned Polynomial 1: {}", hash3);
+            println!("Seen Hashes after inserting clone: {:?}", seen_hashes);
+
+            assert_eq!(p1, p1_clone);
+            assert_eq!(hash1, hash3);
+        }
+        else {
+
+            let basis = naive_grobner_basis(vec![p1, p2]);
+            // copy basis
+            let mut copied_basis = basis.clone();
+            println!("Final Grobner Basis:");
+            for poly in basis {
+                println!("{:?}", poly);
+            }
+            
+
+            //  x^2 + y^2 -1
+            let test_poly = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![2, 0, 0],
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 2, 0],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 0, 0],
+                },
+            ]);
+
+            // x*y -z
+            let test_poly_2 = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 1, 0],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 0, 1],
+                },
+            
+            ]);
+
+            // x*z +y^3 - y
+            let test_poly_3 = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![1, 0, 1],
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 3, 0],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 1, 0],
+                },
+            ]);
+
+            // y^4 - y^2 + z^2
+            let test_poly_4 = Polynomial::new(vec![
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 4, 0],
+                },
+                Term {
+                    coefficient: -1.0,
+                    exponents: vec![0, 2, 0],
+                },
+                Term {
+                    coefficient: 1.0,
+                    exponents: vec![0, 0, 2],
+                },
+            ]);
+
+            let test_basis = vec![test_poly, test_poly_2, test_poly_3];
+
+            // print test_basis
+            println!("Test Basis Polynomials:");
+            for poly in &test_basis {
+                println!("{:?}", poly);
+            }
+            let is_equivalent = are_bases_equivalent(copied_basis, test_basis);
+            println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
+        }
     }
 }

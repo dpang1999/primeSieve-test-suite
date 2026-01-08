@@ -1,5 +1,5 @@
 csharp/obj/
 csharp/bin/
 test/results/
-rust/target
+rust/target/
 *.class

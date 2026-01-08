@@ -8,7 +8,7 @@ pub mod generic;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
 pub mod helpers;
-use crate::helpers::lcg::lcg;
+use crate::helpers::lcg::Lcg;
 
 pub struct GenFFT<N>
 where
@@ -301,7 +301,7 @@ fn main() {
         println!("product (after inverse): {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
     }
     else {
-        let mut rand = lcg::new(12345,1345,65,17);
+        let mut rand = Lcg::new(12345,1345,65,17);
         let mut random_numbers = [0; 10];
         let mut random_doubles = [0.0; 10];
         for i in 0..10 {

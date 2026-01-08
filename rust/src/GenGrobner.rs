@@ -1,5 +1,5 @@
 use core::fmt;
-
+use std::env;
 use crate::generic::i_field::IField;
 use crate::generic::i_exponent::IExponent;
 pub mod generic;
@@ -9,7 +9,7 @@ use crate::generic::single_field::SingleField;
 use crate::generic::vec_exponent::VecExponent;
 use crate::generic::bit_packed_exponent::BitPackedExponent;
 pub mod helpers;
-use crate::helpers::lcg::lcg;
+use crate::helpers::lcg::Lcg;
 
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
@@ -240,6 +240,7 @@ where
     let mut basis_set: HashSet<Polynomial<C, E>> = HashSet::new();
 
     for poly in &basis {
+        //println!("Initial basis polynomial: {}", poly);
         basis_set.insert(poly.clone());
     }
 
@@ -288,33 +289,226 @@ where
 }
 
 fn main() {
+    // let mode = 0 be for testing
+    let mode = 1;
     println!("This is a generic Grobner basis computation module.");
-    TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
-    //x^2*y + y^2*z + z^2*x
-    let p1 = Polynomial::new(vec![
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([2,1,0,0,0,0])),
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,2,1,0,0,0])),
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1,0,2,0,0,0])),
-    ]);
-    //xyz - 1
-    let p2 = Polynomial::new(vec![
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1, 1,1,0,0,0])),
-        Term::from_exponents(SingleField::new(-1.0), BitPackedExponent::from_vec([0, 0,0,0,0,0])),
-    ]);
-    // x+ y + z
-    let p3 = Polynomial::new(vec![
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1,0,0,0,0,0])),
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,1,0,0,0,0])),
-        Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,0,1,0,0,0])),
-    ]);
-    let initial_basis = vec![p1.clone(), p2.clone(), p3.clone()];
-    for(i, poly) in initial_basis.iter().enumerate() {
-        println!("Initial Polynomial {}: {}", i + 1, poly);
+    if mode != 0 {
+        let mut rand = Lcg::new(12345, 1345, 65, 17);
+        let args: Vec<String> = env::args().collect();
+
+        // arg1 = # of polynomials
+        // arg2 = coefficient type (0 = SingleField, 1 = DoubleField, 2 = IntModP)
+        // arg3 = exponent type (0 = VecExponent, 1 = BitPackedExponent) 
+        // arg4 = term order (0 = Lex, 1 = GrLex, 2 = RevLex)
+        let polynomial_count = if args.len() > 1 {
+            args[1].parse::<usize>().unwrap_or(3)
+        } else {
+            3
+        };
+        let coeff_type = if args.len() > 2 {
+            args[2].parse::<usize>().unwrap_or(0)
+        } else {
+            0
+        };
+        let exp_type = if args.len() > 3 {
+            args[3].parse::<usize>().unwrap_or(1)
+        } else {
+            1
+        };
+        let term_order = if args.len() > 4 {
+            args[4].parse::<usize>().unwrap_or(0)
+        } else {
+            0
+        };
+        match term_order {
+            0 => { TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"); },
+            1 => { TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized"); },
+            2 => { TERM_ORDER.set(TermOrder::RevLex).expect("TERM_ORDER already initialized"); },
+            _ => { TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"); },
+        }
+
+        let generated = generate_polynomials(polynomial_count, coeff_type, exp_type, &mut rand);
+
+        match generated {
+            GeneratedPolynomials::SingleFieldVecExponent(polys) => {
+                let basis = naive_grobner_basis(polys);
+                println!("Computed Grobner basis with {} polynomials.", basis.len());
+                /*for (i, poly) in basis.iter().enumerate() {
+                    println!("Polynomial {}: {}", i + 1, poly);
+                }*/
+            }
+            GeneratedPolynomials::SingleFieldBitPackedExponent(polys) => {
+                let basis = naive_grobner_basis(polys);
+                println!("Computed Grobner basis with {} polynomials.", basis.len());
+                /*for (i, poly) in basis.iter().enumerate() {
+                    println!("Polynomial {}: {}", i + 1, poly);
+                }*/
+            }
+            GeneratedPolynomials::DoubleFieldVecExponent(polys) => {
+                let basis = naive_grobner_basis(polys);
+                println!("Computed Grobner basis with {} polynomials.", basis.len());
+                /*for (i, poly) in basis.iter().enumerate() {
+                    println!("Polynomial {}: {}", i + 1, poly);
+                }*/
+            }
+            GeneratedPolynomials::DoubleFieldBitPackedExponent(polys) => {
+                let basis = naive_grobner_basis(polys);
+                println!("Computed Grobner basis with {} polynomials.", basis.len());
+                /*for (i, poly) in basis.iter().enumerate() {
+                    println!("Polynomial {}: {}", i + 1, poly);
+                }*/
+            }
+            GeneratedPolynomials::IntModPVecExponent(polys) => {
+                let basis = naive_grobner_basis(polys);
+                println!("Computed Grobner basis with {} polynomials.", basis.len());
+                /*for (i, poly) in basis.iter().enumerate() {
+                    println!("Polynomial {}: {}", i + 1, poly);
+                }*/
+            }
+            GeneratedPolynomials::IntModPBitPackedExponent(polys) => {
+                let basis = naive_grobner_basis(polys);
+                println!("Computed Grobner basis with {} polynomials.", basis.len());
+                /*for (i, poly) in basis.iter().enumerate() {
+                    println!("Polynomial {}: {}", i + 1, poly);
+                }*/
+            }
+            GeneratedPolynomials::None => {
+                println!("No polynomials generated.");
+            }
+        }
+
+
     }
-    let basis = naive_grobner_basis(vec![p1, p2, p3]);
-    println!("Computed Grobner basis with {} polynomials.", basis.len());
-    // print basis
-    for (i, poly) in basis.iter().enumerate() {
-        println!("Polynomial {}: {}", i + 1, poly);
+    else if mode == 0 {
+        TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
+        //x^2*y + y^2*z + z^2*x
+        let p1 = Polynomial::new(vec![
+            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([2,1,0,0,0,0])),
+            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,2,1,0,0,0])),
+            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1,0,2,0,0,0])),
+        ]);
+        //xyz - 1
+        let p2 = Polynomial::new(vec![
+            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1, 1,1,0,0,0])),
+            Term::from_exponents(SingleField::new(-1.0), BitPackedExponent::from_vec([0, 0,0,0,0,0])),
+        ]);
+        // x+ y + z
+        let p3 = Polynomial::new(vec![
+            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1,0,0,0,0,0])),
+            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,1,0,0,0,0])),
+            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,0,1,0,0,0])),
+        ]);
+        let initial_basis = vec![p1.clone(), p2.clone(), p3.clone()];
+        for(i, poly) in initial_basis.iter().enumerate() {
+            println!("Initial Polynomial {}: {}", i + 1, poly);
+        }
+        let basis = naive_grobner_basis(vec![p1, p2, p3]);
+        println!("Computed Grobner basis with {} polynomials.", basis.len());
+        // print basis
+        for (i, poly) in basis.iter().enumerate() {
+            println!("Polynomial {}: {}", i + 1, poly);
+        }
     }
+}
+
+// Helper function to generate a vector of polynomials for all type combinations
+// Returns a tuple of Option<Vec<Polynomial<...>>> for each type combination
+// conditions: always 3 terms per poly, 3 variables, exponents in [0,3]
+// coefficient type (0 = SingleField, 1 = DoubleField, 2 = IntModP)
+// exponent type (0 = VecExponent, 1 = BitPackedExponent) 
+pub fn generate_polynomials(
+    num_polys: usize,
+    coeff_type: usize,
+    exp_type: usize,
+    rand: &mut Lcg,
+) -> GeneratedPolynomials {
+    match (coeff_type, exp_type) {
+        (0, 0) => GeneratedPolynomials::SingleFieldVecExponent(
+            (0..num_polys)
+                .map(|_| {
+                    let terms = (0..3).map(|_| {
+                        let coeff = SingleField::new(rand.next_double() as f32);
+                        let exps = vec![(rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32];
+                        Term::from_exponents(coeff, VecExponent::new(exps))
+                    }).collect();
+                    Polynomial::new(terms)
+                })
+                .collect()
+        ),
+        (0, 1) => GeneratedPolynomials::SingleFieldBitPackedExponent(
+            (0..num_polys)
+                .map(|_| {
+                    let terms = (0..3).map(|_| {
+                        let coeff = SingleField::new(rand.next_double() as f32);
+                        let mut arr = [0u8; 6];
+                        for i in 0..3 { arr[i] = (rand.next_int() % 4) as u8; }
+                        Term::from_exponents(coeff, BitPackedExponent::from_vec(arr))
+                    }).collect();
+                    Polynomial::new(terms)
+                })
+                .collect()
+        ),
+        (1, 0) => GeneratedPolynomials::DoubleFieldVecExponent(
+            (0..num_polys)
+                .map(|_| {
+                    let terms = (0..3).map(|_| {
+                        let coeff = DoubleField::new(rand.next_double());
+                        let exps = vec![(rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32];
+                        Term::from_exponents(coeff, VecExponent::new(exps))
+                    }).collect();
+                    Polynomial::new(terms)
+                })
+                .collect()
+        ),
+        (1, 1) => GeneratedPolynomials::DoubleFieldBitPackedExponent(
+            (0..num_polys)
+                .map(|_| {
+                    let terms = (0..3).map(|_| {
+                        let coeff = DoubleField::new(rand.next_double());
+                        let mut arr = [0u8; 6];
+                        for i in 0..3 { arr[i] = (rand.next_int() % 4) as u8; }
+                        Term::from_exponents(coeff, BitPackedExponent::from_vec(arr))
+                    }).collect();
+                    Polynomial::new(terms)
+                })
+                .collect()
+        ),
+        (2, 0) => GeneratedPolynomials::IntModPVecExponent(
+            (0..num_polys)
+                .map(|_| {
+                    let terms = (0..3).map(|_| {
+                        let coeff = IntModP::new((rand.next_int() % 7) as u128, 7);
+                        let exps = vec![(rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32];
+                        Term::from_exponents(coeff, VecExponent::new(exps))
+                    }).collect();
+                    Polynomial::new(terms)
+                })
+                .collect()
+        ),
+        (2, 1) => GeneratedPolynomials::IntModPBitPackedExponent(
+            (0..num_polys)
+                .map(|_| {
+                    let terms = (0..3).map(|_| {
+                        let coeff = IntModP::new((rand.next_int() % 7) as u128, 7);
+                        let mut arr = [0u8; 6];
+                        for i in 0..3 { arr[i] = (rand.next_int() % 4) as u8; }
+                        Term::from_exponents(coeff, BitPackedExponent::from_vec(arr))
+                    }).collect();
+                    Polynomial::new(terms)
+                })
+                .collect()
+        ),
+        _ => GeneratedPolynomials::None,
+    }
+}
+
+// Enum to represent all possible generated polynomial types
+pub enum GeneratedPolynomials {
+    SingleFieldVecExponent(Vec<Polynomial<SingleField, VecExponent>>),
+    SingleFieldBitPackedExponent(Vec<Polynomial<SingleField, BitPackedExponent>>),
+    DoubleFieldVecExponent(Vec<Polynomial<DoubleField, VecExponent>>),
+    DoubleFieldBitPackedExponent(Vec<Polynomial<DoubleField, BitPackedExponent>>),
+    IntModPVecExponent(Vec<Polynomial<IntModP, VecExponent>>),
+    IntModPBitPackedExponent(Vec<Polynomial<IntModP, BitPackedExponent>>),
+    None,
 }

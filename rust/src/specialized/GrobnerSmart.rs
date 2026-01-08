@@ -6,6 +6,9 @@ use std::sync::OnceLock;
 
 static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
 
+use rust::helpers::lcg::Lcg;
+
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
     pub coefficient: f64,
@@ -350,12 +353,12 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     let mut basis = polynomials.clone();
     let mut basis_set: HashSet<Polynomial> = HashSet::new();
     // print basis and polynomials
-    for poly in &basis {
+    /*for poly in &basis {
         poly.debug_print();
         println!("---");
-    }
+    }*/
 
-    println!("Begin the experiment, {}", basis.len());
+    //println!("Begin the experiment, {}", basis.len());
     loop { 
         let basis_len = basis.len();
         let mut added = false;
@@ -442,87 +445,127 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 }
 
 fn main() {
-    // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
-    let test = 0;
-     //Lex, GrLex, RevLex
-    TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
+    // let mode = 0 be for testing
+    let mode = 1;
 
-    // x^2 * y + y^2 * z + z^2 * x
-    let p1 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [2, 1, 0, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 2, 1, 0, 0, 0]),
-        Term::from_exponents(1.0, [1, 0, 2, 0, 0, 0]),
-    ]);
+    if mode != 0 { 
+        // arg1 = # of polynomials
+        // arg2 = term order (0=Lex, 1=GrLex, 2=RevLex)
+        let args: Vec<String> = std::env::args().collect();
+        let mut rand = Lcg::new(12345, 1345, 65, 17);
+        let num_polynomials: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(3);
+        let term_order: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
 
-    // x * y * z - 1
-    let p2 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [1, 1, 1, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
-    ]);
+        match term_order {
+            0 => TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"),
+            1 => TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized"),
+            2 => TERM_ORDER.set(TermOrder::RevLex).expect("TERM_ORDER already initialized"),
+            _ => TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"),
+        }
 
-    // x + y + z
-    let p3 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [1, 0, 0, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 1, 0, 0, 0, 0]),
-        Term::from_exponents(1.0, [0, 0, 1, 0, 0, 0]),
-    ]);
+        let mut input_basis = Vec::new();
+        for _ in 0..num_polynomials {
+            let mut terms = Vec::new();
+            for _ in 0..3 { // always 3 terms per polynomial
+                let coefficient = (rand.next_double() * 2.0 - 1.0) as f64;
+                let mut exponents = [0u8; 6];
+                for i in 0..3 { // only working with 3 variables for now
+                    exponents[i] = (rand.next_int() % 4) as u8; // Exponent between 0 and 3
+                }
+                terms.push(Term::from_exponents(coefficient, exponents));
+            }
+            input_basis.push(Polynomial::new(terms));
+        }
 
-    // x^2 - y
-    let p4 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [2, 0, 0, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 1, 0, 0, 0, 0]),
-    ]);
-
-    // xy - 1
-    let p5 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [1, 1, 0, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
-    ]);
-
-    // 3*x + 2*z^7 - 7*z^4 - 7*z
-    let test_poly_1 = Polynomial::new(vec![
-        Term::from_exponents(3.0, [1, 0, 0, 0, 0, 0]),
-        Term::from_exponents(2.0, [0, 0, 7, 0, 0, 0]),
-        Term::from_exponents(-7.0, [0, 0, 4, 0, 0, 0]),
-        Term::from_exponents(-7.0, [0, 0, 1, 0, 0, 0]),
-    ]);
-
-    // 3*y - 2*z^7 + 7*z^4 + 10*z
-    let test_poly_2 = Polynomial::new(vec![
-        Term::from_exponents(3.0, [0, 1, 0, 0, 0, 0]),
-        Term::from_exponents(-2.0, [0, 0, 7, 0, 0, 0]),
-        Term::from_exponents(7.0, [0, 0, 4, 0, 0, 0]),
-        Term::from_exponents(10.0, [0, 0, 1, 0, 0, 0]),
-    ]);
-
-    // z^9 - 3*z^6 - 6*z^3 - 1
-    let test_poly_3 = Polynomial::new(vec![
-        Term::from_exponents(1.0, [0, 0, 9, 0, 0, 0]),
-        Term::from_exponents(-3.0, [0, 0, 6, 0, 0, 0]),
-        Term::from_exponents(-6.0, [0, 0, 3, 0, 0, 0]),
-        Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
-    ]);
-    let input_basis = vec![p1, p2,p3];
-    let basis = naive_grobner_basis(input_basis);
-    let test_basis = vec![test_poly_1, test_poly_2, test_poly_3];
-
-    // print computed basis
-    println!("Computed Grobner Basis Polynomials:");
-    for poly in &basis {
-        poly.debug_print();
-        //println!("{:?}", poly);
-        println!("---");
+        let basis = naive_grobner_basis(input_basis);
+        println!("{}", basis.len());
+        /*println!("Computed Grobner Basis Polynomials:");
+        for poly in &basis {
+            poly.debug_print();
+            println!("---");
+        }*/
+        return;
     }
+    else {
+        //Lex, GrLex, RevLex
+        TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
 
-    // print test_basis
-    println!("Test Basis Polynomials:");
-    for poly in &test_basis {
-        poly.debug_print();
-        println!("---");
+        // x^2 * y + y^2 * z + z^2 * x
+        let p1 = Polynomial::new(vec![
+            Term::from_exponents(1.0, [2, 1, 0, 0, 0, 0]),
+            Term::from_exponents(1.0, [0, 2, 1, 0, 0, 0]),
+            Term::from_exponents(1.0, [1, 0, 2, 0, 0, 0]),
+        ]);
+
+        // x * y * z - 1
+        let p2 = Polynomial::new(vec![
+            Term::from_exponents(1.0, [1, 1, 1, 0, 0, 0]),
+            Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
+        ]);
+
+        // x + y + z
+        let p3 = Polynomial::new(vec![
+            Term::from_exponents(1.0, [1, 0, 0, 0, 0, 0]),
+            Term::from_exponents(1.0, [0, 1, 0, 0, 0, 0]),
+            Term::from_exponents(1.0, [0, 0, 1, 0, 0, 0]),
+        ]);
+
+        // x^2 - y
+        let p4 = Polynomial::new(vec![
+            Term::from_exponents(1.0, [2, 0, 0, 0, 0, 0]),
+            Term::from_exponents(-1.0, [0, 1, 0, 0, 0, 0]),
+        ]);
+
+        // xy - 1
+        let p5 = Polynomial::new(vec![
+            Term::from_exponents(1.0, [1, 1, 0, 0, 0, 0]),
+            Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
+        ]);
+
+        // 3*x + 2*z^7 - 7*z^4 - 7*z
+        let test_poly_1 = Polynomial::new(vec![
+            Term::from_exponents(3.0, [1, 0, 0, 0, 0, 0]),
+            Term::from_exponents(2.0, [0, 0, 7, 0, 0, 0]),
+            Term::from_exponents(-7.0, [0, 0, 4, 0, 0, 0]),
+            Term::from_exponents(-7.0, [0, 0, 1, 0, 0, 0]),
+        ]);
+
+        // 3*y - 2*z^7 + 7*z^4 + 10*z
+        let test_poly_2 = Polynomial::new(vec![
+            Term::from_exponents(3.0, [0, 1, 0, 0, 0, 0]),
+            Term::from_exponents(-2.0, [0, 0, 7, 0, 0, 0]),
+            Term::from_exponents(7.0, [0, 0, 4, 0, 0, 0]),
+            Term::from_exponents(10.0, [0, 0, 1, 0, 0, 0]),
+        ]);
+
+        // z^9 - 3*z^6 - 6*z^3 - 1
+        let test_poly_3 = Polynomial::new(vec![
+            Term::from_exponents(1.0, [0, 0, 9, 0, 0, 0]),
+            Term::from_exponents(-3.0, [0, 0, 6, 0, 0, 0]),
+            Term::from_exponents(-6.0, [0, 0, 3, 0, 0, 0]),
+            Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
+        ]);
+        let input_basis = vec![p1, p2,p3];
+        let basis = naive_grobner_basis(input_basis);
+        let test_basis = vec![test_poly_1, test_poly_2, test_poly_3];
+
+        // print computed basis
+        println!("Computed Grobner Basis Polynomials:");
+        for poly in &basis {
+            poly.debug_print();
+            //println!("{:?}", poly);
+            println!("---");
+        }
+
+        // print test_basis
+        println!("Test Basis Polynomials:");
+        for poly in &test_basis {
+            poly.debug_print();
+            println!("---");
+        }
+
+
+        let is_equivalent = are_bases_equivalent(basis, test_basis);
+        println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
     }
-
-
-    let is_equivalent = are_bases_equivalent(basis, test_basis);
-    println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
-    
 }

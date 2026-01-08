@@ -1,11 +1,11 @@
-pub struct lcg {
+pub struct Lcg {
     m: i32,
     a: i32,
     c: i32,
     last_num: i32,
 }
 
-impl lcg {
+impl Lcg {
     pub fn new(seed: i32, m: i32, a: i32, c: i32) -> Self {
         Self {
             m,
