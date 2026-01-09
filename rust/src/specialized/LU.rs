@@ -1,4 +1,4 @@
-use rand::Rng;
+use rust::helpers::lcg::Lcg;
 
 fn print_matrix(a: &Vec<Vec<f64>>) {
     for row in a {
@@ -99,21 +99,21 @@ fn main() {
         n = args[1].parse().unwrap_or(4);
     }
 
-    let mut rng = rand::rng();
+    let mut rand = Lcg::new(12345,1345,65,17);
     let mut a: Vec<Vec<f64>> = (0..n)
-        .map(|_| (0..n).map(|_| rng.random::<f64>() * 1000.0).collect())
+        .map(|_| (0..n).map(|_| rand.next_double() * 1000.0).collect())
         .collect();
-    let mut b: Vec<f64> = (0..n).map(|_| rng.random::<f64>() * 1000.0).collect();
+    let mut b: Vec<f64> = (0..n).map(|_| rand.next_double() * 1000.0).collect();
     let mut pivot: Vec<usize> = vec![0; n];
 
-    print_matrix(&a);
+    //print_matrix(&a);
 
     factor(&mut a, &mut pivot); 
 
     // Only needed for debugging
-    println!("b: ");
-    print_vector(&b);
+    //println!("b: ");
+    //print_vector(&b);
     solve(&a, &pivot, &mut b); 
-    println!("Solution (x): ");
-    print_vector(&b);
+    //println!("Solution (x): ");
+    //print_vector(&b);
 }

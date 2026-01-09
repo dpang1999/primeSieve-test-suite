@@ -1,6 +1,9 @@
 
 use seeded_random::{Random,Seed};
 
+use rust::helpers::lcg::Lcg;
+use rust::helpers::prime_sieve::prime_sieve;
+use rust::helpers::find_prime::find_prime_congruent_one_mod_n;
 
 pub struct FFT {}
 
@@ -162,19 +165,37 @@ impl FFT
     }
 }
 fn main() {
+    // let mode = 0 be for testing
+    let mode = 1;
     let fft = FFT::new();
-    let n = 1024;
-    let mut data = fft.make_random(n);
-    let mut data2: Vec<f64> = Vec::with_capacity(8);
-    data2.push(0.3618031071604718);
-    data2.push(0.932993485288541);
-    data2.push(0.8330913489710237);
-    data2.push(0.32647575623792624);
-    data2.push(0.2355237906476252);
-    data2.push(0.34911535662488336);
-    data2.push(0.4480776326931518);
-    data2.push(0.6381529437838686);
+    if mode != 0 {
+        let args: Vec<String> = std::env::args().collect();
+        let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(16);
+        let mut rand = Lcg::new(12345,1345,65,17);
+        let mut data: Vec<f64> = Vec::with_capacity(2*n);
+        for _ in 0..n {
+            let r = rand.next_double();
+            data.push(r);
+            let i = rand.next_double();
+            data.push(i);
+        }
+        println!("n={} => RMS Error={}", n, fft.test(&mut data));
+    }
+    else {
+       
+        let n = 1024;
+        let mut data = fft.make_random(n);
+        let mut data2: Vec<f64> = Vec::with_capacity(8);
+        data2.push(0.3618031071604718);
+        data2.push(0.932993485288541);
+        data2.push(0.8330913489710237);
+        data2.push(0.32647575623792624);
+        data2.push(0.2355237906476252);
+        data2.push(0.34911535662488336);
+        data2.push(0.4480776326931518);
+        data2.push(0.6381529437838686);
 
-    //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-    println!("n={} => RMS Error={}", n, fft.test(&mut data));
+        //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        println!("n={} => RMS Error={}", n, fft.test(&mut data));
+    }
 }

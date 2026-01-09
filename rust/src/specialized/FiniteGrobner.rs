@@ -294,7 +294,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     }
 
     //println!("Begin the experiment, {}", basis.len());
-    for i in 0..4 { // This is *supposed* to go until no new polynomials are added, but for now just do 3 iterations
+    loop {
         let basis_len = basis.len();
         let mut added = false;
         for i in 0..basis_len {

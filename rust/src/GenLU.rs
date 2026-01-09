@@ -5,7 +5,7 @@ use crate::generic::i_math::IMath;
 use crate::generic::int_mod_p::IntModP;
 use crate::generic::complex_field::ComplexField;
 use std::fmt::Display;
-use rand::Rng;
+use rust::helpers::lcg::Lcg;
 pub mod generic;
 
 pub fn solve<U: IField>(
@@ -118,30 +118,45 @@ fn run<T: IField + IMath + Clone + Display>(
     mut b: Vec<T>,
     mut pivot: Vec<usize>,
 ) {
-    print_matrix(&a);
+    //print_matrix(&a);
     let a_copy = a.clone();
     factor(&mut a, &mut pivot);
-    println!("b: ");
-    print_vector(&b);
+    //println!("b: ");
+    //print_vector(&b);
     let b_copy = b.clone();
     solve(&a, &pivot, &mut b);
-    println!("Solution: ");
-    print_vector(&b);
+    //println!("Solution: ");
+    //print_vector(&b);
     let product = multiplyMatrices(a_copy, b);
-    print_vector(&product);
+    //print_vector(&product);
+
+    // RMS diff between b_copy and product
+    /*let mut rms_diff = 0.0;
+    for i in 0..b_copy.len() {
+        let diff = b_copy[i].s(&product[i]);
+        let diff_f64 = diff.coerce_to_f64();
+        rms_diff += diff_f64 * diff_f64;
+    }
+    rms_diff = (rms_diff / (b_copy.len() as f64)).sqrt();
+    println!("RMS difference between original b and A*x: {}", rms_diff);*/
+   
 }
 
 fn main() {
+    // arg1 = n (matrix size)
+    // arg2 = mode (1=SingleField, 2=DoubleField, else=int mod p)
+    // arg3 = complex_bool (0=not complex, 1=complex)
     let args: Vec<String> = std::env::args().collect();
+    
     let mut n = 4;
-    let mut mode = 4;
-    let mut rng = rand::rng();
-    let mut complex_bool = 3;
+    let mut mode = 1;
+    let mut rand = Lcg::new(12345,1345,65,17);
+    let mut complex_bool = 0;
     if args.len() > 1 {
         n = args[1].parse().unwrap_or(4);
     }
     if args.len() > 2 {
-        mode = args[2].parse().unwrap_or(4);
+        mode = args[2].parse().unwrap_or(1);
     }
     if args.len() > 3 {
         complex_bool = args[3].parse().unwrap_or(0);
@@ -152,33 +167,33 @@ fn main() {
         if mode == 1 {
             println!("Using SingleField");
             let a: Vec<Vec<SingleField>> = (0..n)
-                .map(|_| (0..n).map(|_| SingleField::new(rand::random::<f32>() * 1000.0)).collect())
+                .map(|_| (0..n).map(|_| SingleField::new((rand.next_double() * 1000.0) as f32)).collect())
                 .collect();
             let b: Vec<SingleField> = (0..n)
-                .map(|_| SingleField::new(rand::random::<f32>() * 1000.0))
+                .map(|_| SingleField::new((rand.next_double() * 1000.0) as f32))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
         } else if mode == 2 {
             println!("Using DoubleField");
             let a: Vec<Vec<DoubleField>> = (0..n)
-                .map(|_| (0..n).map(|_| DoubleField::new(rand::random::<f64>() * 1000.0)).collect())
+                .map(|_| (0..n).map(|_| DoubleField::new(rand.next_double() * 1000.0)).collect())
                 .collect();
             let b: Vec<DoubleField> = (0..n)
-                .map(|_| DoubleField::new(rand::random::<f64>() * 1000.0))
+                .map(|_| DoubleField::new(rand.next_double() * 1000.0))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
         } else {
             println!("Using int mod p");
-            let primes = prime_sieve(rng.random_range(10000..46340)); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
+            let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last()
                 .expect("No prime found in the range");
             let a: Vec<Vec<IntModP>> = (0..n)
-                .map(|_| (0..n).map(|_| IntModP::new(rand::random::<u128>(), *prime as u128)).collect())
+                .map(|_| (0..n).map(|_| IntModP::new(rand.next_int() as u128, *prime as u128)).collect())
                 .collect();
             let b: Vec<IntModP> = (0..n)
-                .map(|_| IntModP::new(rand::random::<u128>(), *prime as u128))
+                .map(|_| IntModP::new(rand.next_int() as u128, *prime as u128))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
@@ -189,10 +204,10 @@ fn main() {
         if mode == 1 {
             println!("Using SingleField");
             let a: Vec<Vec<SingleField>> = (0..n)
-                .map(|_| (0..n).map(|_| SingleField::new(rand::random::<f32>() * 1000.0)).collect())
+                .map(|_| (0..n).map(|_| SingleField::new((rand.next_double() * 1000.0) as f32)).collect())
                 .collect();
             let b: Vec<SingleField> = (0..n)
-                .map(|_| SingleField::new(rand::random::<f32>() * 1000.0))
+                .map(|_| SingleField::new((rand.next_double() * 1000.0) as f32))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
@@ -201,30 +216,30 @@ fn main() {
             let a: Vec<Vec<ComplexField<DoubleField>>> = (0..n)
                 .map(|_| (0..n)
                     .map(|_| ComplexField::new(
-                        DoubleField::new(rand::random::<f64>() * 1000.0),
-                        DoubleField::new(rand::random::<f64>() * 1000.0)
+                        DoubleField::new(rand.next_double() * 1000.0),
+                        DoubleField::new(rand.next_double() * 1000.0)
                     ))
                     .collect()
                 )
                 .collect(); 
             let b: Vec<ComplexField<DoubleField>> = (0..n)
                 .map(|_| ComplexField::new(
-                    DoubleField::new(rand::random::<f64>() * 1000.0),
-                    DoubleField::new(rand::random::<f64>() * 1000.0)
+                    DoubleField::new(rand.next_double() * 1000.0),
+                    DoubleField::new(rand.next_double() * 1000.0)
                 ))
                 .collect(); 
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
         } else {
             println!("Using int mod p");
-            let primes = prime_sieve(rng.random_range(10000..46340)); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
+            let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last()
                 .expect("No prime found in the range");
             let a: Vec<Vec<IntModP>> = (0..n)
-                .map(|_| (0..n).map(|_| IntModP::new(rand::random::<u128>(), *prime as u128)).collect())
+                .map(|_| (0..n).map(|_| IntModP::new(rand.next_int() as u128, *prime as u128)).collect())
                 .collect();
             let b: Vec<IntModP> = (0..n)
-                .map(|_| IntModP::new(rand::random::<u128>(), *prime as u128))
+                .map(|_| IntModP::new(rand.next_int() as u128, *prime as u128))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);

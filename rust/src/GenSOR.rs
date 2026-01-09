@@ -5,7 +5,7 @@ use crate::generic::single_field::SingleField;
 use crate::generic::int_mod_p::IntModP;
 use crate::generic::complex_field::ComplexField;
 use std::fmt::Display;
-use rand::Rng;
+use rust::helpers::lcg::Lcg;
 pub mod generic;
 
 pub fn num_flops(m: usize, n: usize, num_iterations: usize) -> f64 {
@@ -58,27 +58,20 @@ fn print_matrix<T: Display>(a: &Vec<Vec<T>>) {
 }
 
 fn main() {
+    // arg1 = grid size n (nxn)
+    // arg2 = mode (1=SingleField, 2=DoubleField, else IntModP)
+    // arg3 = complex_bool (0=real, 1=complex)
     let args = std::env::args().collect::<Vec<String>>();
-    let mut m = 10;
-    let mut n = 10;
-    let mut mode = 2;
-    let mut complex_bool = 0;
-    let num_iterations = 100;
-    let mut rng = rand::rng();
-    if args.len() > 1 {
-        n = args[1].parse().unwrap_or(4);
-        m = n;
-    }
-    if args.len() > 2 {
-        mode = args[2].parse().unwrap_or(4);
-    }
-    if args.len() > 3 {
-        complex_bool = args[3].parse().unwrap_or(0);
-    }
+    let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(16);
+    let m = n;
+    let field_type: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
+    let complex_bool: usize = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(0);
+    let num_iterations = 1000;
+    let mut rand = Lcg::new(12345,1345,65,17);
     
     if complex_bool == 0 {
         println!("Not Complex");
-        if mode == 1 {
+        if field_type == 1 {
             println!("Using SingleField");
             let omega = SingleField::new(1.5);
             let mut g = vec![vec![omega.zero(); n]; m];
@@ -93,15 +86,15 @@ fn main() {
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 
-            println!("Initial grid:");
-            print_matrix(&g);
+            //println!("Initial grid:");
+            //print_matrix(&g);
 
             execute(omega, &mut g, num_iterations);
 
-            println!("\nSteady-state temperature distribution:");
-            print_matrix(&g);
+            //println!("\nSteady-state temperature distribution:");
+            //print_matrix(&g);
         }
-        else if mode == 2 {
+        else if field_type == 2 {
             println!("Using DoubleField");
             let omega = DoubleField::new(1.5);
             let mut g = vec![vec![omega.zero(); n]; m];
@@ -116,17 +109,17 @@ fn main() {
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 
-            println!("Initial grid:");
+            //println!("Initial grid:");
             print_matrix(&g);
 
             execute(omega, &mut g, num_iterations);
 
-            println!("\nSteady-state temperature distribution:");
-            print_matrix(&g);
+            //println!("\nSteady-state temperature distribution:");
+            //print_matrix(&g);
         }
         else {
             println!("Using IntModP");
-            let primes = prime_sieve(rng.random_range(10000..46340)); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
+            let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last().expect("No prime found in the range");
 
             let omega = IntModP::new(3, *prime as u128).d(&IntModP::new(2, *prime as u128)); // 1.5 mod 449
@@ -142,18 +135,18 @@ fn main() {
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 
-            println!("Initial grid:");
-            print_matrix(&g);
+            //println!("Initial grid:");
+            //print_matrix(&g);
 
             execute(omega, &mut g, num_iterations);
 
-            println!("\nSteady-state temperature distribution:");
-            print_matrix(&g);
+            //println!("\nSteady-state temperature distribution:");
+            //print_matrix(&g);
         }
     }
     else {
         println!("Complex");
-        if mode == 1 {
+        if field_type == 1 {
             println!("Using SingleField");
             let omega = ComplexField::new(SingleField::new(1.5), SingleField::new(0.0));
             let mut g = vec![vec![omega.zero(); n]; m];
@@ -168,15 +161,15 @@ fn main() {
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 
-            println!("Initial grid:");
-            print_matrix(&g);
+            //println!("Initial grid:");
+            //print_matrix(&g);
 
             execute(omega, &mut g, num_iterations);
 
-            println!("\nSteady-state temperature distribution:");
-            print_matrix(&g);
+            //println!("\nSteady-state temperature distribution:");
+            //print_matrix(&g);
         }
-        else if mode == 2 {
+        else if field_type == 2 {
             println!("Using DoubleField");
             let omega = ComplexField::new(DoubleField::new(1.5), DoubleField::new(0.0));
             let mut g = vec![vec![omega.zero(); n]; m];
@@ -191,17 +184,17 @@ fn main() {
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 
-            println!("Initial grid:");
-            print_matrix(&g);
+            //println!("Initial grid:");
+            //print_matrix(&g);
 
             execute(omega, &mut g, num_iterations);
 
-            println!("\nSteady-state temperature distribution:");
-            print_matrix(&g);
+            //println!("\nSteady-state temperature distribution:");
+            //print_matrix(&g);
         }
         else {
             println!("Using IntModP");
-            let primes = prime_sieve(rng.random_range(10000..46340)); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
+            let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last().expect("No prime found in the range");
 
             let omega = ComplexField::new(IntModP::new(3, *prime as u128).d(&IntModP::new(2, *prime as u128)),IntModP::new(0,*prime as u128)); // 1.5 mod 449
@@ -217,13 +210,13 @@ fn main() {
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 
-            println!("Initial grid:");
-            print_matrix(&g);
+            //println!("Initial grid:");
+            //print_matrix(&g);
 
             execute(omega, &mut g, num_iterations);
 
-            println!("\nSteady-state temperature distribution:");
-            print_matrix(&g);
+            //println!("\nSteady-state temperature distribution:");
+            //print_matrix(&g);
         }
     }
 }

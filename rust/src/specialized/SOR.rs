@@ -37,9 +37,11 @@ pub fn print_matrix(a: &Vec<Vec<f64>>) {
 }
 
 fn main() {
-    let m = 10;
-    let n = 10;
-    let num_iterations = 100;
+    // arg1 = grid size n (nxn)
+    let args = std::env::args().collect::<Vec<String>>();
+    let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(16);
+    let m = n;
+    let num_iterations = 1000;
     let omega = 1.5;
     let mut g = vec![vec![0.0; n]; m];
 
@@ -53,11 +55,11 @@ fn main() {
         g[m - 1][j] = 0.0;     // Bottom edge (cold)
     }
 
-    println!("Initial grid:");
-    print_matrix(&g);
+    //println!("Initial grid:");
+    //print_matrix(&g);
 
     execute(omega, &mut g, num_iterations);
 
-    println!("\nSteady-state temperature distribution:");
-    print_matrix(&g);
+    //println!("\nSteady-state temperature distribution:");
+    //print_matrix(&g);
 }

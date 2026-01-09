@@ -29,7 +29,7 @@ fn main() {
         num_samples = args[1].parse().unwrap_or(num_samples);
     }
 
-   let pi = integrate(num_samples);
+    let pi = integrate(num_samples);
     println!("Pi is approximately: {}", pi);
     println!("Num samples: {}", num_samples);
     println!("Num flops: {}", num_flops(num_samples));

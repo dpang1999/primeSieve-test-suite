@@ -28,10 +28,11 @@ fn integrate<T: IField + IOrdered>(t: &T, num_samples: usize) -> f64 {
 }
 
 fn main() {
+    // arg1 = num_samples
+    // arg2 = mode (1=SingleField, 2=DoubleField, else IntModP)
     let args: Vec<String> = std::env::args().collect();
     let mut num_samples = 1_000_000;
     let mut mode = 0; // 1 for SingleField, else for DoubleField. Don't think IntModP makes much sense here
-    let mut complex_bool = 0; // 0 for non-complex, 1 for complex. Doesn't make much sense to use complex numbers here
     if args.len() > 1 {
         num_samples = args[1].parse().unwrap_or(1000000);
     }
