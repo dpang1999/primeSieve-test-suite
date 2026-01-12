@@ -350,7 +350,7 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 
 fn main() {
     // let mode = 0 be for testing
-    let mode = 1;
+    let mode = 0;
     if mode != 0 {
         // arg1 = # of polynomials
         // arg2 = term order (0=Lex, 1=GrLex, 2=RevLex)
@@ -391,7 +391,7 @@ fn main() {
     }
     else {    
         // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
-        let test = 0;
+        let test = -1;
         //Lex, GrLex, RevLex
         TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
 
