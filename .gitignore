@@ -3,3 +3,6 @@ csharp/bin/
 test/results/
 rust/target/
 *.class
+framework_key
+framework_key.pub
+.~lock.framework_key.pub#
