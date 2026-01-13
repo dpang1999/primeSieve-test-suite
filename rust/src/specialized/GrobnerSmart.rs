@@ -279,6 +279,9 @@ impl Polynomial {
 
             // Iterate over the divisors to reduce the leading term
             for divisor in divisors {
+                // debug
+                //println!("Using divisor:");
+                //divisor.debug_print();
                 if let Some(leading_term) = result.terms.first() {
                     if let Some(divisor_leading_term) = divisor.terms.first() {
                         // Check if the leading term can be reduced
@@ -446,7 +449,7 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 
 fn main() {
     // let mode = 0 be for testing
-    let mode = 1;
+    let mode = 0;
 
     if mode != 0 { 
         // arg1 = # of polynomials
@@ -545,6 +548,10 @@ fn main() {
             Term::from_exponents(-6.0, [0, 0, 3, 0, 0, 0]),
             Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
         ]);
+        //test s-poly
+        let s_poly = Polynomial::s_polynomial(&p1, &p2);
+        println!("S-Polynomial of p1 and p2:");
+        s_poly.debug_print();
         let input_basis = vec![p1, p2,p3];
         let basis = naive_grobner_basis(input_basis);
         let test_basis = vec![test_poly_1, test_poly_2, test_poly_3];
@@ -567,5 +574,7 @@ fn main() {
 
         let is_equivalent = are_bases_equivalent(basis, test_basis);
         println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
+
+        
     }
 }

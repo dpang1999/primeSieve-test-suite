@@ -83,6 +83,14 @@ public class Grobner {
             this.terms.sort((a, b) -> b.compareTo(a, order));
         }
 
+        public Polynomial deepCopy(TermOrder order) {
+            List<Term> newTerms = new ArrayList<>();
+            for (Term t : this.terms) {
+                newTerms.add(new Term(t.coefficient, t.exponents));
+            }
+            return new Polynomial(newTerms, order);
+        }
+
         @Override
         public String toString() {
             if (terms.isEmpty()) return "0";
@@ -143,7 +151,8 @@ public class Grobner {
         }
 
         public Polynomial reduce(List<Polynomial> divisors, TermOrder order) {
-            Polynomial result = new Polynomial(new ArrayList<>(terms), order);
+            // deep copy of self
+            Polynomial result = this.deepCopy(order);
             while (true) {
                 boolean reduced = false;
                 for (Polynomial divisor : divisors) {
@@ -213,7 +222,10 @@ public class Grobner {
     }
 
     public static List<Polynomial> naiveGrobnerBasis(List<Polynomial> polynomials, TermOrder order) {
-        List<Polynomial> basis = new ArrayList<>(polynomials);
+        List<Polynomial> basis = new ArrayList<>();
+        for (Polynomial poly : polynomials) {
+            basis.add(poly.deepCopy(order));
+        }
         Set<Polynomial> basisSet = new HashSet<>(basis);
         while (true) {
             boolean added = false;
@@ -222,13 +234,13 @@ public class Grobner {
                 for (int j = i + 1; j < basisLen; j++) {
                     Polynomial sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j), order);
                     // print basis terms and s polynomial
-                    System.out.print("Basis 1: " + basis.get(i).terms);
-                    System.out.print(" | Basis 2: " + basis.get(j).terms);
-                    System.out.println(" | S-Polynomial: " + sPoly.terms);
+                    //System.out.print("Basis 1: " + basis.get(i).terms);
+                    //System.out.print(" | Basis 2: " + basis.get(j).terms);
+                    //System.out.println(" | S-Polynomial: " + sPoly.terms);
                     Polynomial reduced = sPoly.reduce(basis, order);
                     if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
-                        basisSet.add(reduced);
-                        basis.add(reduced);
+                        basis.add(reduced.deepCopy(order));
+                        basisSet.add(reduced.deepCopy(order));
                         added = true;
                     }
                 }
@@ -236,9 +248,14 @@ public class Grobner {
             if (!added) break;
         }
         List<Polynomial> reducedBasis = new ArrayList<>();
-        for (Polynomial poly : basis) {
-            List<Polynomial> basisExcludingSelf = new ArrayList<>(basis);
-            basisExcludingSelf.remove(poly);
+         for (Polynomial poly : basis) {
+            //System.out.println("Basis: " + basis.toString());
+            List<Polynomial> basisExcludingSelf = new ArrayList<>();
+            for (Polynomial p : basis) {
+                if (!p.equals(poly)) {
+                    basisExcludingSelf.add(p.deepCopy(order));
+                }
+            }
             Polynomial reduced = poly.reduce(basisExcludingSelf, order);
             if (!reduced.terms.isEmpty() && !reducedBasis.contains(reduced)) {
                 reducedBasis.add(reduced);
