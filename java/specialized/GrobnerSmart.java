@@ -162,7 +162,7 @@ public class GrobnerSmart {
         }
 
         public Polynomial add(Polynomial other, TermOrder order) {
-            List<Term> result = new ArrayList<>(terms);
+            List<Term> result = this.deepCopy(order).terms;
             for (Term term : other.terms) {
                 boolean found = false;
                 for (Term resTerm : result) {
@@ -180,7 +180,7 @@ public class GrobnerSmart {
         }
 
         public Polynomial subtract(Polynomial other, TermOrder order) {
-            List<Term> result = new ArrayList<>(terms);
+            List<Term> result = this.deepCopy(order).terms;
             for (Term term : other.terms) {
                 boolean found = false;
                 for (Term resTerm : result) {
@@ -209,7 +209,8 @@ public class GrobnerSmart {
 
         public Polynomial reduce(List<Polynomial> divisors, TermOrder order) {
             // deep copy of self
-            Polynomial result = this.deepCopy(order);
+            //Polynomial result = this.deepCopy(order);
+            Polynomial result = new Polynomial(this.terms, order);
             while (true) {
                 boolean reduced = false;
                 //System.out.println("Current polynomial to reduce: " + result.toString());
@@ -256,7 +257,8 @@ public class GrobnerSmart {
         // deep copies of input polynomials
         List<Polynomial> basis = new ArrayList<>();
         for (Polynomial poly : polynomials) {
-            basis.add(poly.deepCopy(order));
+            //basis.add(poly.deepCopy(order));
+            basis.add(poly);
         }
         Set<Polynomial> basisSet = new HashSet<>(basis);
         while (true) {
@@ -271,8 +273,10 @@ public class GrobnerSmart {
                     // print reduced
                     //System.out.println("Reduced S-Polynomial:" + reduced.toString());
                     if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
-                        basis.add(reduced.deepCopy(order));
-                        basisSet.add(reduced.deepCopy(order));
+                        //basis.add(reduced.deepCopy(order));
+                        //basisSet.add(reduced.deepCopy(order));
+                        basis.add(reduced);
+                        basisSet.add(reduced);
                         added = true;
                     }
                 }
@@ -288,7 +292,8 @@ public class GrobnerSmart {
             List<Polynomial> basisExcludingSelf = new ArrayList<>();
             for (Polynomial p : basis) {
                 if (!p.equals(poly)) {
-                    basisExcludingSelf.add(p.deepCopy(order));
+                    //basisExcludingSelf.add(p.deepCopy(order));
+                    basisExcludingSelf.add(p);
                 }
             }
             Polynomial reduced = poly.reduce(basisExcludingSelf, order);

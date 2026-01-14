@@ -256,7 +256,7 @@ where
 
                 if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
                     //println!("Reducing S-Polynomial of basis polynomials {} and {}", &basis[i], &basis[j]);
-                    //println!("Reduced S-Polynomial: {}", &reduced);
+                    //println!("Reduced S-Polynomial of basis[{}] and basis[{}]: {}", i, j, &reduced);
                     basis_set.insert(reduced.clone());
                     basis.push(reduced);
                     //println!("Added new polynomial to basis, total size now: {}", basis.len());

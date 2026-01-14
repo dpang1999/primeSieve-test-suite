@@ -39,7 +39,7 @@ public class VecExponent implements IExponent<VecExponent> {
         return exponents.stream().mapToInt(Integer::intValue).sum();
     }
 
-    
+    // lex comparison
     public int compareTo(VecExponent o) {
         for (int i = 0; i < exponents.size(); i++) {
             int a = exponents.get(i);
@@ -57,5 +57,13 @@ public class VecExponent implements IExponent<VecExponent> {
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof VecExponent)) return false;
+        VecExponent other = (VecExponent) obj;
+        return this.exponents.equals(other.exponents);
     }
 }

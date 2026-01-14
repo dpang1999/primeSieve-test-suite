@@ -64,13 +64,7 @@ public class BitPackedExponent implements IExponent<BitPackedExponent> {
 
     // Lexicographic compare
     public int compareTo(BitPackedExponent o) {
-        int[] a = this.getExponents();
-        int[] b = o.getExponents();
-        for (int i = 0; i < 6; i++) {
-            if (a[i] < b[i]) return -1;
-            if (a[i] > b[i]) return 1;
-        }
-        return 0;
+        return Long.compare(this.packed & 0x0000FFFFFFFFFFFFL, o.packed & 0x0000FFFFFFFFFFFFL);
     }
 
     // Can reduce
@@ -91,5 +85,13 @@ public class BitPackedExponent implements IExponent<BitPackedExponent> {
         int[] exps = getExponents();
         for (int e : exps) sb.append(String.format("%02X ", e));
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BitPackedExponent)) return false;
+        BitPackedExponent other = (BitPackedExponent) o;
+        return this.packed == other.packed;
     }
 }
