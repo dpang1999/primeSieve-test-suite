@@ -78,6 +78,16 @@ where
     }
 }
 
+impl<C, E> fmt::Display for Term<C, E>
+where 
+    C: IField + fmt::Display,
+    E: IExponent + fmt::Display
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}*{}", self.coefficient, self.exponents)
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Polynomial<C, E>
 where
@@ -166,6 +176,8 @@ where
                 if let Some(leading_term) = result.terms.first() {
                     if let Some(divisor_leading_term) = divisor.terms.first() {
                         if leading_term.can_reduce(divisor_leading_term) {
+                            // debug
+                            //println!("Reducing term: {} by divisor leading term: {}", leading_term, divisor_leading_term);
                             let coefficient = leading_term
                                 .coefficient
                                 .d(&divisor_leading_term.coefficient);
@@ -178,7 +190,7 @@ where
 
                             let scaled_divisor = divisor.multiply_by_term(&reduction_term);
                             result = result.subtract(&scaled_divisor);
-
+                            //println!("After reduction, polynomial is: {}", result);
                             reduced = true;
                             break;
                         }
@@ -244,7 +256,10 @@ where
         basis_set.insert(poly.clone());
     }
 
+    let mut polyAdded = 0;
     loop {
+        polyAdded += 1;
+        println!("Grobner basis iteration {}", polyAdded);
         let mut added = false;
         let basis_len = basis.len();
 
@@ -422,13 +437,14 @@ pub fn generate_polynomials(
     exp_type: usize,
     rand: &mut Lcg,
 ) -> GeneratedPolynomials {
+    let max_exp_value = 4; // Exponents will be in the range [0, max_exp_value-1]
     match (coeff_type, exp_type) {
         (0, 0) => GeneratedPolynomials::SingleFieldVecExponent(
             (0..num_polys)
                 .map(|_| {
                     let terms = (0..3).map(|_| {
                         let coeff = SingleField::new(rand.next_double() as f32);
-                        let exps = vec![(rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32];
+                        let exps = vec![(rand.next_int() % max_exp_value) as u32, (rand.next_int() % max_exp_value) as u32, (rand.next_int() % max_exp_value) as u32];
                         Term::from_exponents(coeff, VecExponent::new(exps))
                     }).collect();
                     Polynomial::new(terms)
@@ -441,7 +457,7 @@ pub fn generate_polynomials(
                     let terms = (0..3).map(|_| {
                         let coeff = SingleField::new(rand.next_double() as f32);
                         let mut arr = [0u8; 6];
-                        for i in 0..3 { arr[i] = (rand.next_int() % 4) as u8; }
+                        for i in 0..3 { arr[i] = (rand.next_int() % max_exp_value) as u8; }
                         Term::from_exponents(coeff, BitPackedExponent::from_vec(arr))
                     }).collect();
                     Polynomial::new(terms)
@@ -453,7 +469,7 @@ pub fn generate_polynomials(
                 .map(|_| {
                     let terms = (0..3).map(|_| {
                         let coeff = DoubleField::new(rand.next_double());
-                        let exps = vec![(rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32];
+                        let exps = vec![(rand.next_int() % max_exp_value) as u32, (rand.next_int() % max_exp_value) as u32, (rand.next_int() % max_exp_value) as u32];
                         Term::from_exponents(coeff, VecExponent::new(exps))
                     }).collect();
                     Polynomial::new(terms)
@@ -466,7 +482,7 @@ pub fn generate_polynomials(
                     let terms = (0..3).map(|_| {
                         let coeff = DoubleField::new(rand.next_double());
                         let mut arr = [0u8; 6];
-                        for i in 0..3 { arr[i] = (rand.next_int() % 4) as u8; }
+                        for i in 0..3 { arr[i] = (rand.next_int() % max_exp_value) as u8; }
                         Term::from_exponents(coeff, BitPackedExponent::from_vec(arr))
                     }).collect();
                     Polynomial::new(terms)
@@ -478,7 +494,7 @@ pub fn generate_polynomials(
                 .map(|_| {
                     let terms = (0..3).map(|_| {
                         let coeff = IntModP::new((rand.next_int() % 7) as u128, 7);
-                        let exps = vec![(rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32, (rand.next_int() % 4) as u32];
+                        let exps = vec![(rand.next_int() % max_exp_value) as u32, (rand.next_int() % max_exp_value) as u32, (rand.next_int() % max_exp_value) as u32];
                         Term::from_exponents(coeff, VecExponent::new(exps))
                     }).collect();
                     Polynomial::new(terms)
@@ -491,7 +507,7 @@ pub fn generate_polynomials(
                     let terms = (0..3).map(|_| {
                         let coeff = IntModP::new((rand.next_int() % 7) as u128, 7);
                         let mut arr = [0u8; 6];
-                        for i in 0..3 { arr[i] = (rand.next_int() % 4) as u8; }
+                        for i in 0..3 { arr[i] = (rand.next_int() % max_exp_value) as u8; }
                         Term::from_exponents(coeff, BitPackedExponent::from_vec(arr))
                     }).collect();
                     Polynomial::new(terms)

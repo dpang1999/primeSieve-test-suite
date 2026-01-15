@@ -288,7 +288,7 @@ public class FiniteGrobner {
 
     public static void main(String[] args) {
         // let mode = 0 be for testing
-        int mode = 0;
+        int mode = 1;
         TermOrder order = TermOrder.Lex;
         if (args.length > 1) {
             int orderArg = Integer.parseInt(args[1]);
@@ -304,11 +304,12 @@ public class FiniteGrobner {
             int modulus = 13;
             LCG rand = new LCG(12345, 1345, 65, 17);
             List<Polynomial> inputBasis = new ArrayList<>();
+            int numTerms = 3;
             for (int i = 0; i < numPolynomials; i++) {
                 List<Term> terms = new ArrayList<>();
-                for (int j = 0; j < 3; j++) {
-                    int coefficient = rand.nextInt() * 2 - 1;
-                    List<Integer> exponents = Arrays.asList(rand.nextInt(), rand.nextInt(), rand.nextInt());
+                for (int j = 0; j < numTerms; j++) {
+                    int coefficient = rand.nextInt() % 9 + 1;
+                    List<Integer> exponents = Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4);
                     terms.add(new Term(coefficient, exponents, modulus));
                 }
                 inputBasis.add(new Polynomial(terms, order));

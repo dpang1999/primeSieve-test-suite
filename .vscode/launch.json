@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "FiniteGrobner",
+            "request": "launch",
+            "mainClass": "specialized.FiniteGrobner",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
             "name": "GenGrobner",
             "request": "launch",
             "mainClass": "generic.GenGrobner",

@@ -223,74 +223,135 @@ public class GenGrobner {
         return reducedBasis;
     }
 
-    // Example usage for SingleField + VecExponent
+    /**
+     * Factory method to generate Grobner basis for all combinations of coefficient and exponent types.
+     * Usage:
+     *   args[0] = number of polynomials
+     *   args[1] = coefficient type (0 = SingleField, 1 = DoubleField, 2 = FiniteField)
+     *   args[2] = exponent type (0 = VecExponent, 1 = BitPackedExponent)
+     *   args[3] = term order (0 = Lex, 1 = GrLex, 2 = RevLex)
+     *   args[4] = modulus (for IntModP, optional)
+     */
     public static void main(String[] args) {
-        int mode = 0;
-        TermOrder order = TermOrder.Lex;
-        if (args.length > 1) {
-            int orderArg = Integer.parseInt(args[1]);
-            switch (orderArg) {
-                case 0: order = TermOrder.Lex; break;
-                case 1: order = TermOrder.GrLex; break;
-                case 2: order = TermOrder.RevLex; break;
-                default: order = TermOrder.Lex;
-            }
+        int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
+        int coeffType = args.length > 1 ? Integer.parseInt(args[1]) : 0;
+        int expType = args.length > 2 ? Integer.parseInt(args[2]) : 0;
+        int orderArg = args.length > 3 ? Integer.parseInt(args[3]) : 0;
+        int modulus = args.length > 4 ? Integer.parseInt(args[4]) : 13;
+        TermOrder order;
+        switch (orderArg) {
+            case 0: order = TermOrder.Lex; break;
+            case 1: order = TermOrder.GrLex; break;
+            case 2: order = TermOrder.RevLex; break;
+            default: order = TermOrder.Lex;
         }
-        // print ordering
         System.out.println("Using term order: " + order);
-        if (mode != 0) {
-            int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
-            LCG rand = new LCG(12345, 1345, 65, 17);
+        LCG rand = new LCG(12345, 1345, 65, 17);
+        int numTerms = 3;
+        if (coeffType == 0 && expType == 0) {
+            // SingleField + VecExponent
             List<Polynomial<SingleField, VecExponent>> inputBasis = new ArrayList<>();
             for (int i = 0; i < numPolynomials; i++) {
                 List<Term<SingleField, VecExponent>> terms = new ArrayList<>();
-                for (int j = 0; j < 3; j++) {
-                    SingleField coefficient = new SingleField((float)(rand.nextDouble() * 2.0 - 1.0));
+                for (int j = 0; j < numTerms; j++) {
+                    SingleField coefficient = new SingleField((float)(rand.nextDouble()));
                     VecExponent exponents = new VecExponent(Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4));
                     terms.add(new Term<>(coefficient, exponents));
                 }
                 inputBasis.add(new Polynomial<>(terms, order));
             }
             List<Polynomial<SingleField, VecExponent>> basis = naiveGrobnerBasis(inputBasis, order);
-            System.out.println(basis.size());
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<SingleField, VecExponent> poly : basis) {
                 System.out.println(poly);
             }
-        } else {
-            // Example: x^2*y + y^2*z + z^2*x
-            List<Term<SingleField, BitPackedExponent>> terms1 = new ArrayList<>();
-            terms1.add(new Term<>(new SingleField(1.0f), BitPackedExponent.fromArray(new int[]{2,1,0,0,0,0})));
-            terms1.add(new Term<>(new SingleField(1.0f), BitPackedExponent.fromArray(new int[]{0,2,1,0,0,0})));
-            terms1.add(new Term<>(new SingleField(1.0f), BitPackedExponent.fromArray(new int[]{1,0,2,0,0,0})));
-            Polynomial<SingleField, BitPackedExponent> p1 = new Polynomial<>(terms1, order);
-            // xyz - 1
-            List<Term<SingleField, BitPackedExponent>> terms2 = new ArrayList<>();
-            terms2.add(new Term<>(new SingleField(1.0f), BitPackedExponent.fromArray(new int[]{1,1,1,0,0,0})));
-            terms2.add(new Term<>(new SingleField(-1.0f), BitPackedExponent.fromArray(new int[]{0,0,0,0,0,0})));
-            Polynomial<SingleField, BitPackedExponent> p2 = new Polynomial<>(terms2, order);
-            // x + y + z
-            List<Term<SingleField, BitPackedExponent>> terms3 = new ArrayList<>();
-            terms3.add(new Term<>(new SingleField(1.0f), BitPackedExponent.fromArray(new int[]{1,0,0,0,0,0})));
-            terms3.add(new Term<>(new SingleField(1.0f), BitPackedExponent.fromArray(new int[]{0,1,0,0,0,0})));
-            terms3.add(new Term<>(new SingleField(1.0f), BitPackedExponent.fromArray(new int[]{0,0,1,0,0,0})));
-            Polynomial<SingleField, BitPackedExponent> p3 = new Polynomial<>(terms3, order);
-            List<Polynomial<SingleField, BitPackedExponent>> inputBasis = Arrays.asList(p1, p2, p3);
-            System.out.println("Begin");
-
-
-            // PRINT P1
-            System.out.println("Input Polynomials:");
-            for (Polynomial<SingleField, BitPackedExponent> poly : inputBasis) {
-                System.out.println(poly);
+        } else if (coeffType == 0 && expType == 1) {
+            // SingleField + BitPackedExponent
+            List<Polynomial<SingleField, BitPackedExponent>> inputBasis = new ArrayList<>();
+            for (int i = 0; i < numPolynomials; i++) {
+                List<Term<SingleField, BitPackedExponent>> terms = new ArrayList<>();
+                for (int j = 0; j < numTerms; j++) {
+                    SingleField coefficient = new SingleField((float)(rand.nextDouble()));
+                    BitPackedExponent exponents = BitPackedExponent.fromArray(new int[]{rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4, 0, 0, 0});
+                    terms.add(new Term<>(coefficient, exponents));
+                }
+                inputBasis.add(new Polynomial<>(terms, order));
             }
-            System.out.println("Spoly of p1-p2: " + Polynomial.sPolynomial(p1, p2, order));
-
             List<Polynomial<SingleField, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis, order);
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<SingleField, BitPackedExponent> poly : basis) {
-                System.out.println("\n\nPolynomial: " + poly);
+                System.out.println(poly);
             }
+        } else if (coeffType == 1 && expType == 0) {
+            // DoubleField + VecExponent
+            List<Polynomial<DoubleField, VecExponent>> inputBasis = new ArrayList<>();
+            for (int i = 0; i < numPolynomials; i++) {
+                List<Term<DoubleField, VecExponent>> terms = new ArrayList<>();
+                for (int j = 0; j < numTerms; j++) {
+                    DoubleField coefficient = new DoubleField(rand.nextDouble());
+                    VecExponent exponents = new VecExponent(Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4));
+                    terms.add(new Term<>(coefficient, exponents));
+                }
+                inputBasis.add(new Polynomial<>(terms, order));
+            }
+            List<Polynomial<DoubleField, VecExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            System.out.println("Computed Grobner Basis Polynomials:");
+            for (Polynomial<DoubleField, VecExponent> poly : basis) {
+                System.out.println(poly);
+            }
+        } else if (coeffType == 1 && expType == 1) {
+            // DoubleField + BitPackedExponent
+            List<Polynomial<DoubleField, BitPackedExponent>> inputBasis = new ArrayList<>();
+            for (int i = 0; i < numPolynomials; i++) {
+                List<Term<DoubleField, BitPackedExponent>> terms = new ArrayList<>();
+                for (int j = 0; j < numTerms; j++) {
+                    DoubleField coefficient = new DoubleField(rand.nextDouble());
+                    BitPackedExponent exponents = BitPackedExponent.fromArray(new int[]{rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4, 0, 0, 0});
+                    terms.add(new Term<>(coefficient, exponents));
+                }
+                inputBasis.add(new Polynomial<>(terms, order));
+            }
+            List<Polynomial<DoubleField, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            System.out.println("Computed Grobner Basis Polynomials:");
+            for (Polynomial<DoubleField, BitPackedExponent> poly : basis) {
+                System.out.println(poly);
+            }
+        } else if (coeffType == 2 && expType == 0) {
+            // FiniteField + VecExponent
+            List<Polynomial<IntModP, VecExponent>> inputBasis = new ArrayList<>();
+            for (int i = 0; i < numPolynomials; i++) {
+                List<Term<IntModP, VecExponent>> terms = new ArrayList<>();
+                for (int j = 0; j < numTerms; j++) {
+                    IntModP coefficient = new IntModP(rand.nextInt() % modulus, modulus);
+                    VecExponent exponents = new VecExponent(Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4));
+                    terms.add(new Term<>(coefficient, exponents));
+                }
+                inputBasis.add(new Polynomial<>(terms, order));
+            }
+            List<Polynomial<IntModP, VecExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            System.out.println("Computed Grobner Basis Polynomials:");
+            for (Polynomial<IntModP, VecExponent> poly : basis) {
+                System.out.println(poly);
+            }
+        } else if (coeffType == 2 && expType == 1) {
+            // FiniteField + BitPackedExponent
+            List<Polynomial<IntModP, BitPackedExponent>> inputBasis = new ArrayList<>();
+            for (int i = 0; i < numPolynomials; i++) {
+                List<Term<IntModP, BitPackedExponent>> terms = new ArrayList<>();
+                for (int j = 0; j < numTerms; j++) {
+                    IntModP coefficient = new IntModP(rand.nextInt() % modulus, modulus);
+                    BitPackedExponent exponents = BitPackedExponent.fromArray(new int[]{rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4, 0, 0, 0});
+                    terms.add(new Term<>(coefficient, exponents));
+                }
+                inputBasis.add(new Polynomial<>(terms, order));
+            }
+            List<Polynomial<IntModP, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            System.out.println("Computed Grobner Basis Polynomials:");
+            for (Polynomial<IntModP, BitPackedExponent> poly : basis) {
+                System.out.println(poly);
+            }
+        } else {
+            System.out.println("Invalid coefficient or exponent type selection.");
         }
     }
 }

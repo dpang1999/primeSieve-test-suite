@@ -2,6 +2,8 @@ package specialized;
 
 import java.util.*;
 
+import helpers.LCG;
+
 public class GrobnerSmart {
     public static class Term {
         public double coefficient;
@@ -209,8 +211,8 @@ public class GrobnerSmart {
 
         public Polynomial reduce(List<Polynomial> divisors, TermOrder order) {
             // deep copy of self
-            //Polynomial result = this.deepCopy(order);
-            Polynomial result = new Polynomial(this.terms, order);
+            Polynomial result = this.deepCopy(order);
+            //Polynomial result = new Polynomial(this.terms, order);
             while (true) {
                 boolean reduced = false;
                 //System.out.println("Current polynomial to reduce: " + result.toString());
@@ -226,7 +228,9 @@ public class GrobnerSmart {
                         long exponents = leadingTerm.exponents - divisorLeadingTerm.exponents;
                         double coefficient = leadingTerm.coefficient / divisorLeadingTerm.coefficient;
                         Term reductionTerm = new Term(coefficient, exponents);
+                        //System.out.println("reduction term: " + reductionTerm.toString());
                         Polynomial scaledDivisor = divisor.multiplyByTerm(reductionTerm, order);
+                        //System.out.println("scaled divisor: " + scaledDivisor.toString());
                         result = result.subtract(scaledDivisor, order);
                         reduced = true;
                         //System.out.println("Reduced polynomial: " + result.toString());
@@ -272,6 +276,8 @@ public class GrobnerSmart {
                     Polynomial reduced = sPoly.reduce(basis, order);
                     // print reduced
                     //System.out.println("Reduced S-Polynomial:" + reduced.toString());
+                    // print if in basis
+                    //System.out.println("Is reduced polynomial in basis? " + basisSet.contains(reduced));
                     if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
                         //basis.add(reduced.deepCopy(order));
                         //basisSet.add(reduced.deepCopy(order));
@@ -317,39 +323,82 @@ public class GrobnerSmart {
     }
 
     public static void main(String[] args) {
-        TermOrder order = TermOrder.Lex;
-        // Example: x^2*y + y^2*z + z^2*x
-        Term t1 = Term.fromExponents(1.0, new int[]{2, 1, 0, 0, 0, 0});
-        Term t2 = Term.fromExponents(1.0, new int[]{0, 2, 1, 0, 0, 0});
-        Term t3 = Term.fromExponents(1.0, new int[]{1, 0, 2, 0, 0, 0});
-        Polynomial p1 = new Polynomial(Arrays.asList(t1, t2, t3), order);
-        // x*y*z - 1
-        Term t4 = Term.fromExponents(1.0, new int[]{1, 1, 1, 0, 0, 0});
-        Term t5 = Term.fromExponents(-1.0, new int[]{0, 0, 0, 0, 0, 0});
-        Polynomial p2 = new Polynomial(Arrays.asList(t4, t5), order);
-        // x + y + z
-        Term t6 = Term.fromExponents(1.0, new int[]{1, 0, 0, 0, 0, 0});
-        Term t7 = Term.fromExponents(1.0, new int[]{0, 1, 0, 0, 0, 0});
-        Term t8 = Term.fromExponents(1.0, new int[]{0, 0, 1, 0, 0, 0});
-        Polynomial p3 = new Polynomial(Arrays.asList(t6, t7, t8), order);
-        List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3);
-        List<Polynomial> basis = naiveGrobnerBasis(inputBasis, order);
-        System.out.println("Computed GrobnerSmart Basis Polynomials:");
-        for (Polynomial poly : basis) {
-            System.out.println(poly);
+        // let mode = 0 be for testing
+        int mode = 1;
+
+        // arg0 = number of polynomials to generate
+        // arg1 = term order: 0 = Lex, 1 = GrLex, 2 = RevLex
+
+        if (mode != 0) {
+            int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
+            LCG rand = new LCG(12345, 1345, 65, 17);
+            List<Polynomial> inputBasis = new ArrayList<>();
+            TermOrder order = TermOrder.Lex;
+            if (args.length > 1) {
+                int orderArg = Integer.parseInt(args[1]);
+                switch (orderArg) {
+                    case 0: order = TermOrder.Lex; break;
+                    case 1: order = TermOrder.GrLex; break;
+                    case 2: order = TermOrder.RevLex; break;
+                    default: order = TermOrder.Lex;
+                }
+            }
+            for (int i = 0; i < numPolynomials; i++) {
+                int numTerms = 3;
+                List<Term> terms = new ArrayList<>();
+                for (int j = 0; j < numTerms; j++) {
+                    double coefficient = rand.nextDouble();
+                    int[] exps = new int[6];
+                    for (int k = 0; k < 3; k++) {
+                        exps[k] = rand.nextInt() % 4;
+                    }
+                    terms.add(Term.fromExponents(coefficient, exps));
+                }
+                Polynomial poly = new Polynomial(terms, order);
+                inputBasis.add(poly);
+            }
+            List<Polynomial> basis = naiveGrobnerBasis(inputBasis, order);
+            System.out.println("Computed GrobnerSmart Basis Polynomials:");
+            for (Polynomial poly : basis) {
+                System.out.println(poly);
+            }
         }
+        
+        else {
+            TermOrder order = TermOrder.Lex;
+            // Example: x^2*y + y^2*z + z^2*x
+            Term t1 = Term.fromExponents(1.0, new int[]{2, 1, 0, 0, 0, 0});
+            Term t2 = Term.fromExponents(1.0, new int[]{0, 2, 1, 0, 0, 0});
+            Term t3 = Term.fromExponents(1.0, new int[]{1, 0, 2, 0, 0, 0});
+            Polynomial p1 = new Polynomial(Arrays.asList(t1, t2, t3), order);
+            // x*y*z - 1
+            Term t4 = Term.fromExponents(1.0, new int[]{1, 1, 1, 0, 0, 0});
+            Term t5 = Term.fromExponents(-1.0, new int[]{0, 0, 0, 0, 0, 0});
+            Polynomial p2 = new Polynomial(Arrays.asList(t4, t5), order);
+            // x + y + z
+            Term t6 = Term.fromExponents(1.0, new int[]{1, 0, 0, 0, 0, 0});
+            Term t7 = Term.fromExponents(1.0, new int[]{0, 1, 0, 0, 0, 0});
+            Term t8 = Term.fromExponents(1.0, new int[]{0, 0, 1, 0, 0, 0});
+            Polynomial p3 = new Polynomial(Arrays.asList(t6, t7, t8), order);
+            List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3);
+            List<Polynomial> basis = naiveGrobnerBasis(inputBasis, order);
+            System.out.println("Computed GrobnerSmart Basis Polynomials:");
+            for (Polynomial poly : basis) {
+                System.out.println(poly);
+            }
 
-        // test removal of small coefficients
-            Term t9 = Term.fromExponents(1.0, new int[]{2, 0, 0, 0, 0, 0});
-            Term t10 = Term.fromExponents(1e-3, new int[]{1, 1, 0, 0, 0, 0});
-            Polynomial p4 = new Polynomial(Arrays.asList(t9, t10), order);
-            System.out.println("Polynomial with small coefficient term:");
-            System.out.println(p4.toString());
+            // test removal of small coefficients
+                Term t9 = Term.fromExponents(1.0, new int[]{2, 0, 0, 0, 0, 0});
+                Term t10 = Term.fromExponents(1e-3, new int[]{1, 1, 0, 0, 0, 0});
+                Polynomial p4 = new Polynomial(Arrays.asList(t9, t10), order);
+                System.out.println("Polynomial with small coefficient term:");
+                System.out.println(p4.toString());
 
-        // Test S-poly
-        Polynomial sPoly = Polynomial.sPolynomial(p1, p2, order);
-        System.out.println("S-Polynomial of p1 and p2:");
-        System.out.println(sPoly.toString());
+            // Test S-poly
+            Polynomial sPoly = Polynomial.sPolynomial(p1, p2, order);
+            System.out.println("S-Polynomial of p1 and p2:");
+            System.out.println(sPoly.toString());
+        }
     }
 
     // Helper static methods for bitpacking

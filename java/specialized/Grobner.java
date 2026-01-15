@@ -155,7 +155,10 @@ public class Grobner {
             // deep copy of self
             //Polynomial result = this.deepCopy(order);
             Polynomial result = new Polynomial(this.terms, order);
+            //int attempt = 0;
             while (true) {
+                //attempt++;
+                //System.out.println("Reduction attempt " + attempt);
                 boolean reduced = false;
                 for (Polynomial divisor : divisors) {
                     if (result.terms.isEmpty() || divisor.terms.isEmpty()) continue;
@@ -169,6 +172,8 @@ public class Grobner {
                         }
                     }
                     if (canReduce) {
+                        // debug
+                        //System.out.println("Reducing term: " + leadingTerm + " by divisor leading term: " + divisorLeadingTerm);
                         double coeff = leadingTerm.coefficient / divisorLeadingTerm.coefficient;
                         List<Integer> exps = new ArrayList<>();
                         for (int i = 0; i < leadingTerm.exponents.size(); i++) {
@@ -177,6 +182,7 @@ public class Grobner {
                         Term reductionTerm = new Term(coeff, exps);
                         Polynomial scaledDivisor = divisor.multiplyByTerm(reductionTerm, order);
                         result = result.subtract(scaledDivisor, order);
+                        //System.out.println("After reduction, polynomial is: " + result);
                         reduced = true;
                         break;
                     }
@@ -230,7 +236,10 @@ public class Grobner {
             basis.add(poly);
         }
         Set<Polynomial> basisSet = new HashSet<>(basis);
+        int polyAdded = 0;
         while (true) {
+            polyAdded++;
+            System.out.println("Grobner basis iteration " + polyAdded);
             boolean added = false;
             int basisLen = basis.size();
             for (int i = 0; i < basisLen; i++) {
@@ -252,6 +261,7 @@ public class Grobner {
             }
             if (!added) break;
         }
+        System.out.println("Grobner basis computed with " + basis.size() + " polynomials. Now reducing basis...");
         List<Polynomial> reducedBasis = new ArrayList<>();
          for (Polynomial poly : basis) {
             //System.out.println("Basis: " + basis.toString());
@@ -284,7 +294,10 @@ public class Grobner {
 
     public static void main(String[] args) {
         // let mode = 0 be for testing
-        int mode = 0;
+        int mode = 1;
+
+        // arg1 = number of polynomials to generate
+        // arg2 = term order: 0 = Lex, 1 = GrLex, 2 = RevLex
         TermOrder order = TermOrder.Lex;
         if (args.length > 1) {
             int orderArg = Integer.parseInt(args[1]);
@@ -299,11 +312,12 @@ public class Grobner {
             int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
             LCG rand = new LCG(12345, 1345, 65, 17);
             List<Polynomial> inputBasis = new ArrayList<>();
+            int numTerms = 3;
             for (int i = 0; i < numPolynomials; i++) {
                 List<Term> terms = new ArrayList<>();
-                for (int j = 0; j < 3; j++) {
-                    double coefficient = rand.nextDouble() * 2.0 - 1.0;
-                    List<Integer> exponents = Arrays.asList(rand.nextInt(), rand.nextInt(), rand.nextInt());
+                for (int j = 0; j < numTerms; j++) {
+                    double coefficient = rand.nextDouble();
+                    List<Integer> exponents = Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4);
                     terms.add(new Term(coefficient, exponents));
                 }
                 inputBasis.add(new Polynomial(terms, order));
