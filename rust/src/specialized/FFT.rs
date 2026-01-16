@@ -166,7 +166,7 @@ impl FFT
 }
 fn main() {
     // let mode = 0 be for testing
-    let mode = 1;
+    let mode = 0;
     let fft = FFT::new();
     if mode != 0 {
         let args: Vec<String> = std::env::args().collect();
@@ -185,15 +185,16 @@ fn main() {
        
         let n = 1024;
         let mut data = fft.make_random(n);
-        let mut data2: Vec<f64> = Vec::with_capacity(8);
-        data2.push(0.3618031071604718);
-        data2.push(0.932993485288541);
-        data2.push(0.8330913489710237);
-        data2.push(0.32647575623792624);
-        data2.push(0.2355237906476252);
-        data2.push(0.34911535662488336);
-        data2.push(0.4480776326931518);
-        data2.push(0.6381529437838686);
+        let mut data2: Vec<f64> = vec![
+            0.3618031071604718,
+            0.932993485288541,
+            0.8330913489710237,
+            0.32647575623792624,
+            0.2355237906476252,
+            0.34911535662488336,
+            0.4480776326931518,
+            0.6381529437838686,
+        ];
 
         //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         println!("n={} => RMS Error={}", n, fft.test(&mut data));

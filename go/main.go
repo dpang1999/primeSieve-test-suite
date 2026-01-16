@@ -1,8 +1,14 @@
 package main
 
-import "algos/generic"
+import (
+	"algos/specialized"
+)
+
+//import "algos/generic"
 
 // go run main.go
 func main() {
-	generic.TestGenFFT()
+	//generic.TestGenFFT()
+	specialized.TestSOR()
+
 }

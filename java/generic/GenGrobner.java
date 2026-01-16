@@ -227,17 +227,19 @@ public class GenGrobner {
      * Factory method to generate Grobner basis for all combinations of coefficient and exponent types.
      * Usage:
      *   args[0] = number of polynomials
-     *   args[1] = coefficient type (0 = SingleField, 1 = DoubleField, 2 = FiniteField)
-     *   args[2] = exponent type (0 = VecExponent, 1 = BitPackedExponent)
-     *   args[3] = term order (0 = Lex, 1 = GrLex, 2 = RevLex)
-     *   args[4] = modulus (for IntModP, optional)
+     *   args[1] = number of terms per polynomial   
+     *   args[2] = coefficient type (0 = SingleField, 1 = DoubleField, 2 = FiniteField)
+     *   args[3] = exponent type (0 = VecExponent, 1 = BitPackedExponent)
+     *   args[4] = term order (0 = Lex, 1 = GrLex, 2 = RevLex)
+     *   args[5] = modulus (for IntModP, optional)
      */
     public static void main(String[] args) {
         int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
-        int coeffType = args.length > 1 ? Integer.parseInt(args[1]) : 0;
-        int expType = args.length > 2 ? Integer.parseInt(args[2]) : 0;
-        int orderArg = args.length > 3 ? Integer.parseInt(args[3]) : 0;
-        int modulus = args.length > 4 ? Integer.parseInt(args[4]) : 13;
+        int numTerms = args.length > 1 ? Integer.parseInt(args[1]) : 3;
+        int coeffType = args.length > 2 ? Integer.parseInt(args[2]) : 0;
+        int expType = args.length > 3 ? Integer.parseInt(args[3]) : 0;
+        int orderArg = args.length > 4 ? Integer.parseInt(args[4]) : 0;
+        int modulus = args.length > 5 ? Integer.parseInt(args[5]) : 13;
         TermOrder order;
         switch (orderArg) {
             case 0: order = TermOrder.Lex; break;
@@ -247,7 +249,6 @@ public class GenGrobner {
         }
         System.out.println("Using term order: " + order);
         LCG rand = new LCG(12345, 1345, 65, 17);
-        int numTerms = 3;
         if (coeffType == 0 && expType == 0) {
             // SingleField + VecExponent
             List<Polynomial<SingleField, VecExponent>> inputBasis = new ArrayList<>();
