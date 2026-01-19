@@ -9,6 +9,6 @@ import (
 // go run main.go
 func main() {
 	//generic.TestGenFFT()
-	specialized.TestSOR()
+	specialized.TestGrobner()
 
 }
