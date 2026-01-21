@@ -1,7 +1,7 @@
 package main
 
 import (
-	"algos/specialized/grobnerSmart"
+	"algos/generic"
 )
 
 //import "algos/generic"
@@ -10,5 +10,5 @@ import (
 func main() {
 	//generic.TestGenFFT()
 	//grobner.TestGrobner(3, 0)
-	grobnerSmart.TestGrobnerSmart(3, 0)
+	generic.TestGenGrobner(3, 3, 1, 1, 0, 13)
 }

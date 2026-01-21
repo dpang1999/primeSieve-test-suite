@@ -84,11 +84,19 @@ func (d SingleField) one() SingleField {
 
 // Implement IMath interface for SingleField
 
-func (d SingleField) abs() {
-	d.Value = float32(math.Abs(float64(d.Value)))
+func (d SingleField) abs() SingleField {
+	if d.Value < 0 {
+		d.Value = -d.Value
+		return SingleField{Value: d.Value}
+	}
+	return d
 }
-func (d SingleField) sqrt() {
+func (d SingleField) sqrt() SingleField {
+	if d.Value < 0 {
+		panic("square root of negative number")
+	}
 	d.Value = float32(math.Sqrt(float64(d.Value)))
+	return SingleField{Value: d.Value}
 }
 
 // Implement IEqual interface for SingleField
@@ -101,7 +109,7 @@ func (d SingleField) lt(o SingleField) bool {
 	return d.Value < o.Value
 }
 
-func (d SingleField) lte(o SingleField) bool {
+func (d SingleField) le(o SingleField) bool {
 	return d.Value <= o.Value
 }
 
@@ -109,7 +117,7 @@ func (d SingleField) gt(o SingleField) bool {
 	return d.Value > o.Value
 }
 
-func (d SingleField) gte(o SingleField) bool {
+func (d SingleField) ge(o SingleField) bool {
 	return d.Value >= o.Value
 }
 
