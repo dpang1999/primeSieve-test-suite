@@ -1,6 +1,7 @@
 package specialized
 
 import (
+	"algos/helpers"
 	"fmt"
 	"math"
 )
@@ -144,17 +145,34 @@ func bitreverse(data []float64) {
 	}
 }
 
-func TestFFT() {
-	//rand := helpers.NewLCG(12345, 1345, 65, 17)
+func TestFFT(n int) {
+	// let mode = 0 be for testing
+	mode := 1
 
-	data1 := []float64{
-		0.3618031071604718, 0.932993485288541,
-		0.8330913489710237, 0.32647575623792624,
-		0.2355237906476252, 0.34911535662488336,
-		0.4480776326931518, 0.6381529437838686,
+	if n <= 0 {
+		n = 16 // default size
 	}
+	if mode != 0 {
+		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		data1 := make([]float64, 2*n)
+		for i := 0; i < n; i++ {
+			data1[2*i] = rand.NextDouble()
+			data1[2*i+1] = rand.NextDouble()
+		}
+		fft := FFT{}
+		rmsError := fft.Test(data1)
+		fmt.Printf("FFT RMS Error: %e\n", rmsError)
+	} else {
 
-	fft := FFT{}
-	rmsError := fft.Test(data1)
-	fmt.Printf("FFT RMS Error: %e\n", rmsError)
+		data1 := []float64{
+			0.3618031071604718, 0.932993485288541,
+			0.8330913489710237, 0.32647575623792624,
+			0.2355237906476252, 0.34911535662488336,
+			0.4480776326931518, 0.6381529437838686,
+		}
+
+		fft := FFT{}
+		rmsError := fft.Test(data1)
+		fmt.Printf("FFT RMS Error: %e\n", rmsError)
+	}
 }

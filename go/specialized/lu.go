@@ -100,9 +100,11 @@ func printVector(b []float64) {
 	fmt.Println()
 }
 
-func TestLU() {
+func TestLU(n int) {
 	rand := helpers.NewLCG(12345, 1345, 65, 17)
-	n := 4
+	if n <= 0 {
+		n = 4 // default size
+	}
 	a := make([][]float64, n)
 	for i := range a {
 		a[i] = make([]float64, n)

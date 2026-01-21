@@ -1,6 +1,7 @@
-package specialized
+package grobner
 
 import (
+	"algos/helpers"
 	"fmt"
 	"math"
 	"sort"
@@ -281,39 +282,79 @@ func polynomialsEqual(a, b Polynomial) bool {
 	return true
 }
 
-func TestGrobner() {
-	fmt.Println("--- Grobner Basis Test ---")
-
-	// x^3 + y^3 + z^3
-	p1 := NewPolynomial([]Term{
-		{Coefficient: 1, Exponents: []int{3, 0, 0}},
-		{Coefficient: 1, Exponents: []int{0, 3, 0}},
-		{Coefficient: 1, Exponents: []int{0, 0, 3}},
-	}, Lex)
-
-	// xy + yz + xz
-	p2 := NewPolynomial([]Term{
-		{Coefficient: 1, Exponents: []int{1, 0, 1}},
-		{Coefficient: 1, Exponents: []int{0, 1, 1}},
-		{Coefficient: 1, Exponents: []int{1, 1, 0}},
-	}, Lex)
-
-	//x+y+z
-	p3 := NewPolynomial([]Term{
-		{Coefficient: 1, Exponents: []int{1, 0, 0}},
-		{Coefficient: 1, Exponents: []int{0, 1, 0}},
-		{Coefficient: 1, Exponents: []int{0, 0, 1}},
-	}, Lex)
-	fmt.Printf("Input polynomials:\nP1: %v\nP2: %v\nP3: %v\n", p1.Terms, p2.Terms, p3.Terms)
-	basis := NaiveGrobnerBasis([]Polynomial{p1, p2, p3}, Lex)
-
-	fmt.Println("Grobner Basis:")
-	for i, poly := range basis {
-		fmt.Printf("G%d: ", i)
-		for _, term := range poly.Terms {
-			fmt.Printf("%.2f*%v ", term.Coefficient, term.Exponents)
+func TestGrobner(polyNum int, orderInt int) {
+	// let mode == 0 be for testing
+	mode := 1
+	if mode != 0 {
+		// arg1 = # of polynomials
+		// arg2 = term order (0=Lex,1=GrLex,2=RevLex)
+		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		if polyNum <= 0 {
+			polyNum = 3 // default number of polynomials
 		}
-		fmt.Println()
+		if orderInt < 0 || orderInt > 2 {
+			orderInt = 0 // default to Lex
+		}
+		numTerms := 3 // fixed number of terms per polynomial
+		numExponents := 3
+		order := TermOrder(orderInt)
+		var polys []Polynomial
+		for p := 0; p < polyNum; p++ {
+			var terms []Term
+			for t := 0; t < numTerms; t++ {
+				coeff := (rand.NextDouble()*2 - 1)
+				exps := make([]int, numExponents)
+				for i := range exps {
+					exps[i] = rand.NextInt() % 4 // exponents 0 to 3
+				}
+				terms = append(terms, Term{Coefficient: coeff, Exponents: exps})
+			}
+			polys = append(polys, NewPolynomial(terms, order))
+		}
+		basis := NaiveGrobnerBasis(polys, order)
+		fmt.Println("Grobner Basis:")
+		for i, poly := range basis {
+			fmt.Printf("G%d: ", i)
+			for _, term := range poly.Terms {
+				fmt.Printf("%.2f*%v ", term.Coefficient, term.Exponents)
+			}
+			fmt.Println()
+		}
+	} else {
+
+		fmt.Println("--- Grobner Basis Test ---")
+
+		// x^3 + y^3 + z^3
+		p1 := NewPolynomial([]Term{
+			{Coefficient: 1, Exponents: []int{3, 0, 0}},
+			{Coefficient: 1, Exponents: []int{0, 3, 0}},
+			{Coefficient: 1, Exponents: []int{0, 0, 3}},
+		}, Lex)
+
+		// xy + yz + xz
+		p2 := NewPolynomial([]Term{
+			{Coefficient: 1, Exponents: []int{1, 0, 1}},
+			{Coefficient: 1, Exponents: []int{0, 1, 1}},
+			{Coefficient: 1, Exponents: []int{1, 1, 0}},
+		}, Lex)
+
+		//x+y+z
+		p3 := NewPolynomial([]Term{
+			{Coefficient: 1, Exponents: []int{1, 0, 0}},
+			{Coefficient: 1, Exponents: []int{0, 1, 0}},
+			{Coefficient: 1, Exponents: []int{0, 0, 1}},
+		}, Lex)
+		fmt.Printf("Input polynomials:\nP1: %v\nP2: %v\nP3: %v\n", p1.Terms, p2.Terms, p3.Terms)
+		basis := NaiveGrobnerBasis([]Polynomial{p1, p2, p3}, Lex)
+
+		fmt.Println("Grobner Basis:")
+		for i, poly := range basis {
+			fmt.Printf("G%d: ", i)
+			for _, term := range poly.Terms {
+				fmt.Printf("%.2f*%v ", term.Coefficient, term.Exponents)
+			}
+			fmt.Println()
+		}
+		fmt.Println("--- End Grobner Basis Test ---")
 	}
-	fmt.Println("--- End Grobner Basis Test ---")
 }

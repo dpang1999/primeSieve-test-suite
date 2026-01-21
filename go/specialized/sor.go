@@ -24,10 +24,14 @@ func SOR(omega float64, g [][]float64, numIterations int) {
 	}
 }
 
-func TestSOR() {
-	iterations := 100
+func TestSOR(n int, iterations int) {
+	if n <= 0 {
+		n = 10 // default size
+	}
+	if iterations <= 0 {
+		iterations = 100 // default iterations
+	}
 	omega := 1.5
-	n := 10
 	g := make([][]float64, n)
 	for i := range g {
 		g[i] = make([]float64, n)
