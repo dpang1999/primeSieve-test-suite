@@ -304,7 +304,7 @@ func TestFiniteGrobner(polyNum int, orderInt int, modulus uint32) {
 	// let mode == 0 be for testing
 	mode := 1
 	if mode != 0 {
-		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		if polyNum <= 0 {
 			polyNum = 3
 		}

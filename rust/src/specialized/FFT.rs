@@ -166,12 +166,12 @@ impl FFT
 }
 fn main() {
     // let mode = 0 be for testing
-    let mode = 0;
+    let mode = 1;
     let fft = FFT::new();
     if mode != 0 {
         let args: Vec<String> = std::env::args().collect();
         let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(16);
-        let mut rand = Lcg::new(12345,1345,65,17);
+        let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let mut data: Vec<f64> = Vec::with_capacity(2*n);
         for _ in 0..n {
             let r = rand.next_double();
@@ -179,6 +179,8 @@ fn main() {
             let i = rand.next_double();
             data.push(i);
         }
+        // print array
+        //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         println!("n={} => RMS Error={}", n, fft.test(&mut data));
     }
     else {

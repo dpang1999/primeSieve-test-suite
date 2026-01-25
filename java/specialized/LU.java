@@ -1,5 +1,5 @@
 package specialized;
-
+import helpers.LCG;
 /**
     LU matrix factorization. (Based on TNT implementation.)
     Decomposes a matrix A  into a triangular lower triangular
@@ -292,11 +292,12 @@ public static int factor(double A[][],  int pivot[])
         double A[][] = new double[N][N];
         double b[] = new double[N];
         int pivot[] = new int[N];
+        LCG rand = new LCG(12345, 1345, 16645, 1013904);
         for (int i=0; i<N; i++)
         {
             for (int j=0; j<N; j++)
-                A[i][j] = Math.random()*1000;
-            b[i] = Math.random()*1000;
+                A[i][j] = rand.nextDouble()*1000;
+            b[i] = rand.nextDouble()*1000;
         }
         printMatrix(A);
 

@@ -288,7 +288,7 @@ func TestGrobner(polyNum int, orderInt int) {
 	if mode != 0 {
 		// arg1 = # of polynomials
 		// arg2 = term order (0=Lex,1=GrLex,2=RevLex)
-		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		if polyNum <= 0 {
 			polyNum = 3 // default number of polynomials
 		}

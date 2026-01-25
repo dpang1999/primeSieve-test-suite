@@ -1,5 +1,5 @@
 package specialized;
-import java.util.Random;
+import helpers.LCG;
 /**
  Estimate Pi by approximating the area of a circle.
 
@@ -46,14 +46,14 @@ public class MonteCarlo
 	public static final double integrate(int Num_samples)
 	{
 
-		Random R = new Random(SEED);
+		LCG rand = new LCG(12345, 1345, 16645, 1013904);
 
 
 		int under_curve = 0;
 		for (int count=0; count<Num_samples; count++)
 		{
-			double x= R.nextDouble();
-			double y= R.nextDouble();
+			double x= rand.nextDouble();
+			double y= rand.nextDouble();
 
 			if ( x*x + y*y <= 1.0)
 				 under_curve ++;

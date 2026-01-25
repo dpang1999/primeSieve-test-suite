@@ -1,5 +1,5 @@
 use seeded_random::{Random,Seed};
-
+use rust::helpers::lcg::Lcg;
 const SEED: u64 = 113;
 
 
@@ -9,12 +9,13 @@ fn num_flops(num_samples: usize) -> f64 {
 }
 
 fn integrate(num_samples: usize) -> f64 {
-    let seed1 = Seed::unsafe_new(SEED);
-    let rng = Random::from_seed(seed1);
+    //let seed1 = Seed::unsafe_new(SEED);
+    //let rng = Random::from_seed(seed1);
+    let mut rng = Lcg::new(12345, 1345, 16645, 1013904);
     let mut under_curve = 0;
     for _ in 0..num_samples {
-        let x: f64 = rng.gen();
-        let y: f64 = rng.gen();
+        let x: f64 = rng.next_double();
+        let y: f64 = rng.next_double();
         if x * x + y * y <= 1.0 {
             under_curve += 1;
         }
@@ -32,6 +33,6 @@ fn main() {
     let pi = integrate(num_samples);
     println!("Pi is approximately: {}", pi);
     println!("Num samples: {}", num_samples);
-    println!("Num flops: {}", num_flops(num_samples));
+    //println!("Num flops: {}", num_flops(num_samples));
     println!("RMS Error: {}", (std::f64::consts::PI - pi).abs());
 }

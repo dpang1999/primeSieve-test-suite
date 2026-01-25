@@ -101,7 +101,7 @@ func printVector(b []float64) {
 }
 
 func TestLU(n int) {
-	rand := helpers.NewLCG(12345, 1345, 65, 17)
+	rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 	if n <= 0 {
 		n = 4 // default size
 	}

@@ -1,6 +1,6 @@
 package specialized;
 import java.util.Arrays;
-import java.util.Random;
+import helpers.LCG;
 
 /** Computes FFT's of complex, double precision data where n is an integer power of 2.
   * This appears to be slower than the Radix2 method,
@@ -64,7 +64,7 @@ public class FFT {
 
   /** Make a random array of n (complex) elements. */
   public static double[] makeRandom(int n){
-    Random random = new Random(12345);
+    LCG random = new LCG(12345, 1345, 16645, 1013904);
     int nd = 2*n;
     double data[] = new double[nd];
     for(int i=0; i<nd; i++)

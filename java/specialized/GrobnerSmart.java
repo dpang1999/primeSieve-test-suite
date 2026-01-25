@@ -331,7 +331,7 @@ public class GrobnerSmart {
 
         if (mode != 0) {
             int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
-            LCG rand = new LCG(12345, 1345, 65, 17);
+            LCG rand = new LCG(12345, 1345, 16645, 1013904);
             List<Polynomial> inputBasis = new ArrayList<>();
             TermOrder order = TermOrder.Lex;
             if (args.length > 1) {

@@ -294,7 +294,7 @@ public class Grobner {
 
     public static void main(String[] args) {
         // let mode = 0 be for testing
-        int mode = 1;
+        int mode = 0;
 
         // arg1 = number of polynomials to generate
         // arg2 = term order: 0 = Lex, 1 = GrLex, 2 = RevLex
@@ -310,7 +310,7 @@ public class Grobner {
         }
         if (mode != 0) {
             int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
-            LCG rand = new LCG(12345, 1345, 65, 17);
+            LCG rand = new LCG(12345, 1345, 16645, 1013904);
             List<Polynomial> inputBasis = new ArrayList<>();
             int numTerms = 3;
             for (int i = 0; i < numPolynomials; i++) {

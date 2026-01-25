@@ -99,7 +99,7 @@ fn main() {
         n = args[1].parse().unwrap_or(4);
     }
 
-    let mut rand = Lcg::new(12345,1345,65,17);
+    let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
     let mut a: Vec<Vec<f64>> = (0..n)
         .map(|_| (0..n).map(|_| rand.next_double() * 1000.0).collect())
         .collect();

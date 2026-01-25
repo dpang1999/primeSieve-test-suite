@@ -153,7 +153,7 @@ func TestFFT(n int) {
 		n = 16 // default size
 	}
 	if mode != 0 {
-		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		data1 := make([]float64, 2*n)
 		for i := 0; i < n; i++ {
 			data1[2*i] = rand.NextDouble()
