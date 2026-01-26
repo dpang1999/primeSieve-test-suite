@@ -3,7 +3,7 @@ import { SingleField } from './singleField';
 import { IntModP } from './intModP';
 import { genericFFT } from './genFFT';
 import { genericLU } from './genLU';
-import { genericSOR } from './sor';
+import { genericSOR } from './genSor';
 import { genericMonteCarlo } from './genMonteCarlo';
 
 function testFFT() {

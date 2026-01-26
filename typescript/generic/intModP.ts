@@ -1,33 +1,34 @@
 import { IField } from './iField';
 import { IMath } from './iMath';
 import { IOrdered } from './iOrdered';
-import { ICopiable } from './iCopiable';
 
-export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntModP>, ICopiable<IntModP> {
+export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntModP> {
   value: number;
   modulus: number;
   constructor(value: number, modulus: number) {
     this.value = ((value % modulus) + modulus) % modulus;
     this.modulus = modulus;
   }
-  add(o: IntModP): IntModP { return new IntModP((this.value + o.value) % this.modulus, this.modulus); }
-  sub(o: IntModP): IntModP { return new IntModP((this.value - o.value + this.modulus) % this.modulus, this.modulus); }
-  mul(o: IntModP): IntModP { return new IntModP((this.value * o.value) % this.modulus, this.modulus); }
-  div(o: IntModP): IntModP { return new IntModP((this.value * IntModP.modInv(o.value, this.modulus)) % this.modulus, this.modulus); }
-  coerceFromInt(i: number): IntModP { return new IntModP(i, this.modulus); }
-  coerceFromFloat(f: number): IntModP { return new IntModP(Math.round(f), this.modulus); }
-  coerceToFloat(): number { return this.value; }
-  isZero(): boolean { return this.value === 0; }
-  isOne(): boolean { return this.value === 1; }
+  a(o: IntModP): IntModP { return new IntModP((this.value + o.value) % this.modulus, this.modulus); }
+  ae(o: IntModP): void { this.value = (this.value + o.value) % this.modulus; }
+  s(o: IntModP): IntModP { return new IntModP((this.value - o.value + this.modulus) % this.modulus, this.modulus); }
+  se(o: IntModP): void { this.value = (this.value - o.value + this.modulus) % this.modulus; }
+  m(o: IntModP): IntModP { return new IntModP((this.value * o.value) % this.modulus, this.modulus); }
+  me(o: IntModP): void { this.value = (this.value * o.value) % this.modulus; }
+  d(o: IntModP): IntModP { return new IntModP((this.value * IntModP.modInv(o.value, this.modulus)) % this.modulus, this.modulus); }
+  de(o: IntModP): void { this.value = (this.value * IntModP.modInv(o.value, this.modulus)) % this.modulus; }
+  coerce(o: number): IntModP { return new IntModP(o, this.modulus); }
+  is_zero(): boolean { return this.value === 0; }
+  is_one(): boolean { return this.value === 1; }
   zero(): IntModP { return new IntModP(0, this.modulus); }
   one(): IntModP { return new IntModP(1, this.modulus); }
-  abs(): IntModP { return new IntModP(Math.abs(this.value), this.modulus); }
+  abs(): number { return Math.abs(this.value); }
   sqrt(): IntModP { throw new Error('sqrt not implemented for IntModP'); }
   lt(o: IntModP): boolean { return this.value < o.value; }
   le(o: IntModP): boolean { return this.value <= o.value; }
   gt(o: IntModP): boolean { return this.value > o.value; }
   ge(o: IntModP): boolean { return this.value >= o.value; }
-  eq(o: IntModP): boolean { return this.value === o.value; }
+  e(o: IntModP): boolean { return this.value === o.value; }
   copy(): IntModP { return new IntModP(this.value, this.modulus); }
   toString(): string { return this.value.toString(); }
   static modInv(a: number, m: number): number {

@@ -94,7 +94,7 @@ pub fn factor<U: IField + IMath>(
 
         // Compute elements j+1:M of jth column
         if j < m - 1 {
-            let recp = U::one(&a[j][j]).d(&a[j][j]);
+            let recp = a[j][j].one().d(&a[j][j]);
             for k in (j + 1)..m {
                 a[k][j] = a[k][j].m(&recp);
             }
@@ -118,15 +118,16 @@ fn run<T: IField + IMath + Clone + Display>(
     mut b: Vec<T>,
     mut pivot: Vec<usize>,
 ) {
-    //print_matrix(&a);
+    print_matrix(&a);
     let a_copy = a.clone();
     factor(&mut a, &mut pivot);
-    //println!("b: ");
-    //print_vector(&b);
+    //print_matrix(&a);
+    println!("b: ");
+    print_vector(&b);
     let b_copy = b.clone();
     solve(&a, &pivot, &mut b);
-    //println!("Solution: ");
-    //print_vector(&b);
+    println!("Solution: ");
+    print_vector(&b);
     let product = multiplyMatrices(a_copy, b);
     //print_vector(&product);
 
@@ -144,19 +145,19 @@ fn run<T: IField + IMath + Clone + Display>(
 
 fn main() {
     // arg1 = n (matrix size)
-    // arg2 = mode (1=SingleField, 2=DoubleField, else=int mod p)
+    // arg2 = field (1=SingleField, 2=DoubleField, else=int mod p)
     // arg3 = complex_bool (0=not complex, 1=complex)
     let args: Vec<String> = std::env::args().collect();
     
     let mut n = 4;
-    let mut mode = 1;
+    let mut field = 3;
     let mut rand = Lcg::new(12345,1345,65,17);
     let mut complex_bool = 0;
     if args.len() > 1 {
         n = args[1].parse().unwrap_or(4);
     }
     if args.len() > 2 {
-        mode = args[2].parse().unwrap_or(1);
+        field = args[2].parse().unwrap_or(1);
     }
     if args.len() > 3 {
         complex_bool = args[3].parse().unwrap_or(0);
@@ -164,7 +165,7 @@ fn main() {
     
     if complex_bool == 0 {
         println!("Not Complex");
-        if mode == 1 {
+        if field == 1 {
             println!("Using SingleField");
             let a: Vec<Vec<SingleField>> = (0..n)
                 .map(|_| (0..n).map(|_| SingleField::new((rand.next_double() * 1000.0) as f32)).collect())
@@ -174,7 +175,7 @@ fn main() {
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
-        } else if mode == 2 {
+        } else if field == 2 {
             println!("Using DoubleField");
             let a: Vec<Vec<DoubleField>> = (0..n)
                 .map(|_| (0..n).map(|_| DoubleField::new(rand.next_double() * 1000.0)).collect())
@@ -201,7 +202,7 @@ fn main() {
     }
     else if (complex_bool == 1){
         println!("Complex");
-        if mode == 1 {
+        if field == 1 {
             println!("Using SingleField");
             let a: Vec<Vec<SingleField>> = (0..n)
                 .map(|_| (0..n).map(|_| SingleField::new((rand.next_double() * 1000.0) as f32)).collect())
@@ -211,7 +212,7 @@ fn main() {
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
-        } else if mode == 2 {
+        } else if field == 2 {
             println!("Using DoubleField");
             let a: Vec<Vec<ComplexField<DoubleField>>> = (0..n)
                 .map(|_| (0..n)
@@ -289,10 +290,10 @@ fn main() {
 fn multiplyMatrices<U: IField + IMath + Display + Clone>(a: Vec<Vec<U>>, b: Vec<U>) -> Vec<U> {
     let m = a.len();
     let n = a[0].len();
-    let mut product: Vec<U> = vec![U::zero(&a[0][0]); m];
+    let mut product: Vec<U> = vec![a[0][0].zero(); m];
 
     for i in 0..m {
-        let mut sum = U::zero(&a[0][0]);
+        let mut sum = a[0][0].zero();
         for j in 0..n {
             sum = sum.a(&a[i][j].m(&b[j]));
         }

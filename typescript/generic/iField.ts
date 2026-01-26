@@ -8,7 +8,7 @@ export interface IField<T> {
     d(o: T): T;
     de(o: T): void;
 
-    // coerces don't need to exist because typescript only has the number type
+    coerce(o: number): T
 
     is_zero(): boolean;
     is_one(): boolean;
