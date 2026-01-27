@@ -16,6 +16,7 @@ export class DoubleField implements IField<DoubleField>, IMath<DoubleField>, IOr
   d(o: DoubleField): DoubleField { return new DoubleField(this.value / o.value); }
   de(o: DoubleField): void { this.value /= o.value; }
   coerce(o: number): DoubleField { return new DoubleField(o); }
+  coerce_to_number(): number { return this.value; }
   is_zero(): boolean { return this.value === 0; }
   is_one(): boolean { return this.value === 1; }
   zero(): DoubleField { return new DoubleField(0); }
@@ -26,7 +27,7 @@ export class DoubleField implements IField<DoubleField>, IMath<DoubleField>, IOr
   le(o: DoubleField): boolean { return this.value <= o.value; }
   gt(o: DoubleField): boolean { return this.value > o.value; }
   ge(o: DoubleField): boolean { return this.value >= o.value; }
-  e(o: DoubleField): boolean { return this.value === o.value; }
+  eq(o: DoubleField): boolean { return this.value === o.value; }
   copy(): DoubleField { return new DoubleField(this.value); }
   toString(): string { return this.value.toFixed(4); }
 }

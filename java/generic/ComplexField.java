@@ -122,12 +122,12 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
         // Check if the base field supports trigonometric functions
         if (re instanceof ITrigonometric) {
             // Cast re to ITrigonometric<T>
-            System.out.println("Using ITrigonometric for primitive root calculation");
-            System.out.println(re.coerce());
+            //System.out.println("Using ITrigonometric for primitive root calculation");
+            //System.out.println(re.coerce());
 
             // Compute the angle for the primitive root of unity
             T angle = re.coerce(2.0 * Math.PI / n);
-            System.out.println(angle);
+            //System.out.println(angle);
             
             // Cast realPart and imagPart to ITrigonometric<T> before calling cos() and sin()
             T realPart = ((ITrigonometric<T>) angle).cos(); 
@@ -272,7 +272,7 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
 
     @Override
     public double coerce() {
-        return re.coerce();
+        return Math.pow(re.coerce(),2) + Math.pow(im.coerce(),2);
     }
 
     @Override

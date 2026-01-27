@@ -1,6 +1,6 @@
 // flipped semantics as array defaults to undefined which is falsey
 // so true means not prime, false means prime
-function primeSieve(num:number): boolean[] {
+export function primeSieve(num:number): boolean[] {
     let primes = new Array(num)
     primes[0] = true;
     primes[1] = true;

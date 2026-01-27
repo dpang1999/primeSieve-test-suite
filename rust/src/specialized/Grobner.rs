@@ -350,7 +350,7 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 
 fn main() {
     // let mode = 0 be for testing
-    let mode = 0;
+    let mode = 1;
     if mode != 0 {
         // arg1 = # of polynomials
         // arg2 = term order (0=Lex, 1=GrLex, 2=RevLex)
@@ -659,82 +659,94 @@ fn main() {
 
             let basis = naive_grobner_basis(vec![p1, p2]);
             // copy basis
-            let mut copied_basis = basis.clone();
+            //let mut copied_basis = basis.clone();
             println!("Final Grobner Basis:");
             for poly in basis {
                 println!("{:?}", poly);
             }
             
 
-            //  x^2 + y^2 -1
+            //   0.93*[2, 2, 1] +   0.40*[1, 0, 0] +   0.61*[0, 2, 2]
             let test_poly = Polynomial::new(vec![
                 Term {
-                    coefficient: 1.0,
-                    exponents: vec![2, 0, 0],
+                    coefficient: 0.93,
+                    exponents: vec![2, 2, 1],
                 },
                 Term {
-                    coefficient: 1.0,
+                    coefficient: 0.40,
+                    exponents: vec![1, 0, 0],
+                },
+                Term {
+                    coefficient: 0.61,
+                    exponents: vec![0, 2, 2],
+                },
+            ]);
+  //0.51*[3, 3, 3] +   0.49*[3, 0, 3] +   0.51*[0, 0, 3]
+  let test_poly2 = Polynomial::new(vec![
+                Term {
+                    coefficient: 0.51,
+                    exponents: vec![3, 3, 3],
+                },
+                Term {
+                    coefficient: 0.49,
+                    exponents: vec![3, 0, 3],
+                },
+                Term {
+                    coefficient: 0.51,
+                    exponents: vec![0, 0, 3],
+                },
+            ]);
+  //0.92*[3, 2, 1] +   0.72*[1, 2, 0] +   0.56*[0, 2, 0]
+  let test_poly3 = Polynomial::new(vec![
+                Term {
+                    coefficient: 0.92,
+                    exponents: vec![3, 2, 1],
+                },
+                Term {
+                    coefficient: 0.72,
+                    exponents: vec![1, 2, 0],
+                },
+                Term {
+                    coefficient: 0.56,
                     exponents: vec![0, 2, 0],
                 },
-                Term {
-                    coefficient: -1.0,
-                    exponents: vec![0, 0, 0],
-                },
             ]);
 
-            // x*y -z
-            let test_poly_2 = Polynomial::new(vec![
-                Term {
-                    coefficient: 1.0,
-                    exponents: vec![1, 1, 0],
-                },
-                Term {
-                    coefficient: -1.0,
-                    exponents: vec![0, 0, 1],
-                },
-            
-            ]);
+            let test_basis = vec![test_poly, test_poly2, test_poly3];
 
-            // x*z +y^3 - y
-            let test_poly_3 = Polynomial::new(vec![
+            //0.5145y^3
+            let poly1 = Polynomial::new(vec![
                 Term {
-                    coefficient: 1.0,
-                    exponents: vec![1, 0, 1],
-                },
-                Term {
-                    coefficient: 1.0,
-                    exponents: vec![0, 3, 0],
-                },
-                Term {
-                    coefficient: -1.0,
-                    exponents: vec![0, 1, 0],
+                    coefficient: 0.5145,
+                    exponents: vec![0, 3],
                 },
             ]);
-
-            // y^4 - y^2 + z^2
-            let test_poly_4 = Polynomial::new(vec![
+            //0.1706x + 0.2611y^2z^2
+            let poly2 = Polynomial::new(vec![
                 Term {
-                    coefficient: 1.0,
-                    exponents: vec![0, 4, 0],
+                    coefficient: 0.1706,
+                    exponents: vec![1, 0, 0],
                 },
                 Term {
-                    coefficient: -1.0,
-                    exponents: vec![0, 2, 0],
-                },
-                Term {
-                    coefficient: 1.0,
-                    exponents: vec![0, 0, 2],
+                    coefficient: 0.2611,
+                    exponents: vec![0, 2, 2],
                 },
             ]);
-
-            let test_basis = vec![test_poly, test_poly_2, test_poly_3];
+            //0.5554y^2
+            let poly3 = Polynomial::new(vec![
+                Term {
+                    coefficient: 0.5554,
+                    exponents: vec![0, 2],
+                },
+            ]);
+            let testbasis2 = vec![poly1, poly2, poly3];
 
             // print test_basis
             println!("Test Basis Polynomials:");
             for poly in &test_basis {
                 println!("{:?}", poly);
             }
-            let is_equivalent = are_bases_equivalent(copied_basis, test_basis);
+            let is_equivalent = are_bases_equivalent(testbasis2, test_basis);
             println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
         }
     }

@@ -326,9 +326,9 @@ fn main() {
             0
         };
         let exp_type = if args.len() > 3 {
-            args[3].parse::<usize>().unwrap_or(1)
+            args[3].parse::<usize>().unwrap_or(0)
         } else {
-            1
+            0
         };
         let term_order = if args.len() > 4 {
             args[4].parse::<usize>().unwrap_or(0)
@@ -346,11 +346,15 @@ fn main() {
 
         match generated {
             GeneratedPolynomials::SingleFieldVecExponent(polys) => {
+                // print basis
+                for (i, poly) in polys.iter().enumerate() {
+                    println!("Generated Polynomial {}: {}", i + 1, poly);
+                }
                 let basis = naive_grobner_basis(polys);
                 println!("Computed Grobner basis with {} polynomials.", basis.len());
-                /*for (i, poly) in basis.iter().enumerate() {
+                for (i, poly) in basis.iter().enumerate() {
                     println!("Polynomial {}: {}", i + 1, poly);
-                }*/
+                }
             }
             GeneratedPolynomials::SingleFieldBitPackedExponent(polys) => {
                 let basis = naive_grobner_basis(polys);
@@ -438,7 +442,7 @@ pub fn generate_polynomials(
     rand: &mut Lcg,
 ) -> GeneratedPolynomials {
     let max_exp_value = 4; // Exponents will be in the range [0, max_exp_value-1]
-    let num_terms = 5;
+    let num_terms = 3;
     match (coeff_type, exp_type) {
         (0, 0) => GeneratedPolynomials::SingleFieldVecExponent(
             (0..num_polys)

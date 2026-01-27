@@ -61,7 +61,7 @@ func (c ComplexField[T]) coerceFromFloat(f float64) ComplexField[T] {
 }
 
 func (c ComplexField[T]) coerceToFloat() float64 {
-	return c.Re.coerceToFloat() // Return the real part as a float
+	return math.Pow(c.Re.coerceToFloat(), 2) + math.Pow(c.Im.coerceToFloat(), 2)
 }
 
 func (c ComplexField[T]) isZero() bool {

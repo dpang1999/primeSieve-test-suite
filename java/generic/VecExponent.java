@@ -66,4 +66,9 @@ public class VecExponent implements IExponent<VecExponent> {
         VecExponent other = (VecExponent) obj;
         return this.exponents.equals(other.exponents);
     }
+
+    @Override
+    public String toString() {
+        return exponents.toString();
+    }
 }

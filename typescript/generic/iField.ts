@@ -9,6 +9,7 @@ export interface IField<T> {
     de(o: T): void;
 
     coerce(o: number): T
+    coerce_to_number(): number;
 
     is_zero(): boolean;
     is_one(): boolean;

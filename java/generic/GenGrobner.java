@@ -191,6 +191,7 @@ public class GenGrobner {
         do {
             added = false;
             int n = basis.size();
+            //System.out.println("Basis length:"+n);
             for (int i = 0; i < n; i++) {
                 for (int j = i + 1; j < n; j++) {
                     Polynomial<C, E> sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j), order);
@@ -205,9 +206,9 @@ public class GenGrobner {
             }
         } while (added);
         // print basis before reduction
-        //System.out.println("Basis before reduction:");
-        /*for (Polynomial<C, E> poly : basis) {
-            System.out.println(poly);
+        /*System.out.println("Basis before reduction:");
+        for (Polynomial<C, E> poly : basis) {
+            //System.out.println(poly);
         }*/
 
         List<Polynomial<C, E>> reducedBasis = new ArrayList<>();
@@ -261,6 +262,21 @@ public class GenGrobner {
                 }
                 inputBasis.add(new Polynomial<>(terms, order));
             }
+            
+
+            System.out.println("Input Polynomials:");
+            for (Polynomial<SingleField, VecExponent> poly : inputBasis) {
+                System.out.println(poly);
+            }
+
+            /*
+            Polynomial test = Polynomial.sPolynomial(inputBasis.get(1), inputBasis.get(2), order);
+            System.out.println(inputBasis.get(1));
+            System.out.println(inputBasis.get(2));
+            System.out.println("S-Polynomial of first two input polynomials:");
+            System.out.println(test);*/
+
+
             List<Polynomial<SingleField, VecExponent>> basis = naiveGrobnerBasis(inputBasis, order);
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<SingleField, VecExponent> poly : basis) {

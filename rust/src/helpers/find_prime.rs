@@ -5,7 +5,7 @@ pub fn find_prime_congruent_one_mod_n(n: usize) -> usize {
     loop {
         let p = k * n + 1;
         let primes = prime_sieve(p+1);
-        if primes[p] { // You can use your own is_prime or sieve
+        if primes[p] { 
             return p;
         }
         k += 1;
