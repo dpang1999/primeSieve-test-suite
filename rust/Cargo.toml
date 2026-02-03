@@ -51,3 +51,6 @@ path = "src/specialized/GrobnerSmart.rs"
 [[bin]]
 name = "gengrobner"
 path = "src/GenGrobner.rs"
+[[bin]]
+name = "cyclicPolys"
+path = "src/helpers/cyclic_polynomials.rs"
