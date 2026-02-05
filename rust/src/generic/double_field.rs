@@ -7,15 +7,14 @@ use std::hash::Hash;
 use std::cmp::Eq;
 #[derive(Debug)]
     pub struct DoubleField {
-    pub d: f64,
-    pub print_short: bool,
+    pub d: f64
 }
 
 impl DoubleField {
     //pub static mut FCOUNT: i32 = 0;
 
     pub fn new(d: f64) -> Self {
-        DoubleField { d, print_short: false }
+        DoubleField { d }
     }
 
     pub fn copy(&self) -> DoubleField {
@@ -142,14 +141,9 @@ impl ITrigonometric for DoubleField {
 
 impl fmt::Display for DoubleField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.print_short {
-            write!(f, "{:6.2}", self.d)
-        } else {
-            write!(f, "{}", self.d)
-        }
+        write!(f, "{}", self.d)
     }
 }
-
 impl Clone for DoubleField {
     fn clone(&self) -> Self {
         DoubleField::new(self.d)

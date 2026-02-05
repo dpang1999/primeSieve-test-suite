@@ -11,6 +11,7 @@ use crate::generic::i_ordered::IOrdered;
 pub mod generic;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
+use crate::generic::int_mod_p::MODULUS;
 
 pub struct GenFFT<N>
 where
@@ -172,13 +173,14 @@ fn main() {
     
             // prime is the largest prime less than num
             let prime = find_prime_congruent_one_mod_n(n);
+            MODULUS.set(prime as u128).unwrap();
             for _ in 0..n {
-                data1.push(IntModP::new(rand.next_int() as u128 % prime as u128, prime as u128));
+                data1.push(IntModP::new(rand.next_int() as u128 % prime as u128));
                 //data2.push(IntModP::new(rand.next_int() as u128 % prime as u128, prime as u128));
             }
             let data1_clone = data1.clone();
             //println!("Data before transform: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-            let finite = IntModP::new(0, prime as u128);
+            let finite = IntModP::new(0);
             let finite_fft = GenFFT::new(finite);
             finite_fft.transform(&mut data1);
             //println!("Data after transform: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
@@ -208,15 +210,19 @@ fn main() {
                     DoubleField::new(rand.next_double()),
                 ));
             }
-            let data1_clone = data1.clone();
+
+            fft.transform_internal(&mut data1, -1);
+            fft.transform_internal(&mut data1, 1);
+
+            //let data1_clone = data1.clone();
             //println!("Data before transform: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-            fft.transform(&mut data1);
+            //fft.transform(&mut data1);
             //println!("Data after transform: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-            fft.inverse(&mut data1);
+            //fft.inverse(&mut data1);
             //println!("Data after inverse: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
             // RMS error
-            let mut diff = 0.0;
+            /*let mut diff = 0.0;
             for i in 0..n {
                 let d = data1[i].copy();
                 let real = d.re.coerce_to_f64();
@@ -226,7 +232,7 @@ fn main() {
                 diff += real_diff * real_diff + imag_diff * imag_diff;
             }
             let rms = (diff / (n*2) as f64).sqrt();
-            println!("RMS Error: {}", rms);
+            println!("RMS Error: {}", rms);*/
 
 
         }
@@ -241,6 +247,7 @@ fn main() {
             let in2 = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
             //let out = [3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0];
             let prime = 40961;
+            MODULUS.set(prime as u128).unwrap();
             
             
             /* 
@@ -289,13 +296,13 @@ fn main() {
             */
             let prime: u128 = 4179340454199820289;*/
 
-            let finite = IntModP::new(0, prime);
+            let finite = IntModP::new(0);
             let finite_fft = GenFFT::new(finite);
             let mut data1 = Vec::with_capacity(in1.len());
             let mut data2 = Vec::with_capacity(in2.len());
             for i in 0..in1.len() {
-                data1.push(IntModP::new(in1[i], prime));
-                data2.push(IntModP::new(in2[i], prime));
+                data1.push(IntModP::new(in1[i]));
+                data2.push(IntModP::new(in2[i]));
             }
             finite_fft.transform(&mut data1);
             finite_fft.transform(&mut data2);

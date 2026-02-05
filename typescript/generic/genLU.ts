@@ -148,9 +148,10 @@ if (require.main === module) {
       const { IntModP } = require('./intModP');
       const primes = primeSieve(Math.floor(rand.nextDouble() * 36340 + 10000));
       const prime = primes.findLastIndex((isComposite) => !isComposite);
+      IntModP.setModulus(prime);
       console.log(prime);
-      const a = Array.from({ length: n }, () => Array.from({ length: n }, () => new IntModP(rand.nextInt(), prime)));
-      const b = Array.from({ length: n }, () => new IntModP(rand.nextInt(), prime));
+      const a = Array.from({ length: n }, () => Array.from({ length: n }, () => new IntModP(rand.nextInt())));
+      const b = Array.from({ length: n }, () => new IntModP(rand.nextInt()));
       const pivot = Array(n).fill(0);
       const aCopy = a.map(row => row.map(x => x.copy()));
       const bCopy = b.map(x => x.copy());

@@ -116,8 +116,9 @@ if(require.main == module) {
     const { IntModP } = require('./intModP');
     const data = [];
     const prime = find_prime_congruent_one_mod_n(n);
+    IntModP.setModulus(prime);
     for (let i = 0; i < n; i++) {
-      data.push(new IntModP(rand.nextInt() % prime, prime));
+      data.push(new IntModP(rand.nextInt() % prime));
     }
     const fft = new GenFFT(data[0]);
     const error = fft.test(data);

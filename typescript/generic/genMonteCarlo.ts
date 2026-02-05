@@ -44,7 +44,8 @@ if (require.main === module) {
   } else {
     // IntModP (modular arithmetic, not meaningful for pi, but for completeness)
     const { IntModP } = require('./intModP');
-    const field = new IntModP(0, 1_000_000_007);
+    IntModP.setModulus(1_000_000_007);
+    const field = new IntModP(0);
     pi = monteCarloPi(field, numSamples);
   }
   console.log(`Pi is approximately: ${pi}`);

@@ -241,6 +241,7 @@ public class GenGrobner {
         int expType = args.length > 3 ? Integer.parseInt(args[3]) : 0;
         int orderArg = args.length > 4 ? Integer.parseInt(args[4]) : 0;
         int modulus = args.length > 5 ? Integer.parseInt(args[5]) : 13;
+        IntModP.setModulus(modulus);
         TermOrder order;
         switch (orderArg) {
             case 0: order = TermOrder.Lex; break;
@@ -339,7 +340,7 @@ public class GenGrobner {
             for (int i = 0; i < numPolynomials; i++) {
                 List<Term<IntModP, VecExponent>> terms = new ArrayList<>();
                 for (int j = 0; j < numTerms; j++) {
-                    IntModP coefficient = new IntModP(rand.nextInt() % modulus, modulus);
+                    IntModP coefficient = new IntModP(rand.nextInt() % modulus);
                     VecExponent exponents = new VecExponent(Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4));
                     terms.add(new Term<>(coefficient, exponents));
                 }
@@ -356,7 +357,7 @@ public class GenGrobner {
             for (int i = 0; i < numPolynomials; i++) {
                 List<Term<IntModP, BitPackedExponent>> terms = new ArrayList<>();
                 for (int j = 0; j < numTerms; j++) {
-                    IntModP coefficient = new IntModP(rand.nextInt() % modulus, modulus);
+                    IntModP coefficient = new IntModP(rand.nextInt() % modulus);
                     BitPackedExponent exponents = BitPackedExponent.fromArray(new int[]{rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4, 0, 0, 0});
                     terms.add(new Term<>(coefficient, exponents));
                 }

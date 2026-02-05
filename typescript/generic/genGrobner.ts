@@ -186,6 +186,7 @@ export function naiveGrobnerBasis<C extends IField<C>, E extends IExponent<E>>(p
 // --- New main for Grobner basis testing, modeled after Java implementation ---
 import { DoubleField } from "./doubleField";
 import { VecExponents } from "./vecExponents";
+import { IntModP } from "./intModP";
 
 function main() {
   // args: numPolys, numTerms, coeffType, expType, orderArg
@@ -196,6 +197,7 @@ function main() {
   const expType = parseInt(args[3] || '0', 10);   // 0 = VecExponent
   const orderArg = parseInt(args[4] || '0', 10);
   const modulus = parseInt(args[5] || '13', 10); // for IntModP if needed
+  IntModP.setModulus(modulus);
   let order: TermOrder;
   switch (orderArg) {
     case 0: order = TermOrder.Lex; break;

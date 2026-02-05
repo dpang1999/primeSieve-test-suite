@@ -3,6 +3,7 @@ use crate::generic::double_field::DoubleField;
 use crate::generic::single_field::SingleField;
 //use crate::generic::i_math::IMath;
 use crate::generic::int_mod_p::IntModP;
+use crate::generic::int_mod_p::MODULUS;
 use crate::generic::complex_field::ComplexField;
 use std::fmt::Display;
 use rust::helpers::lcg::Lcg;
@@ -121,8 +122,9 @@ fn main() {
             println!("Using IntModP");
             let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last().expect("No prime found in the range");
+            MODULUS.set(*prime as u128).unwrap();
 
-            let omega = IntModP::new(3, *prime as u128).d(&IntModP::new(2, *prime as u128)); // 1.5 mod 449
+            let omega = IntModP::new(3).d(&IntModP::new(2)); // 1.5 mod 449
             let mut g = vec![vec![omega.zero(); n]; m];
 
             // Set boundary conditions
@@ -131,7 +133,7 @@ fn main() {
                 g[i][n - 1] = omega.zero();     // Right edge
             }
             for j in 0..n {
-                g[0][j] = IntModP::new(100, *prime as u128);       // Top edge (hot)
+                g[0][j] = IntModP::new(100);       // Top edge (hot)
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 
@@ -196,8 +198,9 @@ fn main() {
             println!("Using IntModP");
             let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last().expect("No prime found in the range");
+            MODULUS.set(*prime as u128).unwrap();
 
-            let omega = ComplexField::new(IntModP::new(3, *prime as u128).d(&IntModP::new(2, *prime as u128)),IntModP::new(0,*prime as u128)); // 1.5 mod 449
+            let omega = ComplexField::new(IntModP::new(3).d(&IntModP::new(2)),IntModP::new(0)); // 1.5 mod 449
             let mut g = vec![vec![omega.zero(); n]; m];
 
             // Set boundary conditions
@@ -206,7 +209,7 @@ fn main() {
                 g[i][n - 1] = omega.zero();     // Right edge
             }
             for j in 0..n {
-                g[0][j] = ComplexField::new(IntModP::new(100, *prime as u128), IntModP::new(1,*prime as u128));       // Top edge (hot)
+                g[0][j] = ComplexField::new(IntModP::new(100), IntModP::new(1));       // Top edge (hot)
                 g[m - 1][j] = omega.zero();     // Bottom edge (cold)
             }
 

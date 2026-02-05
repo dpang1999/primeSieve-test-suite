@@ -153,15 +153,17 @@ func TestFFT(n int) {
 		n = 16 // default size
 	}
 	if mode != 0 {
-		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
+		//rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
+		rand := helpers.NewLCG(12345, 1345, 65, 17)
 		data1 := make([]float64, 2*n)
 		for i := 0; i < n; i++ {
 			data1[2*i] = rand.NextDouble()
 			data1[2*i+1] = rand.NextDouble()
 		}
 		fft := FFT{}
-		rmsError := fft.Test(data1)
-		fmt.Printf("FFT RMS Error: %e\n", rmsError)
+		fft.transformInternal(data1, -1)
+		fft.transformInternal(data1, 1)
+		fmt.Printf("done")
 	} else {
 
 		data1 := []float64{

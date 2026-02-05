@@ -3,6 +3,7 @@ use crate::generic::double_field::DoubleField;
 use crate::generic::single_field::SingleField;
 use crate::generic::i_math::IMath;
 use crate::generic::int_mod_p::IntModP;
+use crate::generic::int_mod_p::MODULUS;
 use crate::generic::complex_field::ComplexField;
 use std::fmt::Display;
 use rust::helpers::lcg::Lcg;
@@ -190,11 +191,12 @@ fn main() {
             let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last()
                 .expect("No prime found in the range");
+            MODULUS.set(*prime as u128).unwrap();
             let a: Vec<Vec<IntModP>> = (0..n)
-                .map(|_| (0..n).map(|_| IntModP::new(rand.next_int() as u128, *prime as u128)).collect())
+                .map(|_| (0..n).map(|_| IntModP::new(rand.next_int() as u128)).collect())
                 .collect();
             let b: Vec<IntModP> = (0..n)
-                .map(|_| IntModP::new(rand.next_int() as u128, *prime as u128))
+                .map(|_| IntModP::new(rand.next_int() as u128))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);
@@ -236,11 +238,12 @@ fn main() {
             let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last()
                 .expect("No prime found in the range");
+            MODULUS.set(*prime as u128).unwrap();
             let a: Vec<Vec<IntModP>> = (0..n)
-                .map(|_| (0..n).map(|_| IntModP::new(rand.next_int() as u128, *prime as u128)).collect())
+                .map(|_| (0..n).map(|_| IntModP::new(rand.next_int() as u128)).collect())
                 .collect();
             let b: Vec<IntModP> = (0..n)
-                .map(|_| IntModP::new(rand.next_int() as u128, *prime as u128))
+                .map(|_| IntModP::new(rand.next_int() as u128))
                 .collect();
             let pivot: Vec<usize> = vec![0; n];
             run(a, b, pivot);

@@ -10,7 +10,7 @@ use rust::helpers::lcg::Lcg;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
-    pub coefficient: f64,
+    pub coefficient: i32,
     pub exponents: Vec<usize>, // Exponents for each variable
 }
 
@@ -47,7 +47,7 @@ impl Eq for Term {}
 
 impl Hash for Term {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.coefficient.to_bits().hash(state);
+        self.coefficient.hash(state);
         self.exponents.hash(state);
     }
 }
@@ -73,11 +73,11 @@ impl Polynomial {
         terms.sort_by(|a, b| b.compare(a));
         //terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
         // remove terms that are very close but not equal to 0 to handle floating point errors
-        terms.retain(|t| (t.coefficient - 0.0).abs() > 1e-2);
+        terms.retain(|t| (t.coefficient).abs() > 0);
         // round coefficients to 5 decimal places to handle floating point errors
-        for term in &mut terms {
+        /*for term in &mut terms {
             term.coefficient = (term.coefficient * 1e5).round() / 1e5;
-        }   
+        } */  
         Polynomial { terms }
     }
 
@@ -294,10 +294,10 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         }
 
         //print basis with new lines separating each polynomial
-        /*println!("New basis polynomials:");
+        println!("New basis polynomials:");
         for poly in &basis {
             println!("{:?}", poly);
-        }*/
+        }
     }
 
     //reduce basis by self
@@ -307,6 +307,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         let mut basis_excluding_self = basis.clone();
         basis_excluding_self.retain(|p| p != poly);
         let reduced = poly.reduce(&basis_excluding_self);
+        println!("{:?}", reduced);
         if !reduced.terms.is_empty() && !reduced_basis.contains(&reduced) {
             reduced_basis.push(reduced);
         }
@@ -370,7 +371,7 @@ fn main() {
         for _ in 0..num_polynomials {
             let mut terms = Vec::new();
             for _ in 0..3 { // always 3 terms per polynomial
-                let coefficient = (rand.next_double() * 2.0 - 1.0);
+                let coefficient = (rand.next_int() * 2 - 1);
                 // only working with 3 variables for now
                 let exponents = vec![(rand.next_int() % 4) as usize, (rand.next_int() % 4) as usize, (rand.next_int() % 4) as usize];
                 terms.push(Term {
@@ -395,32 +396,32 @@ fn main() {
 
         // f1 = x0 + x1 + x2 + x3
         let p1 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![1, 0, 0, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 1, 0, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 1, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 0, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 0, 1] },
         ]);
 
         // f2 = x0*x1 + x1*x2 + x2*x3 + x3*x0
         let p2 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![1, 1, 0, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 1, 1, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 1, 1] },
-            Term { coefficient: 1.0, exponents: vec![1, 0, 0, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 0, 1] },
         ]);
 
         // f3 = x0*x1*x2 + x1*x2*x3 + x2*x3*x0 + x3*x0*x1
         let p3 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![1, 1, 1, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 1, 1, 1] },
-            Term { coefficient: 1.0, exponents: vec![1, 0, 1, 1] },
-            Term { coefficient: 1.0, exponents: vec![1, 1, 0, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 0, 1] },
         ]);
 
         // f4 = x0*x1*x2*x3 - 1
         let p4 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![1, 1, 1, 1] },
-            Term { coefficient: -1.0, exponents: vec![0, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![1, 1, 1, 1] },
+            Term { coefficient: -1, exponents: vec![0, 0, 0, 0] },
         ]);
 
         println!("Computing Grobner basis for Cyclic-4...");
@@ -435,50 +436,50 @@ fn main() {
 
         // q1 = x0 + x1 + x2 + x3
         let q1 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![1, 0, 0, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 1, 0, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 1, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 0, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 0, 1] },
         ]);
 
         // q2 = x1^2 + 2x1x3 + x3^2
         let q2 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![0, 2, 0, 0] },
-            Term { coefficient: 2.0, exponents: vec![0, 1, 0, 1] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 2, 0] },
+            Term { coefficient: 1, exponents: vec![0, 2, 0, 0] },
+            Term { coefficient: 2, exponents: vec![0, 1, 0, 1] },
+            Term { coefficient: 1, exponents: vec![0, 0, 2, 0] },
         ]);
 
         // q3 = x1x2 - x1x3 + x2^2*x3^4 +x2x3 - 2x3^2
         let q3 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![0, 1, 1, 0] },
-            Term { coefficient: -1.0, exponents: vec![0, 1, 0, 1] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 2, 4] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 1, 1] },
-            Term { coefficient: -2.0, exponents: vec![0, 0, 0, 2] },
+            Term { coefficient: 1, exponents: vec![0, 1, 1, 0] },
+            Term { coefficient: -1, exponents: vec![0, 1, 0, 1] },
+            Term { coefficient: 1, exponents: vec![0, 0, 2, 4] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 1] },
+            Term { coefficient: -2, exponents: vec![0, 0, 0, 2] },
         ]);
 
         // q4 = x1*x3^4 -x1 + x3^5 - x3
         let q4 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![0, 1, 0, 4] },
-            Term { coefficient: -1.0, exponents: vec![0, 1, 0, 0] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 0, 5] },
-            Term { coefficient: -1.0, exponents: vec![0, 0, 0, 1] },
+            Term { coefficient: 1, exponents: vec![0, 1, 0, 4] },
+            Term { coefficient: -1, exponents: vec![0, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 0, 5] },
+            Term { coefficient: -1, exponents: vec![0, 0, 0, 1] },
         ]);
 
         // q5 = x2^3*x3^2 +x2^2*x3^3 - x2 - x3
         let q5 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![0, 0, 3, 2] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 2, 3] },
-            Term { coefficient: -1.0, exponents: vec![0, 0, 1, 0] },
-            Term { coefficient: -1.0, exponents: vec![0, 0, 0, 1] },
+            Term { coefficient: 1, exponents: vec![0, 0, 3, 2] },
+            Term { coefficient: 1, exponents: vec![0, 0, 2, 3] },
+            Term { coefficient: -1, exponents: vec![0, 0, 1, 0] },
+            Term { coefficient: -1, exponents: vec![0, 0, 0, 1] },
         ]);
 
         // q6 = x2^2*x3^6 - x2^2*x3^2 -x3^4 + 1
         let q6 = Polynomial::new(vec![
-            Term { coefficient: 1.0, exponents: vec![0, 0, 2, 6] },
-            Term { coefficient: -1.0, exponents: vec![0, 0, 2, 2] },
-            Term { coefficient: -1.0, exponents: vec![0, 0, 0, 4] },
-            Term { coefficient: 1.0, exponents: vec![0, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 2, 6] },
+            Term { coefficient: -1, exponents: vec![0, 0, 2, 2] },
+            Term { coefficient: -1, exponents: vec![0, 0, 0, 4] },
+            Term { coefficient: 1, exponents: vec![0, 0, 0, 0] },
         ]);
 
         let benchmark_basis = vec![q1, q2, q3, q4, q5, q6];

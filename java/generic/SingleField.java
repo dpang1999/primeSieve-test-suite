@@ -1,12 +1,9 @@
 package generic;
-import java.util.Formatter;
-
 public class SingleField implements IField<SingleField>,
 		ITrigonometric<SingleField>, IMath<SingleField>,
 		IOrdered<SingleField>, ICopiable<SingleField> {
 	float f;
 
-	public boolean printShort = true;
 
 	//public static int fCount;
 
@@ -108,14 +105,7 @@ public class SingleField implements IField<SingleField>,
 	}
 
  	public String toString() {
-		if (printShort) {
-			try (Formatter fmt = new Formatter()) {
-				fmt.format("%6.2f", f);
-				return fmt.toString();
-			}
-		} else {
-			return Double.toString(f);
-		}
+			return Float.toString(f);
 	} 
 
 	public SingleField newInstance() {

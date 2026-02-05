@@ -82,14 +82,15 @@ if (require.main === module) {
       const { primeSieve } = require('../helpers/primeSieve');
       const primes = primeSieve(Math.floor(rand.nextDouble() * 36340 + 10000))
       const prime = primes.lastIndexOf(false);
-      const omega = new IntModP(3, prime).d(new IntModP(2, prime)); // 1.5 mod prime
+      IntModP.setModulus(prime);
+      const omega = new IntModP(3).d(new IntModP(2)); // 1.5 mod prime
       const g = Array.from({ length: m }, () => Array(n).fill(omega.zero()));
       for (let i = 0; i < m; i++) {
         g[i][0] = omega.zero();
         g[i][n - 1] = omega.zero();
       }
       for (let j = 0; j < n; j++) {
-        g[0][j] = new IntModP(100, prime);
+        g[0][j] = new IntModP(100);
         g[m - 1][j] = omega.zero();
       }
       executeSOR(omega, g, numIterations);

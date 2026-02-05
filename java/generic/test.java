@@ -2,7 +2,9 @@ package generic;
 
 public class test {
   public static void main(String[] args) {
-    IntModP modP = new IntModP(0, 7); // Modulus 7
+    int prime = 7;
+    IntModP.setModulus(prime);
+    IntModP modP = new IntModP(0); 
     ComplexField<IntModP> complexField = new ComplexField<IntModP>(modP, modP.zero());
     ComplexField<IntModP> root = complexField.primitiveRoot(3); // Find a primitive root of order 3
     System.out.println("Primitive root in finite field: " + root);

@@ -1,24 +1,28 @@
 package generic;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Formatter;
 import java.util.List;
 
 public class IntModP implements IField<IntModP>,
 		IOrdered<IntModP>, ICopiable<IntModP>, IPrimitiveRoots<IntModP>, IMath<IntModP> {
 	long d;
-    long p;
+    private static long modulus = -1;
+    
+    public static void setModulus(long p) {
+        modulus = p;
+    }
+    public static long getModulus() {
+        return modulus;
+    }
 
-	public boolean printShort = true;
 
 	//public static int fCount;
-    IntModP(long d, long p) {
-            this.d = d % p;
-            this.p = p;
+    IntModP(long d) {
+            this.d = d % modulus;
     }
     
     public IntModP copy() {
-        return new IntModP(d, p);
+        return new IntModP(d);
     }
     public IntModP[] newArray(int size) {
         return new IntModP[size];
@@ -26,27 +30,27 @@ public class IntModP implements IField<IntModP>,
     public IntModP a(IntModP o) {
         //fCount++;
         if (o == null)
-            return new IntModP(d, p);
+            return new IntModP(d);
         if (Long.MAX_VALUE - d < o.d) {
             //System.out.println("OVERFLOW: d=" + d + ", o.d=" + o.d);
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
-            BigInteger bigP = BigInteger.valueOf(p);
+            BigInteger bigP = BigInteger.valueOf(modulus);
             long result = bigD.add(bigOD).mod(bigP).longValue();
-            return new IntModP(result, p);
+            return new IntModP(result);
         }
         else
-            return new IntModP((d + o.d) % p, p);
+            return new IntModP((d + o.d) % modulus);
     }
     public void ae(IntModP o) {
         //fCount++;
         if (o != null)
-            d = (d + o.d) % p;
+            d = (d + o.d) % modulus;
         if (Long.MAX_VALUE - d < o.d) {
             //System.out.println("OVERFLOW: d=" + d + ", o.d=" + o.d);
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
-            BigInteger bigP = BigInteger.valueOf(p);
+            BigInteger bigP = BigInteger.valueOf(modulus);
             long result = bigD.add(bigOD).mod(bigP).longValue();
             d = result;
         }
@@ -54,29 +58,28 @@ public class IntModP implements IField<IntModP>,
     public IntModP s(IntModP o) {
         //fCount++;
         if (o != null)
-            return new IntModP((d - o.d + p) % p, p);   
+            return new IntModP((d - o.d + modulus) % modulus);   
         else
-            return new IntModP(d, p);
+            return new IntModP(d);
     }
     public void se(IntModP o) {
         //fCount++;
         if (o != null)
-            d = (d - o.d + p) % p;
+            d = (d - o.d + modulus) % modulus;
     }
     public IntModP m(IntModP o) {
         //fCount++;
         if (o == null) {
-            return new IntModP(0, p);
+            return new IntModP(0);
         }
         if (d != 0 && (Long.MAX_VALUE / d) + 1 < o.d) { // Add 1 to compensate for edge case with integer division
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
-            BigInteger bigP = BigInteger.valueOf(p);
+            BigInteger bigP = BigInteger.valueOf(modulus);
             long result = bigD.multiply(bigOD).mod(bigP).longValue();
-            return new IntModP(result, p);
+            return new IntModP(result);
         }
-        return new IntModP((d * o.d) % p, p);
-
+        return new IntModP((d * o.d) % modulus);
             
     }
     public void me(IntModP o) {
@@ -84,42 +87,42 @@ public class IntModP implements IField<IntModP>,
         if (d != 0 && (Long.MAX_VALUE / d) + 1 < o.d) { // Add 1 to compensate for edge case with integer division
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
-            BigInteger bigP = BigInteger.valueOf(p);
+            BigInteger bigP = BigInteger.valueOf(modulus);
             d = bigD.multiply(bigOD).mod(bigP).longValue();
         }
         else 
-            d = (d * o.d) % p;
+            d = (d * o.d) % modulus;
     }
 
     public IntModP d(IntModP o) {
         if (o == null || o.d == 0) {
             throw new ArithmeticException("Division by zero in IntModP");
         }
-        long inverse = modInverse(o.d, p); // Compute modular inverse of o.d
+        long inverse = modInverse(o.d, modulus); // Compute modular inverse of o.d
         if (d != 0 && (Long.MAX_VALUE / d) + 1 < inverse) // Add 1 to compensate for edge case with integer division
         {
             System.out.println("OVERFLOW: d=" + d + ", inverse=" + inverse);
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigInverse = BigInteger.valueOf(inverse);
-            BigInteger bigP = BigInteger.valueOf(p);
+            BigInteger bigP = BigInteger.valueOf(modulus);
             d = bigD.multiply(bigInverse).mod(bigP).longValue();
-            return new IntModP(d, p);
+            return new IntModP(d);
         }
-        return new IntModP((d * inverse) % p, p); // Multiply by the inverse modulo p
+        return new IntModP((d * inverse) % modulus); // Multiply by the inverse modulo p
     }
     
     public void de(IntModP o) {
         if (o == null || o.d == 0) {
             throw new ArithmeticException("Division by zero in IntModP");
         }
-        long inverse = modInverse(o.d, p); // Compute modular inverse of o.d
+        long inverse = modInverse(o.d, modulus); // Compute modular inverse of o.d
         long temp = d;
-        d = (d * inverse) % p; // Update the current value
+        d = (d * inverse) % modulus; // Update the current value
         if (d != 0 && (Long.MAX_VALUE / temp) + 1 < inverse) // Add 1 to compensate for edge case with integer division
         {
             BigInteger bigD = BigInteger.valueOf(d);
-            BigInteger bigInverse = BigInteger.valueOf(modInverse(o.d, p));
-            BigInteger bigP = BigInteger.valueOf(p);
+            BigInteger bigInverse = BigInteger.valueOf(modInverse(o.d, modulus));
+            BigInteger bigP = BigInteger.valueOf(modulus);
 
             // Compute (d * inverse) % p using BigInteger
             d = bigD.multiply(bigInverse).mod(bigP).longValue();
@@ -155,11 +158,11 @@ public class IntModP implements IField<IntModP>,
 
 
     public IntModP coerce(int i) {
-        return new IntModP((i % p + p) % p, p);
+        return new IntModP((i % modulus + modulus) % modulus);
     }
 
     public IntModP coerce(double i) {
-        return new IntModP(((int) i % p + p) % p, p);
+        return new IntModP(((int) i % modulus + modulus) % modulus);
     }
     public double coerce() {
         return d;
@@ -171,31 +174,31 @@ public class IntModP implements IField<IntModP>,
         return d == 1;
     }
     public IntModP zero() {
-        return new IntModP(0, p);
+        return new IntModP(0);
     }
     public IntModP one() {
-        return new IntModP(1, p);
+        return new IntModP(1);
     }
 
     public IntModP primitiveRoot(long n) {
-        if (n <= 0 || n >= p) {
+        if (n <= 0 || n >= modulus) {
             throw new IllegalArgumentException("n must be in range [1, p-1]");
         }
 
         // Factorize p-1
-        List<Long> factors = factorize(p - 1);
+        List<Long> factors = factorize(modulus - 1);
 
         // Test candidates for primitive root
-        for (long g = 2; g < p; g++) {
+        for (long g = 2; g < modulus; g++) {
             boolean isRoot = true;
             for (long factor : factors) {
-                if (modPow(g, (p - 1) / factor, p) == 1) {
+                if (modPow(g, (modulus - 1) / factor, modulus) == 1) {
                     isRoot = false;
                     break;
                 }
             }
             if (isRoot) {
-                return new IntModP(g, p);
+                return new IntModP(g);
             }
         }
         throw new IllegalArgumentException("No primitive root found");
@@ -221,30 +224,30 @@ public class IntModP implements IField<IntModP>,
         if (exp < 0) {
             throw new IllegalArgumentException("Exponent must be non-negative");
         }
-        return new IntModP(modPow(d, exp, p), p);
+        return new IntModP(modPow(d, exp, modulus));
     }
 
     public IntModP[] precomputeRootsOfUnity(int n, int direction) {
 		// Ensure n divides (p - 1)
-		if ((p - 1) % n != 0) {
+		if ((modulus - 1) % n != 0) {
             throw new IllegalArgumentException("n must divide p-1 for roots of unity to exist");
 		}
 
 		// Find a primitive root modulo p
-		IntModP primitiveRoot = primitiveRoot(p - 1);
+		IntModP primitiveRoot = primitiveRoot(modulus - 1);
         //System.out.println("Primitive root: " + primitiveRoot);
 
 		// Compute the primitive n-th root of unity
-		IntModP omega = primitiveRoot.pow((p - 1) / n);
+		IntModP omega = primitiveRoot.pow((modulus - 1) / n);
         //System.out.println("Omega: " + omega + " p: " + p + " n: " + n + " p-1/n= " + (p - 1) / n);
 
 		// Generate all n-th roots of unity
 		IntModP[] roots = new IntModP[n];
 		for (int k = 0; k < n; k++) {
 			// Compute omega^k * direction
-			long exponent = (k * direction) % (p - 1);
+			long exponent = (k * direction) % (modulus - 1);
 			if (exponent < 0) {
-				exponent += (p - 1); // Ensure positive exponent
+				exponent += (modulus - 1); // Ensure positive exponent
 			}
 			roots[k] = omega.pow(exponent);
             //System.out.println("Root " + k + ": " + roots[k] + " exponent: " + exponent);
@@ -264,14 +267,8 @@ public class IntModP implements IField<IntModP>,
             return 0;
     }
     public String toString() {
-        if (printShort) {
-            try (Formatter fmt = new Formatter()) {
-                fmt.format("%6d", d);
-                return fmt.toString();
-            }
-        } else {
             return Long.toString(d);
-        }
+        
     }
     public boolean lt(IntModP o) {
         if (o == null)
@@ -297,7 +294,7 @@ public class IntModP implements IField<IntModP>,
     public boolean eq(IntModP o) {
         if (o == null)
             return false;
-        return d == o.d && p == o.p;
+        return d == o.d;
     }
 
     private static long modPow(long base, long exp, long mod) {

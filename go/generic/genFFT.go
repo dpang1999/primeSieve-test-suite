@@ -140,80 +140,106 @@ func bitreverse[N any](data []N) {
 	}
 }
 
-func TestGenFFT() {
-	rand := helpers.NewLCG(12345, 1345, 65, 17)
-	var randomNumbers [10]int
-	var randomDoubles [10]float64
-	for i := 0; i < 10; i++ {
-		randomNumbers[i] = rand.NextInt()
-		randomDoubles[i] = rand.NextDouble()
+func TestGenFFT(n int, fieldType int) {
+	var mode = 1 // let mode = 0 be for testing
+	// fieldType: 1 = ComplexField[DoubleField], 2 = IntModP
+
+	if mode != 0 {
+		fmt.Println("Testing GenFFT with n =", n)
+		if n <= 0 {
+			n = 16
+		}
+		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		if fieldType == 1 {
+			varRandomNumbers := make([]ComplexField[DoubleField], n)
+			for i := 0; i < n; i++ {
+				varRandomNumbers[i] = ComplexField[DoubleField]{
+					Re: DoubleField{Value: rand.NextDouble()},
+					Im: DoubleField{Value: rand.NextDouble()},
+				}
+			}
+			fft := NewGenFFT(ComplexField[DoubleField]{Re: DoubleField{Value: 3.0}, Im: DoubleField{Value: 4.0}})
+			fft.transformInternal(varRandomNumbers, -1)
+			fft.transformInternal(varRandomNumbers, 1)
+			fmt.Println("done")
+		}
+
+	} else {
+		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		var randomNumbers [10]int
+		var randomDoubles [10]float64
+		for i := 0; i < 10; i++ {
+			randomNumbers[i] = rand.NextInt()
+			randomDoubles[i] = rand.NextDouble()
+		}
+		fmt.Println("Random Integers:", randomNumbers)
+		fmt.Println("Random Doubles:", randomDoubles)
+
+		c := ComplexField[DoubleField]{Re: DoubleField{Value: 3.0}, Im: DoubleField{Value: 4.0}}
+		fft := NewGenFFT(c)
+		n = 268435456
+
+		data1 := make([]ComplexField[DoubleField], 0, n)
+		data1 = append(data1, ComplexField[DoubleField]{
+			Re: DoubleField{Value: 0.3618031071604718},
+			Im: DoubleField{Value: 0.932993485288541},
+		})
+		data1 = append(data1, ComplexField[DoubleField]{
+			Re: DoubleField{Value: 0.8330913489710237},
+			Im: DoubleField{Value: 0.32647575623792624},
+		})
+		data1 = append(data1, ComplexField[DoubleField]{
+			Re: DoubleField{Value: 0.2355237906476252},
+			Im: DoubleField{Value: 0.34911535662488336},
+		})
+		data1 = append(data1, ComplexField[DoubleField]{
+			Re: DoubleField{Value: 0.4480776326931518},
+			Im: DoubleField{Value: 0.6381529437838686},
+		})
+		fmt.Println("Input data:", data1)
+		fft.Transform(data1)
+		fmt.Println("After FFT:", data1)
+		fft.Inverse(data1)
+		fmt.Println("After Inverse FFT:", data1)
+		fmt.Printf("RMS Error: %.6f\n", fft.Test(data1))
+
+		// Test with IntModP
+		/*
+			in1 := []uint64{38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0}
+			in2 := []uint64{80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0}
+			//out := []uint64{3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0}
+			prime := 40961
+		*/
+
+		in1 := []uint64{11400, 28374, 23152, 9576, 29511, 20787, 13067, 14015, 0, 0, 0, 0, 0, 0, 0, 0}
+		in2 := []uint64{30268, 20788, 8033, 15446, 26275, 11619, 2494, 7016, 0, 0, 0, 0, 0, 0, 0, 0}
+		//out := []uint64{ 345055200, 1095807432, 1382179648, 1175142886, 2016084656, 2555168834,2179032777, 1990011337, 1860865174, 1389799087, 942120918, 778961552,341270975, 126631482, 98329240, 0}
+		prime := 3221225473
+		SetModulus(uint64(prime))
+
+		finite := NewIntModP(3)
+		fftInt := NewGenFFT(finite)
+
+		dataA := make([]IntModP, 0, len(in1))
+		dataB := make([]IntModP, 0, len(in2))
+		for i := 0; i < len(in1); i += 1 {
+			dataA = append(dataA, NewIntModP(in1[i]))
+			dataB = append(dataB, NewIntModP(in2[i]))
+		}
+		fmt.Println("Input data A:", dataA)
+		fmt.Println("Input data B:", dataB)
+
+		fftInt.Transform(dataA)
+		fftInt.Transform(dataB)
+		fmt.Println("After FFT A:", dataA)
+		fmt.Println("After FFT B:", dataB)
+
+		for i := range dataA {
+			dataA[i] = dataA[i].m(dataB[i])
+		}
+		fmt.Println("After pointwise multiplication:", dataA)
+
+		fftInt.Inverse(dataA)
+		fmt.Println("After Inverse FFT:", dataA)
 	}
-	fmt.Println("Random Integers:", randomNumbers)
-	fmt.Println("Random Doubles:", randomDoubles)
-
-	c := ComplexField[DoubleField]{Re: DoubleField{Value: 3.0}, Im: DoubleField{Value: 4.0}}
-	fft := NewGenFFT(c)
-	n := 4
-
-	data1 := make([]ComplexField[DoubleField], 0, n)
-	data1 = append(data1, ComplexField[DoubleField]{
-		Re: DoubleField{Value: 0.3618031071604718},
-		Im: DoubleField{Value: 0.932993485288541},
-	})
-	data1 = append(data1, ComplexField[DoubleField]{
-		Re: DoubleField{Value: 0.8330913489710237},
-		Im: DoubleField{Value: 0.32647575623792624},
-	})
-	data1 = append(data1, ComplexField[DoubleField]{
-		Re: DoubleField{Value: 0.2355237906476252},
-		Im: DoubleField{Value: 0.34911535662488336},
-	})
-	data1 = append(data1, ComplexField[DoubleField]{
-		Re: DoubleField{Value: 0.4480776326931518},
-		Im: DoubleField{Value: 0.6381529437838686},
-	})
-	fmt.Println("Input data:", data1)
-	fft.Transform(data1)
-	fmt.Println("After FFT:", data1)
-	fft.Inverse(data1)
-	fmt.Println("After Inverse FFT:", data1)
-	fmt.Printf("RMS Error: %.6f\n", fft.Test(data1))
-
-	// Test with IntModP
-	/*
-		in1 := []uint64{38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0}
-		in2 := []uint64{80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0}
-		//out := []uint64{3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0}
-		prime := 40961
-	*/
-
-	in1 := []uint64{11400, 28374, 23152, 9576, 29511, 20787, 13067, 14015, 0, 0, 0, 0, 0, 0, 0, 0}
-	in2 := []uint64{30268, 20788, 8033, 15446, 26275, 11619, 2494, 7016, 0, 0, 0, 0, 0, 0, 0, 0}
-	//out := []uint64{ 345055200, 1095807432, 1382179648, 1175142886, 2016084656, 2555168834,2179032777, 1990011337, 1860865174, 1389799087, 942120918, 778961552,341270975, 126631482, 98329240, 0}
-	prime := 3221225473
-
-	finite := NewIntModP(3, uint64(prime))
-	fftInt := NewGenFFT(finite)
-
-	dataA := make([]IntModP, 0, len(in1))
-	dataB := make([]IntModP, 0, len(in2))
-	for i := 0; i < len(in1); i += 1 {
-		dataA = append(dataA, NewIntModP(in1[i], uint64(prime)))
-		dataB = append(dataB, NewIntModP(in2[i], uint64(prime)))
-	}
-	fmt.Println("Input data A:", dataA)
-	fmt.Println("Input data B:", dataB)
-
-	fftInt.Transform(dataA)
-	fftInt.Transform(dataB)
-	fmt.Println("After FFT A:", dataA)
-	fmt.Println("After FFT B:", dataB)
-
-	for i := range dataA {
-		dataA[i] = dataA[i].m(dataB[i])
-	}
-	fmt.Println("After pointwise multiplication:", dataA)
-
-	fftInt.Inverse(dataA)
-	fmt.Println("After Inverse FFT:", dataA)
 }

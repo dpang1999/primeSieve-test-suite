@@ -50,7 +50,9 @@ public class GenMonteCarlo
 			int Num_samples = 1000000;
 			if (args.length > 0)
 				Num_samples = Integer.parseInt(args[0]);
-			IntModP t = new IntModP(0, 1009);
+			int prime = 40961;
+			IntModP.setModulus(prime);
+			IntModP t = new IntModP(0);
 			IntModP pi = integrate(t,Num_samples);
 			System.out.println("Pi is approximately: " + pi);
 			System.out.println("Num samples: " + Num_samples);

@@ -5,11 +5,13 @@ use crate::generic::i_exponent::IExponent;
 pub mod generic;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
+use crate::generic::int_mod_p::MODULUS;
 use crate::generic::single_field::SingleField;
 use crate::generic::vec_exponent::VecExponent;
 use crate::generic::bit_packed_exponent::BitPackedExponent;
 pub mod helpers;
 use crate::helpers::lcg::Lcg;
+
 
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
@@ -342,6 +344,8 @@ fn main() {
             _ => { TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"); },
         }
 
+        let prime = 67;
+        MODULUS.set(prime as u128).unwrap();
         let generated = generate_polynomials(polynomial_count, coeff_type, exp_type, &mut rand);
 
         match generated {
@@ -498,7 +502,7 @@ pub fn generate_polynomials(
             (0..num_polys)
                 .map(|_| {
                     let terms = (0..num_terms).map(|_| {
-                        let coeff = IntModP::new((rand.next_int() % 7) as u128, 7);
+                        let coeff = IntModP::new((rand.next_int() % 7) as u128);
                         let exps = vec![(rand.next_int() % max_exp_value) as u32, (rand.next_int() % max_exp_value) as u32, (rand.next_int() % max_exp_value) as u32];
                         Term::from_exponents(coeff, VecExponent::new(exps))
                     }).collect();
@@ -510,7 +514,7 @@ pub fn generate_polynomials(
             (0..num_polys)
                 .map(|_| {
                     let terms = (0..num_terms).map(|_| {
-                        let coeff = IntModP::new((rand.next_int() % 7) as u128, 7);
+                        let coeff = IntModP::new((rand.next_int() % 7) as u128);
                         let mut arr = [0u8; 6];
                         for i in 0..3 { arr[i] = (rand.next_int() % max_exp_value) as u8; }
                         Term::from_exponents(coeff, BitPackedExponent::from_vec(arr))

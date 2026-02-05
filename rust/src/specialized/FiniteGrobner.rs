@@ -11,7 +11,6 @@ use rust::helpers::lcg::Lcg;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
     pub coefficient: u32,
-    pub modulus: u32,
     pub exponents: Vec<usize>, // Exponents for each variable
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -101,13 +100,13 @@ impl Polynomial {
     }
     
 
-    pub fn add(&self, other: &Polynomial) -> Polynomial {
+    pub fn add(&self, other: &Polynomial, modulus: u32) -> Polynomial {
         let mut result = self.terms.clone();
         for term in &other.terms {
             let mut found = false;
             for res_term in &mut result {
                 if res_term.exponents == term.exponents {
-                    res_term.coefficient = (res_term.coefficient + term.coefficient) % term.modulus;
+                    res_term.coefficient = (res_term.coefficient + term.coefficient) % modulus;
                     found = true;
                     break;
                 }
@@ -125,22 +124,20 @@ impl Polynomial {
         Polynomial::new(result)
     }
 
-    pub fn subtract(&self, other: &Polynomial) -> Polynomial {
+    pub fn subtract(&self, other: &Polynomial, modulus: u32) -> Polynomial {
         let mut result = self.terms.clone();
         for term in &other.terms {
             let mut found = false;
             for res_term in &mut result {
                 if res_term.exponents == term.exponents {
-                    //println!("Subtracting term with exponents {:?}: {} - {}", term.exponents, res_term.coefficient, term.coefficient);
-                    res_term.coefficient = (term.modulus + res_term.coefficient - term.coefficient) % term.modulus;
+                    res_term.coefficient = (modulus + res_term.coefficient - term.coefficient) % modulus;
                     found = true;
                     break;
                 }
             }
-            if !found {// 0 - term.coefficient but in finite field we can add mod by coefficient
-                //println!("Adding negative term with exponents {:?}: 0 - {}", term.exponents, term.coefficient);
+            if !found {
                 let mut neg_term = term.clone();
-                neg_term.coefficient = (term.modulus + 0 - term.coefficient) % term.modulus;
+                neg_term.coefficient = (modulus + 0 - term.coefficient) % modulus;
                 result.push(neg_term);
             }
         }
@@ -153,7 +150,7 @@ impl Polynomial {
     }
     
 
-   pub fn reduce(&self, divisors: &[Polynomial]) -> Polynomial {
+   pub fn reduce(&self, divisors: &[Polynomial], modulus: u32) -> Polynomial {
         let mut result = self.clone(); // Start with the input polynomial
 
         loop {
@@ -170,7 +167,6 @@ impl Polynomial {
 
                             // Compute the reduction factor
                             //let coefficient = leading_term.coefficient / divisor_leading_term.coefficient;
-                            let modulus = divisor_leading_term.modulus;
                             let coefficient = (leading_term.coefficient as u64 * mod_inverse(divisor_leading_term.coefficient, modulus) as u64 % modulus as u64) as u32;
                             let exponents: Vec<usize> = leading_term
                                 .exponents
@@ -182,13 +178,12 @@ impl Polynomial {
                             // Create the reduction term
                             let reduction_term = Term {
                                 coefficient,
-                                modulus: leading_term.modulus,
                                 exponents,
                             };
 
                             // Subtract the scaled divisor from the result
-                            let scaled_divisor = divisor.multiply_by_term(&reduction_term);
-                            result = result.subtract(&scaled_divisor);
+                            let scaled_divisor = divisor.multiply_by_term(&reduction_term, modulus);
+                            result = result.subtract(&scaled_divisor, modulus);
 
                             reduced = true;
                             break; // Restart the loop after reducing
@@ -206,13 +201,12 @@ impl Polynomial {
         Polynomial::new(result.terms)
     }
 
-    pub fn multiply_by_term(&self, term: &Term) -> Polynomial {
+    pub fn multiply_by_term(&self, term: &Term, modulus: u32) -> Polynomial {
         let terms = self
             .terms
             .iter()
             .map(|t| Term {
-                coefficient: (t.coefficient * term.coefficient) % term.modulus,
-                modulus: term.modulus,
+                coefficient: (t.coefficient * term.coefficient) % modulus,
                 exponents: t
                     .exponents
                     .iter()
@@ -225,7 +219,7 @@ impl Polynomial {
         Polynomial::new(terms)
     }
 
-    pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial) -> Polynomial {
+    pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial, modulus: u32) -> Polynomial {
         // Compute the LCM of the leading monomials' exponents
         let mut lcm_exponents = vec![0; p1.terms[0].exponents.len()];
         for i in 0..lcm_exponents.len() {
@@ -244,7 +238,6 @@ impl Polynomial {
                 .iter()
                 .map(|term| Term {
                     coefficient: term.coefficient,
-                    modulus: term.modulus,
                     exponents: term
                         .exponents
                         .iter()
@@ -267,7 +260,6 @@ impl Polynomial {
                 .iter()
                 .map(|term| Term {
                     coefficient: term.coefficient,
-                    modulus: term.modulus,
                     exponents: term
                         .exponents
                         .iter()
@@ -279,12 +271,12 @@ impl Polynomial {
         );
 
         // Subtract the scaled polynomials
-        scaled_p1.subtract(&scaled_p2)
+        scaled_p1.subtract(&scaled_p2, modulus)
     }
 
 }
 
-pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
+pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u32) -> Vec<Polynomial> {
     let mut basis = polynomials.clone();
     let mut basis_set: HashSet<Polynomial> = HashSet::new();
     // print basis and polynomials
@@ -299,11 +291,8 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         let mut added = false;
         for i in 0..basis_len {
             for j in i + 1..basis_len {
-                let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
-                let reduced = s_poly.reduce(&basis);
-                //print basis[i], basis[j], s_poly, reduced
-                //println!("Basis 1: {:?} | Basis 2: {:?} | S-Polynomial: {:?}", basis[i], basis[j], s_poly);
-                //println!("Reduced: {:?}", reduced);
+                let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j], modulus);
+                let reduced = s_poly.reduce(&basis, modulus);
                 if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
                     //println!("Adding new polynomial to basis.");
                     basis_set.insert(reduced.clone());
@@ -334,7 +323,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         // reduce poly by basis excluding itself
         let mut basis_excluding_self = basis.clone();
         basis_excluding_self.retain(|p| p != poly);
-        let reduced = poly.reduce(&basis_excluding_self);
+        let reduced = poly.reduce(&basis_excluding_self, modulus);
         if !reduced.terms.is_empty() && !reduced_basis.contains(&reduced) {
             reduced_basis.push(reduced);
         }
@@ -344,10 +333,10 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     
 }
 
-pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> bool {
+pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>, modulus: u32) -> bool {
     // Check if all polynomials in set_a reduce to zero using set_b
     for poly in &set_a {
-        let reduced = poly.reduce(&set_b);
+        let reduced = poly.reduce(&set_b, modulus);
         if !reduced.terms.is_empty() {
             return false; // Found a polynomial in set_a that does not reduce to zero
         }
@@ -355,7 +344,7 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 
     // Check if all polynomials in set_b reduce to zero using set_a
     for poly in &set_b {
-        let reduced = poly.reduce(&set_a);
+        let reduced = poly.reduce(&set_a, modulus);
         if !reduced.terms.is_empty() {
             return false; // Found a polynomial in set_b that does not reduce to zero
         }
@@ -393,14 +382,13 @@ fn main() {
                 let exponents = vec![(rand.next_int() % 4) as usize, (rand.next_int() % 4) as usize, (rand.next_int() % 4) as usize];
                 terms.push(Term {
                     coefficient,
-                    modulus,
                     exponents,
                 });
             }
             input_basis.push(Polynomial::new(terms));
         }
 
-        let basis = naive_grobner_basis(input_basis);
+        let basis = naive_grobner_basis(input_basis, modulus);
         println!("{}", basis.len());
         println!("Computed Grobner Basis Polynomials:");
         for poly in &basis {
@@ -411,154 +399,101 @@ fn main() {
     else {
         // 1 for s_polynomial, 2 for add, 3 for subtract, 4 for reduce, 5 for testing hashes, else grobner basis
         let test = 0;
-        let modulus = 13;
+        let modulus = 65;
         //Lex, GrLex, RevLex
         TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized");
         // x^3 + y^3 + z^3
+        // f1 = x0 + x1 + x2 + x3
         let p1 = Polynomial::new(vec![
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![3, 0, 0], // x^3
-            },
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![0, 3, 0], // y^3
-            },
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![0, 0, 3], // z^3
-            },
-        ]);
-        // xy + yz + xz
-        let p2 = Polynomial::new(vec![
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![1, 1, 0], // xy
-            },
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![0, 1, 1], // yz
-            },
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![1, 0, 1], // xz
-            },
-        ]);
-        // x+y+z
-        let p3 = Polynomial::new(vec![
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![1, 0, 0], // x
-            },
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![0, 1, 0], // y
-            },
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![0, 0, 1], // z
-            },
+            Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 0, 1] },
         ]);
 
-        // x + y + z
+        // f2 = x0*x1 + x1*x2 + x2*x3 + x3*x0
+        let p2 = Polynomial::new(vec![
+            Term { coefficient: 1, exponents: vec![1, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 0, 1] },
+        ]);
+
+        // f3 = x0*x1*x2 + x1*x2*x3 + x2*x3*x0 + x3*x0*x1
+        let p3 = Polynomial::new(vec![
+            Term { coefficient: 1, exponents: vec![1, 1, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 0, 1] },
+        ]);
+
+        // f4 = x0*x1*x2*x3 - 1
         let p4 = Polynomial::new(vec![
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![1, 0, 0],
-            },
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![0, 1, 0],
-            },
-            Term {
-                coefficient: 1,
-                modulus,
-                exponents: vec![0, 0, 1],
-            },
+            Term { coefficient: 1, exponents: vec![1, 1, 1, 1] },
+            Term { coefficient: modulus-1, exponents: vec![0, 0, 0, 0] },
         ]);
 
         println!("Begin the experiment");
 
 
         if test == 1 {
-            let s_poly = Polynomial::s_polynomial(&p1, &p2);
+            let s_poly = Polynomial::s_polynomial(&p1, &p2, modulus);
 
             let expected = Polynomial::new(vec![
                 Term {
                     coefficient: modulus - 1,    
-                    modulus,
                     exponents: vec![0, 2], // Term: -y^2
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![1, 0], // Term: x
                 },
             ]);
 
             assert_eq!(s_poly, expected);
         } else if test == 2 {
-            let sum = p1.add(&p2);
+            let sum = p1.add(&p2, modulus);
             println!("Sum: {:?}", sum);
 
             let expected = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![2, 0],
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![1, 1],
                 },
                 Term {
                     coefficient: modulus - 1,
-                    modulus,
                     exponents: vec![0, 1],
                 },
                 Term {
                     coefficient: modulus - 1,
-                    modulus,
                     exponents: vec![0, 0],
                 },
             ]);
 
             assert_eq!(sum, expected);
         } else if test == 3 {
-            let difference = p1.subtract(&p2);
+            let difference = p1.subtract(&p2, modulus);
             println!("Difference: {:?}", difference);
 
             let expected = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![2, 0],
                 },
                 Term {
                     coefficient: modulus - 1,
-                    modulus,
                     exponents: vec![1, 1],
                 },
                 Term {
                     coefficient: modulus - 1,
-                    modulus,
                     exponents: vec![0, 1],
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 0],
                 },
             ]);
@@ -570,17 +505,14 @@ fn main() {
             let p1 = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![3, 0, 0], // x^3
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 3, 0], // y^3
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 0, 3], // z^3
                 },
             ]);
@@ -588,17 +520,14 @@ fn main() {
             let p2 = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![1, 1, 0], // xy
                 },
                 Term {
                     coefficient: 1,
-                    modulus,    
                     exponents: vec![0, 1, 1], // yz
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![1, 0, 1], // xz
                 },
             ]);
@@ -606,17 +535,14 @@ fn main() {
             let p3 = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![1, 0, 0], // x
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 1, 0], // y
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 0, 1], // z
                 },
             ]);
@@ -626,12 +552,10 @@ fn main() {
             let divisor = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![1, 2] // xy^2
                 },
                 Term {
                     coefficient: modulus - 1,
-                    modulus,
                     exponents: vec![0, 1] // -y
                 }
             ]);
@@ -641,7 +565,7 @@ fn main() {
                 println!("{:?}", poly);
             }
             println!("Divisor Polynomial: {:?}", divisor);
-            let reduced = divisor.reduce(&basis);
+            let reduced = divisor.reduce(&basis, modulus);
             // print reduced
             println!("Reduced polynomial: {:?}", reduced);
 
@@ -667,12 +591,10 @@ fn main() {
             let p1_clone = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![2, 0],
                 },
                 Term {
                     coefficient: modulus - 1,
-                    modulus,
                     exponents: vec![0, 1],
                 },
             ]);
@@ -689,7 +611,7 @@ fn main() {
         }
         else {
 
-            let basis = naive_grobner_basis(vec![p1, p2, p3]);
+            let basis = naive_grobner_basis(vec![p1, p2, p3, p4], modulus);
             // copy basis
             let mut copied_basis = basis.clone();
             println!("Final Grobner Basis:");
@@ -702,7 +624,6 @@ fn main() {
             let test_poly = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 0, 3],
                 },
             
@@ -712,17 +633,15 @@ fn main() {
             let test_poly_2 = Polynomial::new(vec![
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 2, 0],
                 },
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 1, 1],
                 },
+
                 Term {
                     coefficient: 1,
-                    modulus,
                     exponents: vec![0, 0, 2],
                 },
             
@@ -732,24 +651,21 @@ fn main() {
             let test_poly_3 = Polynomial::new(vec![
             Term {
                 coefficient: 1,
-                modulus,
                 exponents: vec![1, 0, 0], // x
             },
             Term {
                 coefficient: 1,
-                modulus,
                 exponents: vec![0, 1, 0], // y
             },
             Term {
                 coefficient: 1,
-                modulus,
                 exponents: vec![0, 0, 1], // z
             },
         ]);
-
-            let test_basis = vec![test_poly, test_poly_2, test_poly_3];
-            let is_equivalent = are_bases_equivalent(copied_basis, test_basis);
-            println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
+            println!("eh");
+            //let test_basis = vec![test_poly, test_poly_2, test_poly_3];
+            //let is_equivalent = are_bases_equivalent(copied_basis, test_basis);
+            //println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
         }
     }
 }

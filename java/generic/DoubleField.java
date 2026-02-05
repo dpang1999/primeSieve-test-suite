@@ -1,12 +1,9 @@
 package generic;
-import java.util.Formatter;
 
 public class DoubleField implements IField<DoubleField>,
 		ITrigonometric<DoubleField>, IMath<DoubleField>,
 		IOrdered<DoubleField>, ICopiable<DoubleField> {
 	double d;
-
-	public boolean printShort = false;
 
 	//public static int fCount;
 
@@ -108,14 +105,7 @@ public class DoubleField implements IField<DoubleField>,
 	}
 
  	public String toString() {
-		if (printShort) {
-			try (Formatter fmt = new Formatter()) {
-				fmt.format("%6.2f", d);
-				return fmt.toString();
-			}
-		} else {
 			return Double.toString(d);
-		}
 	} 
 
 	public DoubleField newInstance() {

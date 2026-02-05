@@ -71,17 +71,17 @@ public class GenSOR
 			int N = 10;
 			int num_iterations = 100;
 			int prime = 40961;
-
-			IntModP omega = new IntModP(2, prime);
+			IntModP.setModulus(prime);
+			IntModP omega = new IntModP(2);
 			IntModP G[][] = new IntModP[M][N];
 			for (int i=0; i<M; i++)
 				for (int j=0; j<N; j++)
 				{
 					if (i == 0) {
-						G[i][j] = new IntModP(1000, prime); // Top edge is hot
+						G[i][j] = new IntModP(1000); // Top edge is hot
 					}
 					else {
-						G[i][j] = new IntModP(0, prime);
+						G[i][j] = new IntModP(0);
 					}
 				}
 

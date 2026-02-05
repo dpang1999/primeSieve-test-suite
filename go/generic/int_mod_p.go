@@ -2,21 +2,32 @@ package generic
 
 import (
 	"fmt"
+	"sync"
 )
+
+var (
+	modulus     uint64
+	modulusOnce sync.Once
+)
+
+func SetModulus(m uint64) {
+	modulusOnce.Do(func() {
+		modulus = m
+	})
+}
+func GetModulus() uint64 {
+	return modulus
+}
 
 // IntModP represents an integer modulo a prime number
 type IntModP struct {
-	Value      uint64
-	Modulus    uint64
-	PrintShort bool
+	Value uint64
 }
 
 // NewIntModP creates a new IntModP instance
-func NewIntModP(value, modulus uint64) IntModP {
+func NewIntModP(value uint64) IntModP {
 	return IntModP{
-		Value:      value % modulus,
-		Modulus:    modulus,
-		PrintShort: true,
+		Value: value % modulus,
 	}
 }
 
@@ -42,51 +53,51 @@ func modInverse(a, p uint64) uint64 {
 
 // Implement IField interface for IntModP
 func (i IntModP) a(o IntModP) IntModP {
-	return NewIntModP(i.Value+o.Value, i.Modulus)
+	return NewIntModP(i.Value + o.Value)
 }
 
 func (i *IntModP) ae(o IntModP) {
-	i.Value = (i.Value + o.Value) % i.Modulus
+	i.Value = (i.Value + o.Value) % modulus
 }
 
 func (i IntModP) s(o IntModP) IntModP {
-	return NewIntModP(i.Value+i.Modulus-o.Value, i.Modulus)
+	return NewIntModP(i.Value + modulus - o.Value)
 }
 
 func (i *IntModP) se(o IntModP) {
-	i.Value = (i.Value + i.Modulus - o.Value) % i.Modulus
+	i.Value = (i.Value + modulus - o.Value) % modulus
 }
 
 func (i IntModP) m(o IntModP) IntModP {
-	return NewIntModP(i.Value*o.Value, i.Modulus)
+	return NewIntModP(i.Value * o.Value)
 }
 
 func (i *IntModP) me(o IntModP) {
-	i.Value = (i.Value * o.Value) % i.Modulus
+	i.Value = (i.Value * o.Value) % modulus
 }
 
 func (i IntModP) d(o IntModP) IntModP {
 	if o.Value == 0 {
 		panic("Division by zero in IntModP")
 	}
-	inv := modInverse(o.Value, i.Modulus)
-	return NewIntModP(i.Value*inv, i.Modulus)
+	inv := modInverse(o.Value, modulus)
+	return NewIntModP(i.Value * inv)
 }
 
 func (i *IntModP) de(o IntModP) {
 	if o.Value == 0 {
 		panic("Division by zero in IntModP")
 	}
-	inv := modInverse(o.Value, i.Modulus)
-	i.Value = (i.Value * inv) % i.Modulus
+	inv := modInverse(o.Value, modulus)
+	i.Value = (i.Value * inv) % modulus
 }
 
 func (i IntModP) coerceFromInt(v int) IntModP {
-	return NewIntModP(uint64(v), i.Modulus)
+	return NewIntModP(uint64(v))
 }
 
 func (i IntModP) coerceFromFloat(f float64) IntModP {
-	return NewIntModP(uint64(f), i.Modulus)
+	return NewIntModP(uint64(f))
 }
 
 func (i IntModP) coerceToFloat() float64 {
@@ -102,16 +113,16 @@ func (i IntModP) isOne() bool {
 }
 
 func (i IntModP) zero() IntModP {
-	return NewIntModP(0, i.Modulus)
+	return NewIntModP(0)
 }
 
 func (i IntModP) one() IntModP {
-	return NewIntModP(1, i.Modulus)
+	return NewIntModP(1)
 }
 
 // Implement IMath interface for IntModP
 func (i IntModP) abs() IntModP {
-	return NewIntModP(i.Value, i.Modulus)
+	return NewIntModP(i.Value)
 }
 
 func (i IntModP) sqrt() IntModP {
@@ -155,43 +166,41 @@ func modPow(base, exp, modulus uint64) uint64 {
 
 // Implement IPrimitiveRoots interface for IntModP
 func (i IntModP) primitiveRoots(n int64) IntModP {
-	if n == 0 || n >= int64(i.Modulus) {
+	if n == 0 || n >= int64(modulus) {
 		panic("n must be in range [1, p-1]")
 	}
 
-	factors := factorize(i.Modulus - 1)
-
-	for g := uint64(2); g < i.Modulus; g++ {
+	factors := factorize(modulus - 1)
+	for g := uint64(2); g < modulus; g++ {
 		isRoot := true
 		for _, factor := range factors {
-			if modPow(g, (i.Modulus-1)/factor, i.Modulus) == 1 {
+			if modPow(g, (modulus-1)/factor, modulus) == 1 {
 				isRoot = false
 				break
 			}
 		}
 		if isRoot {
-			return NewIntModP(g, i.Modulus)
+			return NewIntModP(g)
 		}
 	}
 
-	return NewIntModP(0, i.Modulus) // No primitive root found
+	return NewIntModP(0) // No primitive root found
 }
 
 func (i IntModP) pow(exp int64) IntModP {
-	return NewIntModP(modPow(i.Value, uint64(exp), i.Modulus), i.Modulus)
+	return NewIntModP(modPow(i.Value, uint64(exp), modulus))
 }
 
 func (i IntModP) precomputeRootsOfUnity(n int, direction int) []IntModP {
-	if (i.Modulus-1)%uint64(n) != 0 {
+	if (modulus-1)%uint64(n) != 0 {
 		panic("n must divide p-1 for roots of unity to exist in IntModP")
 	}
 
-	g := i.primitiveRoots(int64(i.Modulus - 1))
-	omega := g.pow(int64((i.Modulus - 1) / uint64(n)))
-
+	g := i.primitiveRoots(int64(modulus - 1))
+	omega := g.pow(int64((modulus - 1) / uint64(n)))
 	roots := make([]IntModP, n)
 	for k := 0; k < n; k++ {
-		exponent := uint64(k) * uint64(direction) % (i.Modulus - 1)
+		exponent := uint64(k) * uint64(direction) % (modulus - 1)
 		roots[k] = omega.pow(int64(exponent))
 	}
 	return roots
@@ -199,10 +208,8 @@ func (i IntModP) precomputeRootsOfUnity(n int, direction int) []IntModP {
 
 // Implement fmt.Stringer interface for IntModP
 func (i IntModP) String() string {
-	if i.PrintShort {
-		return fmt.Sprintf("%d (mod %d)", i.Value, i.Modulus)
-	}
-	return fmt.Sprintf("IntModP(%d, %d)", i.Value, i.Modulus)
+
+	return fmt.Sprintf("IntModP(%d, %d)", i.Value, modulus)
 }
 
 // Implement IOrdered interface for IntModP
@@ -228,8 +235,6 @@ func (i IntModP) ge(o IntModP) bool {
 
 func (i IntModP) copy() IntModP {
 	return IntModP{
-		Value:      i.Value,
-		Modulus:    i.Modulus,
-		PrintShort: i.PrintShort,
+		Value: i.Value,
 	}
 }

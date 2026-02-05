@@ -161,7 +161,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		}
 		else if (type == 1) {
 			int[] basic = {1,2,3,4};
-			IntModP basicNum = new IntModP(1, 13);
+			IntModP basicNum = new IntModP(1);
 			GenFFT basicFft = new GenFFT(basicNum);
 			IntModP[] basicData = new IntModP[basic.length];
 			for(int i = 0; i < basic.length; i ++) {
@@ -185,6 +185,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			};
 			long[] out = {3040, 684, 5876, 11172,  5420, 16710, 12546, 20555,16730, 15704, 21665,  5490, 13887,  4645,  9021,0};
 			long prime = 40961;
+			IntModP.setModulus(prime);
 			
 			
 			/*
@@ -216,7 +217,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 				
 			
 			
-			IntModP finiteNum = new IntModP(1, prime);
+			IntModP finiteNum = new IntModP(1);
 			GenFFT finiteFft = new GenFFT(finiteNum);
 			IntModP[] data1 = new IntModP[in1.length];
 			IntModP[] data2 = new IntModP[in2.length];
@@ -246,22 +247,34 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		}
 		else {
 			LCG rand = new LCG(12345, 1345, 65, 17);
-			int[] randomNumbers = new int[10];
+			/*int[] randomNumbers = new int[10];
 			double[] randomDoubles = new double[10];
-			for (int i = 0; i < randomNumbers.length; i++) {
+			for (int i = 0; i < randomNumbers.length; ic ++) {
 				randomNumbers[i] = rand.nextInt();
 				randomDoubles[i] = rand.nextDouble();
 			}
 			System.out.println("Random Numbers: " + Arrays.toString(randomNumbers));
-			System.out.println("Random Doubles: " + Arrays.toString(randomDoubles));
+			System.out.println("Random Doubles: " + Arrays.toString(randomDoubles));*/
+		
+			int n = Integer.parseInt(args[0]);
+			System.out.println("n = " + n);
+			ComplexField<DoubleField>[] data = (ComplexField<DoubleField>[]) Array.newInstance(c.getClass(), n);
+			for (int i = 0; i < n; i++) {
+				data[i] = new ComplexField<DoubleField>(
+					new DoubleField(rand.nextDouble()),
+					new DoubleField(rand.nextDouble()));
+			}
+			ComplexField<DoubleField> c1 = new ComplexField<DoubleField>(new DoubleField(0),
+				new DoubleField(0));
+			GenFFT<ComplexField<DoubleField>> fft1 = new GenFFT<ComplexField<DoubleField>>(c1);
+			for (int i = 1; i<= 10; i++) {
+				fft1.transform_internal(data, -1);
+				fft1.transform_internal(data, 1);
+				System.out.println("Loop " + i + " done.");
+			}
+		
 		}
-		for (int i = 0; i < args.length; i++) {
-			int n = Integer.parseInt(args[i]);
-			ComplexField<DoubleField>[] data = fft.makeRandom(n);
-			System.out.println(Arrays.toString(data));
-			System.out.println("n=" + n + " => RMS Error="
-					+ fft.test(data));
-		}
+		
 	}
 
 	/* ______________________________________________________________________ */

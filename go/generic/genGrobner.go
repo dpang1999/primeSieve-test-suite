@@ -345,8 +345,11 @@ func TestGenGrobner(numPoly, numTerms, coeffType, expType, orderInt, modulus int
 		// 0 = lex, 1 = grlex, 2 = revlex
 	}
 	if modulus <= 0 {
-		modulus = 13
+		SetModulus(13)
+	} else {
+		SetModulus(uint64(modulus))
 	}
+
 	order := TermOrder(orderInt)
 	rand := helpers.NewLCG(12345, 1345, 65, 17)
 
@@ -391,7 +394,7 @@ func TestGenGrobner(numPoly, numTerms, coeffType, expType, orderInt, modulus int
 		for i := 0; i < numPoly; i++ {
 			var terms []Term[IntModP, VecExponents]
 			for j := 0; j < numTerms; j++ {
-				coeff := NewIntModP(uint64(rand.NextInt()%int(modulus)), uint64(modulus))
+				coeff := NewIntModP(uint64(rand.NextInt() % int(modulus)))
 				exps := NewVecExponents([]uint32{uint32(rand.NextInt() % 4), uint32(rand.NextInt() % 4), uint32(rand.NextInt() % 4)})
 				terms = append(terms, Term[IntModP, VecExponents]{Coefficient: coeff, Exponents: exps})
 			}
@@ -408,7 +411,7 @@ func TestGenGrobner(numPoly, numTerms, coeffType, expType, orderInt, modulus int
 		for i := 0; i < numPoly; i++ {
 			var terms []Term[IntModP, BitPackedExponents]
 			for j := 0; j < numTerms; j++ {
-				coeff := NewIntModP(uint64(rand.NextInt()%int(modulus)), uint64(modulus))
+				coeff := NewIntModP(uint64(rand.NextInt() % int(modulus)))
 				exps := NewBitPackedExponents([6]uint8{uint8(rand.NextInt() % 4), uint8(rand.NextInt() % 4), uint8(rand.NextInt() % 4), 0, 0, 0})
 				terms = append(terms, Term[IntModP, BitPackedExponents]{Coefficient: coeff, Exponents: exps})
 			}

@@ -81,17 +81,10 @@ func primeSieve(limit int) []int {
 func TestGenSOR() {
 	m := 10
 	n := 10
-	mode := 2
+	mode := 3 // 1: SingleField, 2: DoubleField, 3: IntModP
 	numIterations := 100
 
 	fmt.Println("Running SOR Algorithm")
-
-	test := DoubleField{Value: -3.14}
-	fmt.Printf("Test value: %v\n", test)
-	test.abs()
-	fmt.Printf("Absolute value: %v\n", test)
-	test2 := test.abs()
-	fmt.Printf("Absolute value (non-mutating): %v\n", test2)
 
 	if mode == 1 {
 		fmt.Println("Using SingleField")
@@ -153,8 +146,9 @@ func TestGenSOR() {
 		fmt.Println("Using IntModP")
 		primes := primeSieve(46340) // Max sqrt of int32
 		prime := primes[len(primes)-1]
+		SetModulus(uint64(prime))
 
-		omega := IntModP{Value: 3, Modulus: uint64(prime)}.d(IntModP{Value: 2, Modulus: uint64(prime)})
+		omega := IntModP{Value: 3}.d(IntModP{Value: 2})
 		g := make([][]IntModP, m)
 		for i := range g {
 			g[i] = make([]IntModP, n)
@@ -169,8 +163,8 @@ func TestGenSOR() {
 			g[i][n-1] = omega.zero() // Right edge
 		}
 		for j := 0; j < n; j++ {
-			g[0][j] = IntModP{Value: 100, Modulus: uint64(prime)} // Top edge (hot)
-			g[m-1][j] = omega.zero()                              // Bottom edge (cold)
+			g[0][j] = IntModP{Value: 100} // Top edge (hot)
+			g[m-1][j] = omega.zero()      // Bottom edge (cold)
 		}
 
 		/*fmt.Println("Initial grid:")

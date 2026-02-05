@@ -19,6 +19,11 @@ Java
 javac (source file name, or the entire directory with *).java
 java (source file name, no extension)
 
+(be in root)
+javac $(find . -name "*.java") 
+java (full name, e.x. generic.GenFFT)
+
+
 Julia:
 julia (source file name)
 

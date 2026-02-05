@@ -1,4 +1,5 @@
 use crate::generic::int_mod_p::IntModP;
+use crate::generic::int_mod_p::MODULUS;
 use crate::generic::i_field::IField;
 use crate::generic::double_field::DoubleField;
 use crate::generic::complex_field::ComplexField;
@@ -29,9 +30,10 @@ fn test_int_mod_p() {
         None => 7,
     };
     let prime_num = p as u128;
+    MODULUS.set(prime_num).unwrap();
  
-    let a = IntModP::new(rng.random_range(1000..10000), prime_num);
-    let b = IntModP::new(rng.random_range(1000..10000), prime_num);
+    let a = IntModP::new(rng.random_range(1000..10000));
+    let b = IntModP::new(rng.random_range(1000..10000));
     let result = a.d(&b);
     println!("{}/{}={}", a.coerce_to_f64(), b.coerce_to_f64(), result.coerce_to_f64()); 
     let verify = b.m(&result);
@@ -65,7 +67,7 @@ fn test_complex() {
 
 fn test_primitive_root_int_mod_p() {
     let modulus = 7;
-    let int_mod_p = IntModP::new(0, modulus);
+    let int_mod_p = IntModP::new(0);
     let root = int_mod_p.primitive_root(3);
     println!("Primitive root in finite field (IntModP): {}", root);
 }

@@ -73,7 +73,7 @@ public class FFT {
 
   /** Simple Test routine. */
   public static void main(String args[]){
-    if (args.length == 0) {
+    /*if (args.length == 0) {
       int n = 4;
       double[] data = makeRandom(n);
       
@@ -102,8 +102,26 @@ public class FFT {
       System.out.println("Inverse in2: " + Arrays.toString(in2));
     for(int i=0; i<args.length; i++) {
       int n = Integer.parseInt(args[i]);
-      System.out.println("n="+n+" => RMS Error="+test(makeRandom(n))); }
+      System.out.println("n="+n+" => RMS Error="+test(makeRandom(n))); }*/
+      int n = Integer.parseInt(args[0]);
+      System.out.println("FFT with " + n);
+      LCG rand = new LCG(12345, 1345, 65, 17);
+      double data[] = new double[2*n];
+      for (int i = 0; i < n; i=i+2) {
+          double real = rand.nextDouble();
+          double imag = rand.nextDouble();
+          data[i] = real;
+          data[i+1] = imag;
+        }
+      for (int loop = 1; loop <= 10; loop++) { //looping for JIT warmup
+        
+        transform_internal(data, -1);
+        transform_internal(data, 1);
+        System.out.println("Loop " + loop + " done");
+      }
+
   }
+
   /* ______________________________________________________________________ */
 
   protected static int log2 (int n){

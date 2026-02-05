@@ -8,14 +8,13 @@ use std::cmp::Eq;
 #[derive(Debug)]
 pub struct SingleField {
     pub f: f32,
-    pub print_short: bool,
 }
 
 impl SingleField {
     //pub static mut FCOUNT: i32 = 0;
 
     pub fn new(f: f32) -> Self {
-        SingleField { f, print_short: true }
+        SingleField { f }
     }
 
     pub fn copy(&self) -> SingleField {
@@ -142,11 +141,7 @@ impl ITrigonometric for SingleField {
 
 impl fmt::Display for SingleField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.print_short {
-            write!(f, "{:6.2}", self.f)
-        } else {
-            write!(f, "{}", self.f)
-        }
+        write!(f, "{}", self.f)
     }
 }
 
