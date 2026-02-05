@@ -137,17 +137,14 @@ impl Polynomial {
         loop {
             let mut reduced = false;
 
-            // Iterate over the divisors to reduce the leading term
             for divisor in divisors {
                 if let Some(leading_term) = result.terms.first() {
                     if let Some(divisor_leading_term) = divisor.terms.first() {
                         // Check if the leading term can be reduced
                         if leading_term.exponents.iter().zip(&divisor_leading_term.exponents).all(|(a, b)| a >= b) {
-                            // print leading_term and divisor_leading_term
-                            //println!("Leading Term: {:?}, Divisor Leading Term: {:?}", leading_term, divisor_leading_term);
-
-                            // Compute the reduction factor
-                            let coefficient = leading_term.coefficient / divisor_leading_term.coefficient;
+                            // Pseudo-division: multiply result by divisor's leading coefficient
+                            let a = leading_term.coefficient;
+                            let b = divisor_leading_term.coefficient;
                             let exponents: Vec<usize> = leading_term
                                 .exponents
                                 .iter()
@@ -155,15 +152,23 @@ impl Polynomial {
                                 .map(|(a, b)| a - b)
                                 .collect();
 
-                            // Create the reduction term
+                            // Multiply result by b
+                            let result_scaled = Polynomial::new(
+                                result.terms.iter().map(|t| Term {
+                                    coefficient: t.coefficient * b,
+                                    exponents: t.exponents.clone(),
+                                }).collect()
+                            );
+
+                            // Multiply divisor by a and monomial
                             let reduction_term = Term {
-                                coefficient,
+                                coefficient: a,
                                 exponents,
                             };
+                            let divisor_scaled = divisor.multiply_by_term(&reduction_term);
 
-                            // Subtract the scaled divisor from the result
-                            let scaled_divisor = divisor.multiply_by_term(&reduction_term);
-                            result = result.subtract(&scaled_divisor);
+                            // Subtract
+                            result = result_scaled.subtract(&divisor_scaled);
 
                             reduced = true;
                             break; // Restart the loop after reducing
@@ -172,7 +177,6 @@ impl Polynomial {
                 }
             }
 
-            // If no reduction was performed, break the loop
             if !reduced {
                 break;
             }
