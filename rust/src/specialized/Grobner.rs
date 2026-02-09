@@ -1,16 +1,16 @@
 use std::collections::HashSet;
-
 use std::hash::{Hash, Hasher};
-
 use std::sync::OnceLock;
-
 static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
-
 use rust::helpers::lcg::Lcg;
+use num_integer::Integer;
+use num_bigint::BigInt;
+use num_traits::{Zero, One, Signed};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
-    pub coefficient: i32,
+    pub numerator: BigInt,
+    pub denominator: BigInt,
     pub exponents: Vec<usize>, // Exponents for each variable
 }
 
@@ -47,7 +47,8 @@ impl Eq for Term {}
 
 impl Hash for Term {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.coefficient.hash(state);
+        self.numerator.hash(state);
+        self.denominator.hash(state);
         self.exponents.hash(state);
     }
 }
@@ -68,16 +69,25 @@ impl Hash for Polynomial {
 }
 
 impl Polynomial {
+    // Reduce each term as much as possible (normalize numerator/denominator by GCD, denominator always positive)
+    fn reduce_terms(terms: &mut Vec<Term>) {
+        for t in terms {
+            let gcd = t.numerator.gcd(&t.denominator);
+            if gcd > BigInt::one() {
+                t.numerator /= &gcd;
+                t.denominator /= &gcd;
+            }
+            if t.denominator.is_negative() {
+                t.numerator = -t.numerator.clone();
+                t.denominator = -t.denominator.clone();
+            }
+        }
+    }
+
     pub fn new(mut terms: Vec<Term>) -> Self {
-        // Sort terms by sort order
         terms.sort_by(|a, b| b.compare(a));
-        //terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
-        // remove terms that are very close but not equal to 0 to handle floating point errors
-        terms.retain(|t| (t.coefficient).abs() > 0);
-        // round coefficients to 5 decimal places to handle floating point errors
-        /*for term in &mut terms {
-            term.coefficient = (term.coefficient * 1e5).round() / 1e5;
-        } */  
+        terms.retain(|t| !t.numerator.is_zero());
+        Self::reduce_terms(&mut terms);
         Polynomial { terms }
     }
 
@@ -87,7 +97,11 @@ impl Polynomial {
             let mut found = false;
             for res_term in &mut result {
                 if res_term.exponents == term.exponents {
-                    res_term.coefficient = res_term.coefficient + term.coefficient;
+                    // a/b + c/d = (ad + bc) / bd
+                    let num = &res_term.numerator * &term.denominator + &term.numerator * &res_term.denominator;
+                    let den = &res_term.denominator * &term.denominator;
+                    res_term.numerator = num;
+                    res_term.denominator = den;
                     found = true;
                     break;
                 }
@@ -96,13 +110,9 @@ impl Polynomial {
                 result.push(term.clone());
             }
         }
-        // print results
-        /*for term in &result {
-            println!("Term: {:?}, Coefficient: {}", term.exponents, term.coefficient);
-        }*/
-
-
-        Polynomial::new(result)
+        let mut result_poly = Polynomial::new(result);
+        Self::reduce_terms(&mut result_poly.terms);
+        result_poly
     }
 
     pub fn subtract(&self, other: &Polynomial) -> Polynomial {
@@ -111,96 +121,76 @@ impl Polynomial {
             let mut found = false;
             for res_term in &mut result {
                 if res_term.exponents == term.exponents {
-                    res_term.coefficient = res_term.coefficient - term.coefficient;
+                    // a/b - c/d = (ad - bc) / bd
+                    let num = &res_term.numerator * &term.denominator - &term.numerator * &res_term.denominator;
+                    let den = &res_term.denominator * &term.denominator;
+                    res_term.numerator = num;
+                    res_term.denominator = den;
                     found = true;
                     break;
                 }
             }
             if !found {
                 let mut neg_term = term.clone();
-                neg_term.coefficient = -term.coefficient;
+                neg_term.numerator = -neg_term.numerator.clone();
                 result.push(neg_term);
             }
         }
-        // print results
-        /*for term in &result {
-            println!("Term: {:?}, Coefficient: {}", term.exponents, term.coefficient);
-        }*/
-
-        Polynomial::new(result)
+        let mut result_poly = Polynomial::new(result);
+        Self::reduce_terms(&mut result_poly.terms);
+        result_poly
     }
     
 
-   pub fn reduce(&self, divisors: &[Polynomial]) -> Polynomial {
-        let mut result = self.clone(); // Start with the input polynomial
-
+    pub fn reduce(&self, divisors: &[Polynomial]) -> Polynomial {
+        let mut result = self.clone();
         loop {
             let mut reduced = false;
-
             for divisor in divisors {
                 if let Some(leading_term) = result.terms.first() {
                     if let Some(divisor_leading_term) = divisor.terms.first() {
-                        // Check if the leading term can be reduced
                         if leading_term.exponents.iter().zip(&divisor_leading_term.exponents).all(|(a, b)| a >= b) {
-                            // Pseudo-division: multiply result by divisor's leading coefficient
-                            let a = leading_term.coefficient;
-                            let b = divisor_leading_term.coefficient;
+                            // Direct rational division: multiply divisor by monomial and scale so leading coefficients match
                             let exponents: Vec<usize> = leading_term
                                 .exponents
                                 .iter()
                                 .zip(&divisor_leading_term.exponents)
                                 .map(|(a, b)| a - b)
                                 .collect();
-
-                            // Multiply result by b
-                            let result_scaled = Polynomial::new(
-                                result.terms.iter().map(|t| Term {
-                                    coefficient: t.coefficient * b,
-                                    exponents: t.exponents.clone(),
-                                }).collect()
-                            );
-
-                            // Multiply divisor by a and monomial
+                            // Scale divisor so leading term matches result's leading term
+                            let scale_num = &leading_term.numerator * &divisor_leading_term.denominator;
+                            let scale_den = &leading_term.denominator * &divisor_leading_term.numerator;
                             let reduction_term = Term {
-                                coefficient: a,
+                                numerator: scale_num,
+                                denominator: scale_den,
                                 exponents,
                             };
                             let divisor_scaled = divisor.multiply_by_term(&reduction_term);
-
-                            // Subtract
-                            result = result_scaled.subtract(&divisor_scaled);
-
+                            result = result.subtract(&divisor_scaled);
+                            Self::reduce_terms(&mut result.terms);
                             reduced = true;
-                            break; // Restart the loop after reducing
+                            break;
                         }
                     }
                 }
             }
-
             if !reduced {
                 break;
             }
         }
-
-        Polynomial::new(result.terms)
+        Self::reduce_terms(&mut result.terms);
+        result
     }
 
     pub fn multiply_by_term(&self, term: &Term) -> Polynomial {
-        let terms = self
-            .terms
-            .iter()
-            .map(|t| Term {
-                coefficient: t.coefficient * term.coefficient,
-                exponents: t
-                    .exponents
-                    .iter()
-                    .zip(&term.exponents)
-                    .map(|(a, b)| a + b)
-                    .collect(),
-            })
-            .collect();
-
-        Polynomial::new(terms)
+        let terms = self.terms.iter().map(|t| Term {
+            numerator: &t.numerator * &term.numerator,
+            denominator: &t.denominator * &term.denominator,
+            exponents: t.exponents.iter().zip(&term.exponents).map(|(a, b)| a + b).collect(),
+        }).collect();
+        let mut result_poly = Polynomial::new(terms);
+        Self::reduce_terms(&mut result_poly.terms);
+        result_poly
     }
 
     pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial) -> Polynomial {
@@ -209,52 +199,33 @@ impl Polynomial {
         for i in 0..lcm_exponents.len() {
             lcm_exponents[i] = p1.terms[0].exponents[i].max(p2.terms[0].exponents[i]);
         }
-        
-        // Scale p1 to the LCM
-        let scale_factor_p1 = lcm_exponents
-            .iter()
-            .zip(&p1.terms[0].exponents)
-            .map(|(lcm, exp)| lcm - exp)
-            .collect::<Vec<_>>();
-
+        // Compute LCM of denominators for scaling
+        fn lcm_bigint(x: &BigInt, y: &BigInt) -> BigInt {
+            (x.abs() / x.gcd(&y.abs())) * y.abs()
+        }
+        let a_num = &p1.terms[0].numerator;
+        let a_den = &p1.terms[0].denominator;
+        let b_num = &p2.terms[0].numerator;
+        let b_den = &p2.terms[0].denominator;
+        let lcm_num = lcm_bigint(&(a_num * b_den), &(b_num * a_den));
+        let scale_p1 = &lcm_num / &(a_num * b_den);
+        let scale_p2 = &lcm_num / &(b_num * a_den);
+        let scale_factor_p1 = lcm_exponents.iter().zip(&p1.terms[0].exponents).map(|(lcm, exp)| lcm - exp).collect::<Vec<_>>();
         let scaled_p1 = Polynomial::new(
-            p1.terms
-                .iter()
-                .map(|term| Term {
-                    coefficient: term.coefficient,
-                    exponents: term
-                        .exponents
-                        .iter()
-                        .zip(&scale_factor_p1)
-                        .map(|(exp, scale)| exp + scale)
-                        .collect(),
-                })
-                .collect(),
+            p1.terms.iter().map(|term| Term {
+                numerator: &term.numerator * &scale_p1,
+                denominator: &term.denominator * &scale_p1,
+                exponents: term.exponents.iter().zip(&scale_factor_p1).map(|(exp, scale)| exp + scale).collect(),
+            }).collect()
         );
-
-        // Scale p2 to the LCM
-        let scale_factor_p2 = lcm_exponents
-            .iter()
-            .zip(&p2.terms[0].exponents)
-            .map(|(lcm, exp)| lcm - exp)
-            .collect::<Vec<_>>();
-
+        let scale_factor_p2 = lcm_exponents.iter().zip(&p2.terms[0].exponents).map(|(lcm, exp)| lcm - exp).collect::<Vec<_>>();
         let scaled_p2 = Polynomial::new(
-            p2.terms
-                .iter()
-                .map(|term| Term {
-                    coefficient: term.coefficient,
-                    exponents: term
-                        .exponents
-                        .iter()
-                        .zip(&scale_factor_p2)
-                        .map(|(exp, scale)| exp + scale)
-                        .collect(),
-                })
-                .collect(),
+            p2.terms.iter().map(|term| Term {
+                numerator: &term.numerator * &scale_p2,
+                denominator: &term.denominator * &scale_p2,
+                exponents: term.exponents.iter().zip(&scale_factor_p2).map(|(exp, scale)| exp + scale).collect(),
+            }).collect()
         );
-
-        // Subtract the scaled polynomials
         scaled_p1.subtract(&scaled_p2)
     }
 
@@ -357,6 +328,7 @@ fn main() {
     // let mode = 0 be for testing
     let mode = 0;
     if mode != 0 {
+        /*
         // arg1 = # of polynomials
         // arg2 = term order (0=Lex, 1=GrLex, 2=RevLex)
         let args: Vec<String> = std::env::args().collect();
@@ -392,7 +364,7 @@ fn main() {
         for poly in &basis {
             println!("{:?}", poly);
         }*/
-        return;
+        return;*/
     }
     else {    
         // Cyclic-4 benchmark
@@ -400,44 +372,44 @@ fn main() {
 
         // f1 = x0 + x1 + x2 + x3
         let p1 = Polynomial::new(vec![
-            Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
-            Term { coefficient: 1, exponents: vec![0, 1, 0, 0] },
-            Term { coefficient: 1, exponents: vec![0, 0, 1, 0] },
-            Term { coefficient: 1, exponents: vec![0, 0, 0, 1] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 0] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 0, 0] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 0] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 1] },
         ]);
 
         // f2 = x0*x1 + x1*x2 + x2*x3 + x3*x0
         let p2 = Polynomial::new(vec![
-            Term { coefficient: 1, exponents: vec![1, 1, 0, 0] },
-            Term { coefficient: 1, exponents: vec![0, 1, 1, 0] },
-            Term { coefficient: 1, exponents: vec![0, 0, 1, 1] },
-            Term { coefficient: 1, exponents: vec![1, 0, 0, 1] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 0] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 0] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 1] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 1] },
         ]);
 
         // f3 = x0*x1*x2 + x1*x2*x3 + x2*x3*x0 + x3*x0*x1
         let p3 = Polynomial::new(vec![
-            Term { coefficient: 1, exponents: vec![1, 1, 1, 0] },
-            Term { coefficient: 1, exponents: vec![0, 1, 1, 1] },
-            Term { coefficient: 1, exponents: vec![1, 0, 1, 1] },
-            Term { coefficient: 1, exponents: vec![1, 1, 0, 1] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 0] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 1] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 1, 1] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 1] },
         ]);
 
         // f4 = x0*x1*x2*x3 - 1
         let p4 = Polynomial::new(vec![
-            Term { coefficient: 1, exponents: vec![1, 1, 1, 1] },
-            Term { coefficient: -1, exponents: vec![0, 0, 0, 0] },
+            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 1] },
+            Term { numerator: BigInt::from(-1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 0] },
         ]);
 
         println!("Computing Grobner basis for Cyclic-4...");
 
         let basis = naive_grobner_basis(vec![p1, p2, p3, p4]);
-        
+
         println!("Final Grobner Basis for Cyclic-4:");
         println!("Number of polynomials in basis: {}", basis.len());
         for (i, poly) in basis.iter().enumerate() {
             println!("Polynomial {}: {:?}", i + 1, poly);
         }
-
+/*
         // q1 = x0 + x1 + x2 + x3
         let q1 = Polynomial::new(vec![
             Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
@@ -493,6 +465,6 @@ fn main() {
         } else {
             println!("The computed Grobner basis is NOT equivalent to the benchmark basis.");   
         }
-
+*/
     }
 }

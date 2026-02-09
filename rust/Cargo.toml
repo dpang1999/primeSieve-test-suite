@@ -13,9 +13,6 @@ num-integer = "0.1"
 
 
 [[bin]]
-name = "sieve"
-path = "src/specialized/PrimeSieve.rs"
-[[bin]]
 name = "lu"
 path = "src/specialized/LU.rs"
 [[bin]]
@@ -57,3 +54,6 @@ path = "src/GenGrobner.rs"
 [[bin]]
 name = "cyclicPolys"
 path = "src/helpers/cyclic_polynomials.rs"
+[[bin]]
+name = "testCyclicPolys"
+path = "src/specialized/test.rs"

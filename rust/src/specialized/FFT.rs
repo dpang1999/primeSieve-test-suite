@@ -181,9 +181,15 @@ fn main() {
         }
         // print array
         //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-        //println!("n={} => RMS Error={}", n, fft.test(&mut data));
-        fft.transform(&mut data);
-        fft.inverse(&mut data);
+        //println!("n={} => RMS Error={}", n, fft.test(&mut data))
+        println!("Specialized Rust FFT Tests");
+        println!("Specialized, Double-Precision, n={}", n);
+        for i in 0..10 {
+            fft.transform(&mut data);
+            fft.inverse(&mut data);    
+            println!("Loop {} done", i);
+        }
+        
     }
     else {
        

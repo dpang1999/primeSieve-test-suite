@@ -2,6 +2,7 @@ package generic;
 import java.util.*;
 import java.lang.reflect.*;
 import helpers.LCG;
+import helpers.FindPrime;
 
 /**
  * A generic FFT computation for complex fields or finite fields 
@@ -257,20 +258,42 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			System.out.println("Random Doubles: " + Arrays.toString(randomDoubles));*/
 		
 			int n = Integer.parseInt(args[0]);
-			System.out.println("n = " + n);
-			ComplexField<DoubleField>[] data = (ComplexField<DoubleField>[]) Array.newInstance(c.getClass(), n);
-			for (int i = 0; i < n; i++) {
-				data[i] = new ComplexField<DoubleField>(
-					new DoubleField(rand.nextDouble()),
-					new DoubleField(rand.nextDouble()));
+			int fieldType = Integer.parseInt(args[1]); // 0 for finite field, 1 for complex field
+			if (fieldType == 0) {
+				IntModP[] data = new IntModP[n];
+				int prime = FindPrime.findPrimeCongruentOneModN(n);
+				IntModP.setModulus(prime);
+				for (int i = 0; i < n; i++) {
+					data[i] = new IntModP(rand.nextInt() % prime);
+				}
+				GenFFT<IntModP> finiteFft = new GenFFT<IntModP>(new IntModP(0));
+				System.out.println("Generic Java FFT Tests");
+				System.out.println("Java Generics, Finite Field, n=" + n);
+				for (int i = 0; i < 10; i++) {
+					finiteFft.transform_internal(data, -1);
+					finiteFft.transform_internal(data, 1);
+					System.out.println("Loop " + i + " done.");	
+				}
+
+				
 			}
-			ComplexField<DoubleField> c1 = new ComplexField<DoubleField>(new DoubleField(0),
-				new DoubleField(0));
-			GenFFT<ComplexField<DoubleField>> fft1 = new GenFFT<ComplexField<DoubleField>>(c1);
-			for (int i = 1; i<= 10; i++) {
-				fft1.transform_internal(data, -1);
-				fft1.transform_internal(data, 1);
-				System.out.println("Loop " + i + " done.");
+			else {
+				ComplexField<DoubleField>[] data = (ComplexField<DoubleField>[]) Array.newInstance(c.getClass(), n);
+				for (int i = 0; i < n; i++) {
+					data[i] = new ComplexField<DoubleField>(
+						new DoubleField(rand.nextDouble()),
+						new DoubleField(rand.nextDouble()));
+				}
+				ComplexField<DoubleField> c1 = new ComplexField<DoubleField>(new DoubleField(0),
+					new DoubleField(0));
+				GenFFT<ComplexField<DoubleField>> fft1 = new GenFFT<ComplexField<DoubleField>>(c1);
+				System.out.println("Generic Java FFT Tests");
+				System.out.println("Java Generics, Complex Field, n=" + n);				
+				for (int i = 0; i<= 10; i++) {
+					fft1.transform_internal(data, -1);
+					fft1.transform_internal(data, 1);
+					System.out.println("Loop " + i + " done.");
+				}
 			}
 		
 		}

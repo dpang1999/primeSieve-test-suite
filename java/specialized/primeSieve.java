@@ -1,6 +1,6 @@
 package specialized;
 public class primeSieve {
-    static boolean[] sieve(int num) {
+    public static boolean[] sieve(int num) {
         boolean[] primes = new boolean[num];
         // default instantiation is false, flipping semantics
         primes[0] = true;
@@ -8,7 +8,7 @@ public class primeSieve {
         for (int i = 2; i < num; i++) {
             if (!primes[i]) {
                 int j = i;
-                while (j * i < num) {
+                while (j * i < num && j * i > 0) { // check for overflow
                     primes[j*i] = true;
                     j++;
                 }

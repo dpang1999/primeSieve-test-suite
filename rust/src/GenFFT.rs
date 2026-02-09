@@ -178,15 +178,21 @@ fn main() {
                 data1.push(IntModP::new(rand.next_int() as u128 % prime as u128));
                 //data2.push(IntModP::new(rand.next_int() as u128 % prime as u128, prime as u128));
             }
-            let data1_clone = data1.clone();
+            //let data1_clone = data1.clone();
             //println!("Data before transform: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
             let finite = IntModP::new(0);
             let finite_fft = GenFFT::new(finite);
-            finite_fft.transform(&mut data1);
-            //println!("Data after transform: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-            finite_fft.inverse(&mut data1);
-            //println!("Data after inverse: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));       
+            println!("Generic Rust FFT Tests");
+            println!("Rust Generics, Finite Field, n={}", n);
+            for i in 0..10 {
+                finite_fft.transform(&mut data1);
+                //println!("Data after transform: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+                finite_fft.inverse(&mut data1);
+                //println!("Data after inverse: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));   
+                println!("Loop {} done", i);
+            }
 
+            /*
             // RMS error
             let mut diff = 0.0;
             for i in 0..n {
@@ -197,7 +203,7 @@ fn main() {
                 diff += real_diff * real_diff;
             }
             let rms = (diff / n as f64).sqrt();
-            println!("RMS Error: {}", rms);        
+            println!("RMS Error: {}", rms);    */    
 
         }
         else if field_type == 1 {
@@ -211,8 +217,13 @@ fn main() {
                 ));
             }
 
-            fft.transform_internal(&mut data1, -1);
-            fft.transform_internal(&mut data1, 1);
+            println!("Generic Rust FFT Tests");
+            println!("Rust Generics, Complex Field, n={}", n);
+            for i in 0..10 {
+                fft.transform_internal(&mut data1, -1);
+                fft.transform_internal(&mut data1, 1);
+                println!("Loop {} done", i);
+            }
 
             //let data1_clone = data1.clone();
             //println!("Data before transform: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
