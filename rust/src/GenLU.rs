@@ -152,7 +152,7 @@ fn main() {
     
     let mut n = 4;
     let mut field = 3;
-    let mut rand = Lcg::new(12345,1345,65,17);
+    let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
     let mut complex_bool = 0;
     if args.len() > 1 {
         n = args[1].parse().unwrap_or(4);

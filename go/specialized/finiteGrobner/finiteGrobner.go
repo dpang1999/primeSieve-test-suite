@@ -14,9 +14,10 @@ const (
 	RevLex
 )
 
+var modulus uint32 = 13
+
 type Term struct {
 	Coefficient uint32
-	Modulus     uint32
 	Exponents   []int
 }
 
@@ -88,8 +89,8 @@ func (p Polynomial) Add(other Polynomial, order TermOrder) Polynomial {
 	for _, t := range other.Terms {
 		found := false
 		for i := range result {
-			if equalExponents(result[i].Exponents, t.Exponents) && result[i].Modulus == t.Modulus {
-				result[i].Coefficient = (result[i].Coefficient + t.Coefficient) % t.Modulus
+			if equalExponents(result[i].Exponents, t.Exponents) {
+				result[i].Coefficient = (result[i].Coefficient + t.Coefficient) % modulus
 				found = true
 				break
 			}
@@ -106,15 +107,15 @@ func (p Polynomial) Subtract(other Polynomial, order TermOrder) Polynomial {
 	for _, t := range other.Terms {
 		found := false
 		for i := range result {
-			if equalExponents(result[i].Exponents, t.Exponents) && result[i].Modulus == t.Modulus {
-				result[i].Coefficient = (t.Modulus + result[i].Coefficient - t.Coefficient) % t.Modulus
+			if equalExponents(result[i].Exponents, t.Exponents) {
+				result[i].Coefficient = (modulus + result[i].Coefficient - t.Coefficient) % modulus
 				found = true
 				break
 			}
 		}
 		if !found {
 			t2 := t
-			t2.Coefficient = (t.Modulus + 0 - t.Coefficient) % t.Modulus
+			t2.Coefficient = (modulus + 0 - t.Coefficient) % modulus
 			result = append(result, t2)
 		}
 	}
@@ -129,8 +130,7 @@ func (p Polynomial) MultiplyByTerm(term Term, order TermOrder) Polynomial {
 			newExps[j] = t.Exponents[j] + term.Exponents[j]
 		}
 		terms[i] = Term{
-			Coefficient: (t.Coefficient * term.Coefficient) % term.Modulus,
-			Modulus:     term.Modulus,
+			Coefficient: (t.Coefficient * term.Coefficient) % modulus,
 			Exponents:   newExps,
 		}
 	}
@@ -172,13 +172,12 @@ func (p Polynomial) Reduce(divisors []Polynomial, order TermOrder) Polynomial {
 			}
 			divLead := divisor.Terms[0]
 			if canReduce(lead.Exponents, divLead.Exponents) {
-				modulus := divLead.Modulus
 				coeff := (lead.Coefficient * modInverse(divLead.Coefficient, modulus)) % modulus
 				exps := make([]int, len(lead.Exponents))
 				for i := range exps {
 					exps[i] = lead.Exponents[i] - divLead.Exponents[i]
 				}
-				reductionTerm := Term{Coefficient: coeff, Modulus: modulus, Exponents: exps}
+				reductionTerm := Term{Coefficient: coeff, Exponents: exps}
 				scaledDivisor := divisor.MultiplyByTerm(reductionTerm, order)
 				result = result.Subtract(scaledDivisor, order)
 				reduced = true
@@ -205,8 +204,8 @@ func SPolynomial(p1 Polynomial, p2 Polynomial, order TermOrder) Polynomial {
 		scale1[i] = lcmExps[i] - lead1.Exponents[i]
 		scale2[i] = lcmExps[i] - lead2.Exponents[i]
 	}
-	scaled1 := p1.MultiplyByTerm(Term{Coefficient: 1, Modulus: lead1.Modulus, Exponents: scale1}, order)
-	scaled2 := p2.MultiplyByTerm(Term{Coefficient: 1, Modulus: lead2.Modulus, Exponents: scale2}, order)
+	scaled1 := p1.MultiplyByTerm(Term{Coefficient: 1, Exponents: scale1}, order)
+	scaled2 := p2.MultiplyByTerm(Term{Coefficient: 1, Exponents: scale2}, order)
 	result := scaled1.Subtract(scaled2, order)
 	return result
 }
@@ -293,7 +292,7 @@ func polynomialsEqual(a, b Polynomial) bool {
 		return false
 	}
 	for i := range a.Terms {
-		if a.Terms[i].Coefficient != b.Terms[i].Coefficient || a.Terms[i].Modulus != b.Terms[i].Modulus || !equalExponents(a.Terms[i].Exponents, b.Terms[i].Exponents) {
+		if a.Terms[i].Coefficient != b.Terms[i].Coefficient || !equalExponents(a.Terms[i].Exponents, b.Terms[i].Exponents) {
 			return false
 		}
 	}
@@ -326,7 +325,7 @@ func TestFiniteGrobner(polyNum int, orderInt int, modulus uint32) {
 				for i := range exps {
 					exps[i] = rand.NextInt() % 4
 				}
-				terms = append(terms, Term{Coefficient: coeff, Modulus: modulus, Exponents: exps})
+				terms = append(terms, Term{Coefficient: coeff, Exponents: exps})
 			}
 			polys = append(polys, NewPolynomial(terms, order))
 		}
@@ -335,30 +334,30 @@ func TestFiniteGrobner(polyNum int, orderInt int, modulus uint32) {
 		for i, poly := range basis {
 			fmt.Printf("G%d: ", i)
 			for _, term := range poly.Terms {
-				fmt.Printf("%d*%v (mod %d) ", term.Coefficient, term.Exponents, term.Modulus)
+				fmt.Printf("%d*%v ", term.Coefficient, term.Exponents)
 			}
 			fmt.Println()
 		}
 	} else {
 		fmt.Println("--- Grobner Basis Test ---")
-		modulus := uint32(13)
+		modulus = uint32(13)
 		// x^3 + y^3 + z^3
 		p1 := NewPolynomial([]Term{
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{3, 0, 0}},
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{0, 3, 0}},
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{0, 0, 3}},
+			{Coefficient: 1, Exponents: []int{3, 0, 0}},
+			{Coefficient: 1, Exponents: []int{0, 3, 0}},
+			{Coefficient: 1, Exponents: []int{0, 0, 3}},
 		}, Lex)
 		// xy + yz + xz
 		p2 := NewPolynomial([]Term{
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{1, 0, 1}},
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{0, 1, 1}},
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{1, 1, 0}},
+			{Coefficient: 1, Exponents: []int{1, 0, 1}},
+			{Coefficient: 1, Exponents: []int{0, 1, 1}},
+			{Coefficient: 1, Exponents: []int{1, 1, 0}},
 		}, Lex)
 		//x+y+z
 		p3 := NewPolynomial([]Term{
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{1, 0, 0}},
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{0, 1, 0}},
-			{Coefficient: 1, Modulus: modulus, Exponents: []int{0, 0, 1}},
+			{Coefficient: 1, Exponents: []int{1, 0, 0}},
+			{Coefficient: 1, Exponents: []int{0, 1, 0}},
+			{Coefficient: 1, Exponents: []int{0, 0, 1}},
 		}, Lex)
 		fmt.Printf("Input polynomials:\nP1: %v\nP2: %v\nP3: %v\n", p1.Terms, p2.Terms, p3.Terms)
 		basis := NaiveGrobnerBasis([]Polynomial{p1, p2, p3}, Lex)
@@ -366,7 +365,7 @@ func TestFiniteGrobner(polyNum int, orderInt int, modulus uint32) {
 		for i, poly := range basis {
 			fmt.Printf("G%d: ", i)
 			for _, term := range poly.Terms {
-				fmt.Printf("%d*%v (mod %d) ", term.Coefficient, term.Exponents, term.Modulus)
+				fmt.Printf("%d*%v ", term.Coefficient, term.Exponents)
 			}
 			fmt.Println()
 		}

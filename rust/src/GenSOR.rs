@@ -68,7 +68,7 @@ fn main() {
     let field_type: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
     let complex_bool: usize = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(0);
     let num_iterations = 1000;
-    let mut rand = Lcg::new(12345,1345,65,17);
+    let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
     
     if complex_bool == 0 {
         println!("Not Complex");

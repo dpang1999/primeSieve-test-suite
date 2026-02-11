@@ -115,7 +115,7 @@ if (require.main === module) {
   if (args.length > 0) n = parseInt(args[0], 10) || n;
   if (args.length > 1) mode = parseInt(args[1], 10) || mode;
   if (args.length > 2) complex = parseInt(args[2], 10) || complex;
-  const rand = new LCG(12345, 1345, 65, 17);
+  const rand = new LCG(12345, 1345, 16645, 1013904);
 
 
   if (complex === 0) {

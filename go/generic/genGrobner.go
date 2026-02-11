@@ -267,7 +267,7 @@ func TestGenGrobner[N interface {
 }](numPoly int, numTerms int, coeffType int, expType int, orderInt int, modulus int) {
 	mode := 1
 	if mode != 0 {
-		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		if numPoly <= 0 {
 			numPoly = 3
 		}
@@ -351,7 +351,7 @@ func TestGenGrobner(numPoly, numTerms, coeffType, expType, orderInt, modulus int
 	}
 
 	order := TermOrder(orderInt)
-	rand := helpers.NewLCG(12345, 1345, 65, 17)
+	rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 
 	switch {
 	case coeffType == 0 && expType == 0:

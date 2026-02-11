@@ -105,7 +105,7 @@ public class FFT {
       System.out.println("n="+n+" => RMS Error="+test(makeRandom(n))); }*/
       int n = Integer.parseInt(args[0]);
       System.out.println("FFT with " + n);
-      LCG rand = new LCG(12345, 1345, 65, 17);
+      LCG rand = new LCG(12345, 1345, 16645, 1013904);
       double data[] = new double[2*n];
       for (int i = 0; i < n; i=i+2) {
           double real = rand.nextDouble();

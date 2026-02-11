@@ -206,7 +206,7 @@ function main() {
     default: order = TermOrder.Lex;
   }
   console.log(`Using term order: ${TermOrder[order]}`);
-  const rand = new LCG(12345, 1345, 65, 17);
+  const rand = new LCG(12345, 1345, 16645, 1013904);
 
   if (coeffType === 0 && expType === 0) {
     // DoubleField + VecExponent

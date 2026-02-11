@@ -148,7 +148,7 @@ func TestGenFFT(n int, fieldType int) {
 		if n <= 0 {
 			n = 16
 		}
-		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		if fieldType == 1 {
 			fmt.Println("Go Generic FFT Complex Field, ", n)
 			varRandomNumbers := make([]ComplexField[DoubleField], n)
@@ -180,7 +180,7 @@ func TestGenFFT(n int, fieldType int) {
 		}
 
 	} else {
-		rand := helpers.NewLCG(12345, 1345, 65, 17)
+		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		var randomNumbers [10]int
 		var randomDoubles [10]float64
 		for i := 0; i < 10; i++ {

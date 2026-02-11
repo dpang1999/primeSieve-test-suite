@@ -310,7 +310,7 @@ fn main() {
     let mode = 1;
     println!("This is a generic Grobner basis computation module.");
     if mode != 0 {
-        let mut rand = Lcg::new(12345, 1345, 65, 17);
+        let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let args: Vec<String> = env::args().collect();
 
         // arg1 = # of polynomials

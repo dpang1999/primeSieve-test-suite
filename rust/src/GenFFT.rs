@@ -166,7 +166,7 @@ fn main() {
         let args: Vec<String> = std::env::args().collect();
         let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(16);
         let field_type: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let mut rand = Lcg::new(12345,1345,65,17);
+        let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         if field_type == 0 {
             let mut data1 = Vec::<IntModP>::with_capacity(n);
             //let mut data2 = Vec::<IntModP>::with_capacity(n);
@@ -397,7 +397,7 @@ fn main() {
             println!("product (after inverse): {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         }
         else {
-            let mut rand = Lcg::new(12345,1345,65,17);
+            let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
             let mut random_numbers = [0; 10];
             let mut random_doubles = [0.0; 10];
             for i in 0..10 {

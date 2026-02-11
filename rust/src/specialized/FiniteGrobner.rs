@@ -383,7 +383,7 @@ fn main() {
         // arg1 = # of polynomials
         // arg2 = term order (0=Lex, 1=GrLex, 2=RevLex)
         let args: Vec<String> = std::env::args().collect();
-        let mut rand = Lcg::new(12345, 1345, 65, 17);
+        let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let num_polynomials: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(3);
         let term_order: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
 
@@ -671,7 +671,7 @@ fn main() {
                 },
                 Term {
                     coefficient: 1,
-                    exponents: vec![0, 1, 1], // yz
+                    exponents: vec![0, 1, 1], // yz 
                 },
             ]);
             // xyz - 1

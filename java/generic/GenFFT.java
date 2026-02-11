@@ -247,7 +247,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			System.out.println("Inverse Data2: " + Arrays.toString(data2));
 		}
 		else {
-			LCG rand = new LCG(12345, 1345, 65, 17);
+			LCG rand = new LCG(12345, 1345, 16645, 1013904);
 			/*int[] randomNumbers = new int[10];
 			double[] randomDoubles = new double[10];
 			for (int i = 0; i < randomNumbers.length; ic ++) {

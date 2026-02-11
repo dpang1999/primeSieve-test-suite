@@ -3,9 +3,10 @@
 
 import { LCG } from "../helpers/lcg";
 
+let modulus: number = 13; // Global modulus for all terms, can be set from main
+
 export type Term = {
   coefficient: number;
-  modulus: number;
   exponents: number[];
 };
 
@@ -64,10 +65,10 @@ export class Polynomial {
   constructor(terms: Term[], order: TermOrder) {
     this.order = order;
     // Remove zero coefficients, sort by term order
-    this.terms = terms.filter(t => t.coefficient % t.modulus !== 0);
+    this.terms = terms.filter(t => t.coefficient % modulus !== 0);
     this.terms = this.terms.map(t => ({
-      coefficient: ((t.coefficient % t.modulus) + t.modulus) % t.modulus,
-      modulus: t.modulus,
+      coefficient: ((t.coefficient % modulus) + modulus) % modulus,
+      modulus: modulus,
       exponents: t.exponents.slice(),
     }));
     this.terms.sort((a, b) => -compareExponents(a.exponents, b.exponents, order));
@@ -79,7 +80,7 @@ export class Polynomial {
       let found = false;
       for (const rt of result) {
         if (rt.exponents.length === t.exponents.length && rt.exponents.every((v, i) => v === t.exponents[i])) {
-          rt.coefficient = (rt.coefficient + t.coefficient) % t.modulus;
+          rt.coefficient = (rt.coefficient + t.coefficient) % modulus;
           found = true;
           break;
         }
@@ -95,20 +96,19 @@ export class Polynomial {
       let found = false;
       for (const rt of result) {
         if (rt.exponents.length === t.exponents.length && rt.exponents.every((v, i) => v === t.exponents[i])) {
-          rt.coefficient = (rt.coefficient - t.coefficient + t.modulus) % t.modulus;
+          rt.coefficient = (rt.coefficient - t.coefficient + modulus) % modulus;
           found = true;
           break;
         }
       }
-      if (!found) result.push({ coefficient: (-t.coefficient + t.modulus) % t.modulus, modulus: t.modulus, exponents: t.exponents.slice() });
+      if (!found) result.push({ coefficient: (-t.coefficient + modulus) % modulus, exponents: t.exponents.slice() });
     }
     return new Polynomial(result, this.order);
   }
 
   multiplyByTerm(term: Term): Polynomial {
     const terms = this.terms.map(t => ({
-      coefficient: (t.coefficient * term.coefficient) % term.modulus,
-      modulus: term.modulus,
+      coefficient: (t.coefficient * term.coefficient) % modulus,
       exponents: t.exponents.map((v, i) => v + term.exponents[i]),
     }));
     return new Polynomial(terms, this.order);
@@ -124,9 +124,9 @@ export class Polynomial {
         const divLead = divisor.terms[0];
         if (lead.exponents.length !== divLead.exponents.length) continue;
         if (lead.exponents.every((v, i) => v >= divLead.exponents[i])) {
-          const coeff = (lead.coefficient * modInverse(divLead.coefficient, lead.modulus)) % lead.modulus;
+          const coeff = (lead.coefficient * modInverse(divLead.coefficient, modulus)) % modulus;
           const exps = lead.exponents.map((v, i) => v - divLead.exponents[i]);
-          const reductionTerm: Term = { coefficient: coeff, modulus: lead.modulus, exponents: exps };
+          const reductionTerm: Term = { coefficient: coeff, exponents: exps };
           const scaledDivisor = divisor.multiplyByTerm(reductionTerm);
           result = result.subtract(scaledDivisor);
           reduced = true;
@@ -144,8 +144,8 @@ export class Polynomial {
     const lcmExps = lead1.exponents.map((v, i) => Math.max(v, lead2.exponents[i]));
     const scale1 = lcmExps.map((v, i) => v - lead1.exponents[i]);
     const scale2 = lcmExps.map((v, i) => v - lead2.exponents[i]);
-    const scaled1 = p1.multiplyByTerm({ coefficient: 1, modulus: lead1.modulus, exponents: scale1 });
-    const scaled2 = p2.multiplyByTerm({ coefficient: 1, modulus: lead2.modulus, exponents: scale2 });
+    const scaled1 = p1.multiplyByTerm({ coefficient: 1, exponents: scale1 });
+    const scaled2 = p2.multiplyByTerm({ coefficient: 1, exponents: scale2 });
     return scaled1.subtract(scaled2);
   }
 }
@@ -194,7 +194,7 @@ function main() {
     const args = process.argv.slice(2);
     const numPolys = parseInt(args[0] || '3', 10);
     const orderArg = parseInt(args[1] || '0', 10);
-    const modulus = parseInt(args[2] || '13', 10);
+    modulus = parseInt(args[2] || '13', 10);
     let order: TermOrder;
     switch (orderArg) {
       case 0:
@@ -216,7 +216,7 @@ function main() {
         for (let j = 0; j < 3; ++j) {
         const coefficient = rand.nextDouble() * 2 - 1;
         const exponents = [0, 0, 0].map(() => rand.nextInt() % 4);
-        terms.push({ coefficient, modulus, exponents });
+        terms.push({ coefficient, exponents });
         }
         polys.push(new Polynomial(terms, order));
     }
@@ -233,21 +233,21 @@ function main() {
     // Example: x^3 + y^3 + z^3
     const modulus = 13;
     const p1 = new Polynomial([
-      { coefficient: 1, modulus: 13, exponents: [3, 0, 0] },
-      { coefficient: 1, modulus: 13, exponents: [0, 3, 0] },
-      { coefficient: 1, modulus: 13, exponents: [0, 0, 3] },
+      { coefficient: 1, exponents: [3, 0, 0] },
+      { coefficient: 1, exponents: [0, 3, 0] },
+      { coefficient: 1, exponents: [0, 0, 3] },
     ], TermOrder.Lex);
     // xy + yz + xz
     const p2 = new Polynomial([
-      { coefficient: 1, modulus: 13, exponents: [1, 1, 0] },
-      { coefficient: 1, modulus: 13, exponents: [0, 1, 1] },
-      { coefficient: 1, modulus: 13, exponents: [1, 0, 1] },
+      { coefficient: 1, exponents: [1, 1, 0] },
+      { coefficient: 1, exponents: [0, 1, 1] },
+      { coefficient: 1, exponents: [1, 0, 1] },
     ], TermOrder.Lex);
     // x+y+z
     const p = new Polynomial([
-      { coefficient: 1, modulus: 13, exponents: [1, 0, 0] },
-      { coefficient: 1, modulus: 13, exponents: [0, 1, 0] },
-      { coefficient: 1, modulus: 13, exponents: [0, 0, 1] },
+      { coefficient: 1, exponents: [1, 0, 0] },
+      { coefficient: 1, exponents: [0, 1, 0] },
+      { coefficient: 1, exponents: [0, 0, 1] },
     ], TermOrder.Lex);
     const basis = naiveGrobnerBasis([p1, p2, p], TermOrder.Lex);
     console.log('Final Grobner Basis:');

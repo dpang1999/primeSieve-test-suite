@@ -250,7 +250,7 @@ public class GenGrobner {
             default: order = TermOrder.Lex;
         }
         System.out.println("Using term order: " + order);
-        LCG rand = new LCG(12345, 1345, 65, 17);
+        LCG rand = new LCG(12345, 1345, 16645, 1013904);
         if (coeffType == 0 && expType == 0) {
             // SingleField + VecExponent
             List<Polynomial<SingleField, VecExponent>> inputBasis = new ArrayList<>();

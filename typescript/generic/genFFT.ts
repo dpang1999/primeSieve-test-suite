@@ -99,7 +99,7 @@ if(require.main == module) {
   const args = process.argv.slice(2);
   const n = parseInt(args[0] || '16', 10);
   const mode = parseInt(args[1] || '0', 10);
-  const rand = new LCG(12345, 1345, 65, 17);
+  const rand = new LCG(12345, 1345, 16645, 1013904);
 
   if (mode === 1) {
     const { ComplexField } = require('./complexField');

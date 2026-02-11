@@ -46,7 +46,7 @@ if (require.main === module) {
   const mode = parseInt(args[1] || '2', 10);
   const complex = parseInt(args[2] || '0', 10);
   const numIterations = 1_000_000;
-  const rand = new LCG(12345, 1345, 65, 17);
+  const rand = new LCG(12345, 1345, 16645, 1013904);
 
   if (complex === 0) {
     if (mode === 1) {
