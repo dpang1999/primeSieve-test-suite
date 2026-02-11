@@ -40,7 +40,7 @@ public class IntModP implements IField<IntModP>,
             return new IntModP(result);
         }
         else
-            return new IntModP((d + o.d) % modulus);
+            return new IntModP(d + o.d);
     }
     public void ae(IntModP o) {
         //fCount++;
@@ -58,7 +58,7 @@ public class IntModP implements IField<IntModP>,
     public IntModP s(IntModP o) {
         //fCount++;
         if (o != null)
-            return new IntModP((d - o.d + modulus) % modulus);   
+            return new IntModP(d - o.d + modulus);   
         else
             return new IntModP(d);
     }
@@ -79,7 +79,7 @@ public class IntModP implements IField<IntModP>,
             long result = bigD.multiply(bigOD).mod(bigP).longValue();
             return new IntModP(result);
         }
-        return new IntModP((d * o.d) % modulus);
+        return new IntModP(d * o.d);
             
     }
     public void me(IntModP o) {
@@ -108,7 +108,7 @@ public class IntModP implements IField<IntModP>,
             d = bigD.multiply(bigInverse).mod(bigP).longValue();
             return new IntModP(d);
         }
-        return new IntModP((d * inverse) % modulus); // Multiply by the inverse modulo p
+        return new IntModP(d * inverse); // Multiply by the inverse modulo p
     }
     
     public void de(IntModP o) {
@@ -158,11 +158,11 @@ public class IntModP implements IField<IntModP>,
 
 
     public IntModP coerce(int i) {
-        return new IntModP((i % modulus + modulus) % modulus);
+        return new IntModP(i % modulus + modulus);
     }
 
     public IntModP coerce(double i) {
-        return new IntModP(((int) i % modulus + modulus) % modulus);
+        return new IntModP((int) i % modulus + modulus);
     }
     public double coerce() {
         return d;

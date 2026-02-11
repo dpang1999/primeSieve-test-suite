@@ -161,9 +161,12 @@ func TestFFT(n int) {
 			data1[2*i+1] = rand.NextDouble()
 		}
 		fft := FFT{}
-		fft.transformInternal(data1, -1)
-		fft.transformInternal(data1, 1)
-		fmt.Printf("done")
+		fmt.Printf("Go Specialized f64 FFT Test: n=%d\n", n)
+		for i := 0; i < 10; i++ {
+			fft.transformInternal(data1, -1)
+			fft.transformInternal(data1, 1)
+			fmt.Printf("loop %d done\n", i)
+		}
 	} else {
 
 		data1 := []float64{

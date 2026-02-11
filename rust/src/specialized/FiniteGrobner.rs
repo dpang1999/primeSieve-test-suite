@@ -2,9 +2,7 @@ use std::collections::HashSet;
 
 use std::hash::{Hash, Hasher};
 
-use std::sync::OnceLock;
-
-static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
+static mut TERM_ORDER: TermOrder = TermOrder::Lex; // default to lex order, can be set to GrLex or RevLex as well
 
 use rust::helpers::lcg::Lcg;
 
@@ -22,7 +20,7 @@ pub enum TermOrder {
 
 impl Term {
     pub fn compare(&self, other: &Term) -> std::cmp::Ordering {
-        let order = TERM_ORDER.get().expect("TERM_ORDER not initialized");
+        let order = unsafe { TERM_ORDER };
         match order {
             TermOrder::Lex => self.exponents.cmp(&other.exponents), // Lexicographic order
             TermOrder::GrLex => { // Graded lexicographic order
@@ -296,9 +294,6 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u32) -> Vec<Po
         }
     }
     //println!("Begin the experiment, {}", basis.len());
-
-    let basis_len = basis.len();
-    let mut added = false;
     while pairs.is_empty() == false {
         let (i, j) = pairs.remove(0);
         //println!("Processing pair ({}, {})", i, j);
@@ -393,10 +388,10 @@ fn main() {
         let term_order: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
 
         match term_order {
-            0 => TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"),
-            1 => TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized"),
-            2 => TERM_ORDER.set(TermOrder::RevLex).expect("TERM_ORDER already initialized"),
-            _ => TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"),
+            0 => unsafe { TERM_ORDER = TermOrder::Lex; },
+            1 => unsafe { TERM_ORDER = TermOrder::GrLex; },
+            2 => unsafe { TERM_ORDER = TermOrder::RevLex; },
+            _ => unsafe { TERM_ORDER = TermOrder::Lex; },
         }
 
         let mut input_basis = Vec::new();
@@ -428,36 +423,48 @@ fn main() {
         let test = 0;
         let modulus = 7;
         //Lex, GrLex, RevLex
-        TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
-        // x^3 + y^3 + z^3
-        // f1 = x0 + x1 + x2 + x3
+        unsafe { TERM_ORDER = TermOrder::Lex; }
+
+        // f1 = x0 + x1 + x2 + x3 + x4
         let p1 = Polynomial::new(vec![
-            Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
-            Term { coefficient: 1, exponents: vec![0, 1, 0, 0] },
-            Term { coefficient: 1, exponents: vec![0, 0, 1, 0] },
-            Term { coefficient: 1, exponents: vec![0, 0, 0, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 0, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 0, 0, 1] },
         ]);
 
-        // f2 = x0*x1 + x1*x2 + x2*x3 + x3*x0
+        // f2 = x0x1 + x1x2 + x2x3 + x3x4 + x4x0
         let p2 = Polynomial::new(vec![
-            Term { coefficient: 1, exponents: vec![1, 1, 0, 0] },
-            Term { coefficient: 1, exponents: vec![0, 1, 1, 0] },
-            Term { coefficient: 1, exponents: vec![0, 0, 1, 1] },
-            Term { coefficient: 1, exponents: vec![1, 0, 0, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 0, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 0, 0, 1] },
         ]);
 
-        // f3 = x0*x1*x2 + x1*x2*x3 + x2*x3*x0 + x3*x0*x1
+        // f3 = x0x1x2 + x1x2x3 + x2x3x4 + x3x4x0 + x4x0x1
         let p3 = Polynomial::new(vec![
-            Term { coefficient: 1, exponents: vec![1, 1, 1, 0] },
-            Term { coefficient: 1, exponents: vec![0, 1, 1, 1] },
-            Term { coefficient: 1, exponents: vec![1, 0, 1, 1] },
-            Term { coefficient: 1, exponents: vec![1, 1, 0, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 1, 0, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 1, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 0, 1, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 0, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 0, 0, 1] },
         ]);
 
-        // f4 = x0*x1*x2*x3 - 1
+        // f4 = x0x1x2x3 + x1x2x3x4 + x2x3x4x0 + x3x4x0x1 + x4x0x1x2 - 1
         let p4 = Polynomial::new(vec![
-            Term { coefficient: 1, exponents: vec![1, 1, 1, 1] },
-            Term { coefficient: modulus-1, exponents: vec![0, 0, 0, 0] },
+            Term { coefficient: 1, exponents: vec![1, 1, 1, 1, 0] },
+            Term { coefficient: 1, exponents: vec![0, 1, 1, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 0, 1, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 0, 1, 1] },
+            Term { coefficient: 1, exponents: vec![1, 1, 1, 0, 1] },
+        ]);
+
+        // f4 = x0*x1*x2*x3*x4 -1
+        let p5 = Polynomial::new(vec![
+            Term { coefficient: 1, exponents: vec![1, 1, 1, 1, 1] },
+            Term { coefficient: modulus-1, exponents: vec![0, 0, 0, 0, 0] },
         ]);
 
         println!("Begin the experiment");
@@ -679,7 +686,7 @@ fn main() {
                 },
             ]); 
             let p1clone = p1.clone();
-            let basis = naive_grobner_basis(vec![p1,p2,p3,p4], modulus);
+            let basis = naive_grobner_basis(vec![p1,p2,p3,p4,p5], modulus);
             // copy basis
             let mut copied_basis = basis.clone();
             println!("Final Grobner Basis:");
@@ -688,7 +695,7 @@ fn main() {
             }
             
 
-            // x0 + x1 + x2 + x3
+        /*     // x0 + x1 + x2 + x3
             let test_poly = Polynomial::new(vec![
                 Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
                 Term { coefficient: 1, exponents: vec![0, 1, 0, 0] },
@@ -798,16 +805,8 @@ fn main() {
             for poly in &test_basis_clone {
                 println!("{:?}\n", poly);
             }
-            let result = test.reduce(&test_basis_clone, modulus);
-            println!("Reduced test polynomial: {:?}", result);
+ */
 
-
-            
-            let temp1 = Polynomial { terms: vec![Term { coefficient: 1, exponents: vec![0, 2, 1, 1] }, Term { coefficient: 1, exponents: vec![0, 1, 2, 1] }, Term { coefficient: 1, exponents: vec![0, 1, 1, 2] }, Term { coefficient: 1, exponents: vec![0, 0, 0, 0] }] };
-            // Example usage or print if needed:
-            let temp2 = Polynomial { terms: vec![Term { coefficient: 1, exponents: vec![0, 2, 0, 0] }, Term { coefficient: 2, exponents: vec![0, 1, 0, 1] }, Term { coefficient: 1, exponents: vec![0, 0, 0, 2] }] };
-            let temp3 = Polynomial { terms: vec![Term { coefficient: 1, exponents: vec![0, 1, 2, 0] }, Term { coefficient: 6, exponents: vec![0, 1, 0, 2] }, Term { coefficient: 1, exponents: vec![0, 0, 2, 1] }, Term { coefficient: 6, exponents: vec![0, 0, 0, 3] }] };
-            println!("Reduced temp1: {:?}", temp1.reduce(&vec![temp3,temp2], modulus));
         }
     }
 }

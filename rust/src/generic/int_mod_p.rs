@@ -5,19 +5,24 @@ use crate::generic::i_math::IMath;
 use crate::generic::i_primitive_roots::IPrimitiveRoots;
 use std::hash::Hash;
 use std::cmp::Eq;
-use std::sync::OnceLock;
 #[derive(Debug)]
 pub struct IntModP {
-    pub i: u128,
+    pub i: u64,
 }
 
-pub static MODULUS: OnceLock<u128> = OnceLock::new();
+pub static mut MODULUS: u64 = 7;
 
-fn get_modulus() -> u128 {
-    *MODULUS.get().expect("Modulus not set")
+fn get_modulus() -> u64 {
+    unsafe { MODULUS }
 }
 
-fn mod_inverse(a: u128, p: u128) -> u128 {
+pub fn set_modulus(p: u64) {
+    unsafe {
+        MODULUS = p;
+    }
+}
+
+fn mod_inverse(a: u64, p: u64) -> u64 {
     let (mut t, mut new_t) = (0 as i128, 1 as i128);
     let (mut r, mut new_r) = (p as i128, a.rem_euclid(p) as i128);
     while new_r != 0 {
@@ -35,11 +40,11 @@ fn mod_inverse(a: u128, p: u128) -> u128 {
     if t < 0 {
         t += p as i128;
     }
-    t as u128
+    t as u64
 }
 
 impl IntModP {
-    pub fn new(i: u128) -> Self {
+    pub fn new(i: u64) -> Self {
         let p = get_modulus();
         IntModP { i: i.rem_euclid(p) }
     }
@@ -49,7 +54,7 @@ impl IntModP {
     }
 
     pub fn coerce(&self, value: f64) -> IntModP {
-        IntModP::new(value as u128)
+        IntModP::new(value as u64)
     }
 
     pub fn coerce_to_f64(&self) -> f64 {
@@ -112,7 +117,7 @@ impl IField for IntModP {
     }
 
     fn coerce(&self, value: f64) -> IntModP {
-        IntModP::new(value as u128)
+        IntModP::new(value as u64)
     }
 
     fn is_zero(&self) -> bool {
@@ -196,7 +201,7 @@ fn factorize(mut n: u64) -> Vec<u64> {
     factors
 }
 
- fn mod_pow(base: u128, exp: u128, modulus: u128) -> u128 {
+ fn mod_pow(base: u64, exp: u64, modulus: u64) -> u64 {
         if modulus <= 0 {
             panic!("Modulus must be positive");
         }
@@ -218,7 +223,7 @@ fn factorize(mut n: u64) -> Vec<u64> {
 
 
 impl IPrimitiveRoots<IntModP> for IntModP {
-    fn primitive_root(&self, n: u128) -> Self {
+    fn primitive_root(&self, n: u64) -> Self {
         let p = get_modulus();
         if n == 0 || n >= p {
             panic!("n must be in range [1, p-1]");
@@ -227,7 +232,7 @@ impl IPrimitiveRoots<IntModP> for IntModP {
         for g in 2..p {
             let mut is_root = true;
             for &factor in &factors {
-                if mod_pow(g, (p - 1) / factor as u128, p) == 1 {
+                if mod_pow(g, (p - 1) / factor as u64, p) == 1 {
                     is_root = false;
                     break;
                 }
@@ -239,23 +244,23 @@ impl IPrimitiveRoots<IntModP> for IntModP {
         Self::new(0)
     }
 
-    fn pow(&self, exp: u128) -> IntModP {
+    fn pow(&self, exp: u64) -> IntModP {
         let p = get_modulus();
-        IntModP::new(mod_pow(self.i, exp as u128, p))
+        IntModP::new(mod_pow(self.i, exp as u64, p))
     }
 
     fn precomputeRootsOfUnity(&self, n: u32, direction: i32) -> Vec<IntModP> {
         let p = get_modulus();
-        if (p - 1) % n as u128 != 0 {
+        if (p - 1) % n as u64 != 0 {
             panic!("n must divide p-1 for roots of unity to exist in IntModP");
         }
         let g = self.primitive_root(p - 1);
-        let omega = g.pow((p - 1) / (n as u128));
+        let omega = g.pow((p - 1) / (n as u64));
         let mut roots = Vec::with_capacity(n as usize);
         for k in 0..n as i32 {
-            let mut exponent: u128 = (k * direction % (p - 1) as i32) as u128;
+            let mut exponent: u64 = (k * direction % (p - 1) as i32) as u64;
             if exponent < 0 {
-                exponent += (p - 1) as u128;
+                exponent += (p - 1) as u64;
             }
             roots.push(omega.pow(exponent));
         }

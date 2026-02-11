@@ -6,11 +6,18 @@ Rust:
 cargo run
 also "cargo run --bin (bin name: found in cargo.toml)
 
+cargo build --release
+./target/release/<bin-name>
+
+
 Typescript:
 tsx (source file name)
 
 Go:
 go run (source file name)
+
+go build -o main main.go
+./main () ()
 
 C#:
 dotnet run

@@ -3,7 +3,7 @@ use crate::generic::double_field::DoubleField;
 use crate::generic::single_field::SingleField;
 //use crate::generic::i_math::IMath;
 use crate::generic::int_mod_p::IntModP;
-use crate::generic::int_mod_p::MODULUS;
+use crate::generic::int_mod_p::set_modulus;
 use crate::generic::complex_field::ComplexField;
 use std::fmt::Display;
 use rust::helpers::lcg::Lcg;
@@ -122,7 +122,7 @@ fn main() {
             println!("Using IntModP");
             let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last().expect("No prime found in the range");
-            MODULUS.set(*prime as u128).unwrap();
+            set_modulus(*prime as u64);
 
             let omega = IntModP::new(3).d(&IntModP::new(2)); // 1.5 mod 449
             let mut g = vec![vec![omega.zero(); n]; m];
@@ -198,7 +198,7 @@ fn main() {
             println!("Using IntModP");
             let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
             let prime = primes.last().expect("No prime found in the range");
-            MODULUS.set(*prime as u128).unwrap();
+            set_modulus(*prime as u64);
 
             let omega = ComplexField::new(IntModP::new(3).d(&IntModP::new(2)),IntModP::new(0)); // 1.5 mod 449
             let mut g = vec![vec![omega.zero(); n]; m];

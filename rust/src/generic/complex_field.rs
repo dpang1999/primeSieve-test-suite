@@ -187,7 +187,7 @@ where
 
 // Implement PrimitiveRoot for SingleField numbers
 impl IPrimitiveRoots<ComplexField<SingleField>> for ComplexField<SingleField> {
-    fn primitive_root(&self, n: u128) -> Self {
+    fn primitive_root(&self, n: u64) -> Self {
         if n == 0 {
             panic!("n must be positive");
         }
@@ -202,7 +202,7 @@ impl IPrimitiveRoots<ComplexField<SingleField>> for ComplexField<SingleField> {
         ComplexField::new(real, imag)
     }
 
-    fn pow(&self, exponent: u128) -> Self {
+    fn pow(&self, exponent: u64) -> Self {
         if exponent == 0 {
             return self.one(); // Any number to the power of 0 is 1
         }
@@ -235,7 +235,7 @@ impl IPrimitiveRoots<ComplexField<SingleField>> for ComplexField<SingleField> {
 
 // Implement PrimitiveRoot for DoubleField numbers
 impl IPrimitiveRoots<ComplexField<DoubleField>> for ComplexField<DoubleField> {
-    fn primitive_root(&self, n: u128) -> Self {
+    fn primitive_root(&self, n: u64) -> Self {
         if n == 0 {
             panic!("n must be positive");
         }
@@ -251,7 +251,7 @@ impl IPrimitiveRoots<ComplexField<DoubleField>> for ComplexField<DoubleField> {
     }
 
     //Polar form exponentiation
-    fn pow(&self, exponent: u128) -> Self {
+    fn pow(&self, exponent: u64) -> Self {
         if exponent == 0 {
             return self.one(); // Any number to the power of 0 is 1
         }
@@ -285,7 +285,7 @@ impl IPrimitiveRoots<ComplexField<DoubleField>> for ComplexField<DoubleField> {
 
 // Implement PrimitiveRoot for finite fields
 impl IPrimitiveRoots<ComplexField<IntModP>> for ComplexField<IntModP> {
-    fn primitive_root(&self, n: u128) -> Self {
+    fn primitive_root(&self, n: u64) -> Self {
         if n == 0 {
             panic!("n must be positive");
         }
@@ -297,7 +297,7 @@ impl IPrimitiveRoots<ComplexField<IntModP>> for ComplexField<IntModP> {
         ComplexField::new(real, imag)
     }
 
-    fn pow(&self, exponent: u128) -> Self {
+    fn pow(&self, exponent: u64) -> Self {
         if exponent == 0 {
             return self.one(); // Any number to the power of 0 is 1
         }

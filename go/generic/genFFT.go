@@ -145,12 +145,12 @@ func TestGenFFT(n int, fieldType int) {
 	// fieldType: 1 = ComplexField[DoubleField], 2 = IntModP
 
 	if mode != 0 {
-		fmt.Println("Testing GenFFT with n =", n)
 		if n <= 0 {
 			n = 16
 		}
 		rand := helpers.NewLCG(12345, 1345, 65, 17)
 		if fieldType == 1 {
+			fmt.Println("Go Generic FFT Complex Field, ", n)
 			varRandomNumbers := make([]ComplexField[DoubleField], n)
 			for i := 0; i < n; i++ {
 				varRandomNumbers[i] = ComplexField[DoubleField]{
@@ -159,9 +159,24 @@ func TestGenFFT(n int, fieldType int) {
 				}
 			}
 			fft := NewGenFFT(ComplexField[DoubleField]{Re: DoubleField{Value: 3.0}, Im: DoubleField{Value: 4.0}})
-			fft.transformInternal(varRandomNumbers, -1)
-			fft.transformInternal(varRandomNumbers, 1)
-			fmt.Println("done")
+			for j := 0; j < 10; j++ {
+				fft.transformInternal(varRandomNumbers, -1)
+				fft.transformInternal(varRandomNumbers, 1)
+				fmt.Println("loop ", j, " done")
+			}
+		} else {
+			fmt.Println("Go Generic FFT IntModP, ", n)
+			varRandomNumbers := make([]IntModP, n)
+			for i := 0; i < n; i++ {
+				varRandomNumbers[i] = NewIntModP(uint64(rand.NextInt()))
+			}
+			fft := NewGenFFT(NewIntModP(3))
+			for j := 0; j < 10; j++ {
+				fft.transformInternal(varRandomNumbers, -1)
+				fft.transformInternal(varRandomNumbers, 1)
+				fmt.Println("loop ", j, " done")
+			}
+
 		}
 
 	} else {

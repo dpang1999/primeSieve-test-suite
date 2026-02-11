@@ -1,5 +1,5 @@
 use crate::generic::int_mod_p::IntModP;
-use crate::generic::int_mod_p::MODULUS;
+use crate::generic::int_mod_p::set_modulus;
 use crate::generic::i_field::IField;
 use crate::generic::double_field::DoubleField;
 use crate::generic::complex_field::ComplexField;
@@ -29,8 +29,8 @@ fn test_int_mod_p() {
         Some(&p) => p,
         None => 7,
     };
-    let prime_num = p as u128;
-    MODULUS.set(prime_num).unwrap();
+    let prime_num = p as u64;
+    set_modulus(prime_num);
  
     let a = IntModP::new(rng.random_range(1000..10000));
     let b = IntModP::new(rng.random_range(1000..10000));

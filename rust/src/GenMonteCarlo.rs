@@ -2,7 +2,7 @@ use seeded_random::{Random,Seed};
 use crate::generic::double_field::DoubleField;
 use crate::generic::single_field::SingleField;
 use crate::generic::int_mod_p::IntModP;
-use crate::generic::int_mod_p::MODULUS;
+use crate::generic::int_mod_p::set_modulus;
 use crate::generic::i_field::IField;
 use crate::generic::i_ordered::IOrdered;
 pub mod generic;
@@ -35,7 +35,7 @@ fn main() {
     let mut num_samples = 1_000_000;
     let mut mode = 0; // 1 for SingleField, else for DoubleField. Don't think IntModP makes much sense here
     let prime = 1_000_000_007;
-    MODULUS.set(prime).unwrap();
+    set_modulus(prime);
     if args.len() > 1 {
         num_samples = args[1].parse().unwrap_or(1000000);
     }
