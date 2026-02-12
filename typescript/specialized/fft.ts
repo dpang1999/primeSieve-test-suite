@@ -125,10 +125,15 @@ function main() {
   const n = parseInt(process.argv[2] ?? "16", 10);
   const fft = new FFT();
   const data = fft.make_random(n);
-  const rms = fft.test(data);
+  console.log("Typescript Specialized number FFT, n=" + n)
+  for (let i = 0; i < 10; i++) {
+    FFT.transform_internal(data, -1);
+    FFT.transform_internal(data, 1);
+    console.log(`Loop ${i} done`);
+  }
   // print array
   //console.log(data);
-  console.log(`n=${n} => RMS Error=${rms}`);
+  //console.log(`n=${n} => RMS Error=${rms}`);
 }
 
 if (require.main === module) {

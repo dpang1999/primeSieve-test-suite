@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "FiniteFFT",
+            "request": "launch",
+            "mainClass": "specialized.FiniteFFT",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
             "name": "SOR",
             "request": "launch",
             "mainClass": "specialized.SOR",

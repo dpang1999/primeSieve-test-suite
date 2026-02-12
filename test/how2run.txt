@@ -13,6 +13,9 @@ cargo build --release
 Typescript:
 tsx (source file name)
 
+tsc (file name)
+node (file name)
+
 Go:
 go run (source file name)
 

@@ -159,7 +159,7 @@ where
 }
 fn main() {
     // let mode = 0 be for testing
-    let mode = 1;
+    let mode = 0;
     if mode != 0 { 
         // arg 1 = size (N = power of 2)
         // arg 2 = field type (0 = finite field, 1 = complex field)
@@ -252,7 +252,7 @@ fn main() {
     }
     else {
         // test: 0 for finite field, 1 complex field
-        let test = 3;    
+        let test = 0;    
         if test == 0 {
             
             let in1 = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0];

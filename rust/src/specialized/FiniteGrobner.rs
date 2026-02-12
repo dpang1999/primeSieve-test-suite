@@ -8,7 +8,7 @@ use rust::helpers::lcg::Lcg;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
-    pub coefficient: u32,
+    pub coefficient: u64,
     pub exponents: Vec<usize>, // Exponents for each variable
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -63,7 +63,7 @@ impl Hash for Polynomial {
     }
 }
 
-fn mod_inverse(a: u32, m: u32) -> u32 {
+fn mod_inverse(a: u64, m: u64) -> u64 {
     let (mut a, mut m) = (a as i64, m as i64);
     let (mut x0, mut x1) = (0i64, 1i64);
     let m0 = m;
@@ -82,7 +82,7 @@ fn mod_inverse(a: u32, m: u32) -> u32 {
     if x1 < 0 {
         x1 += m0;
     }
-    (x1 % m0) as u32
+    (x1 % m0) as u64
 }
 impl Polynomial {
     pub fn new(mut terms: Vec<Term>) -> Self {
@@ -98,7 +98,7 @@ impl Polynomial {
     }
     
 
-    pub fn add(&self, other: &Polynomial, modulus: u32) -> Polynomial {
+    pub fn add(&self, other: &Polynomial, modulus: u64) -> Polynomial {
         let mut result = self.terms.clone();
         for term in &other.terms {
             let mut found = false;
@@ -122,7 +122,7 @@ impl Polynomial {
         Polynomial::new(result)
     }
 
-    pub fn subtract(&self, other: &Polynomial, modulus: u32) -> Polynomial {
+    pub fn subtract(&self, other: &Polynomial, modulus: u64) -> Polynomial {
         let mut result = self.terms.clone();
         for term in &other.terms {
             let mut found = false;
@@ -147,7 +147,7 @@ impl Polynomial {
         Polynomial::new(result)
     }
 
-    pub fn make_monic(&self, modulus: u32) -> Polynomial {
+    pub fn make_monic(&self, modulus: u64) -> Polynomial {
         if self.terms.is_empty() { return self.clone(); }
         let lead_coeff = self.terms[0].coefficient;
         let inv = mod_inverse(lead_coeff, modulus);
@@ -159,7 +159,7 @@ impl Polynomial {
     }
     
 
-   pub fn reduce(&self, divisors: &[Polynomial], modulus: u32) -> Polynomial {
+   pub fn reduce(&self, divisors: &[Polynomial], modulus: u64) -> Polynomial {
         let mut result = self.clone(); // Start with the input polynomial
         let mut remainder: Vec<Term> = Vec::new();
 
@@ -177,7 +177,7 @@ impl Polynomial {
 
                             // Compute the reduction factor
                             //let coefficient = leading_term.coefficient / divisor_leading_term.coefficient;
-                            let coefficient = (leading_term.coefficient as u64 * mod_inverse(divisor_leading_term.coefficient, modulus) as u64 % modulus as u64) as u32;
+                            let coefficient = (leading_term.coefficient as u64 * mod_inverse(divisor_leading_term.coefficient, modulus) % modulus) as u64;
                             let exponents: Vec<usize> = leading_term
                                 .exponents
                                 .iter()
@@ -224,7 +224,7 @@ impl Polynomial {
         Polynomial::new(result.terms)
     }
 
-    pub fn multiply_by_term(&self, term: &Term, modulus: u32) -> Polynomial {
+    pub fn multiply_by_term(&self, term: &Term, modulus: u64) -> Polynomial {
         let terms = self
             .terms
             .iter()
@@ -242,7 +242,7 @@ impl Polynomial {
         Polynomial::new(terms)
     }
 
-    pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial, modulus: u32) -> Polynomial {
+    pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial, modulus: u64) -> Polynomial {
         // Compute the LCM of the leading monomials' exponents
         let mut lcm_exponents = vec![0; p1.terms[0].exponents.len()];
         for i in 0..lcm_exponents.len() {
@@ -277,7 +277,7 @@ impl Polynomial {
 
 }
 
-pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u32) -> Vec<Polynomial> {
+pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u64) -> Vec<Polynomial> {
     let mut basis = polynomials.clone();
     let mut basis_set: HashSet<Polynomial> = HashSet::new();
     // print basis and polynomials
@@ -344,7 +344,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u32) -> Vec<Po
     
 }
 
-pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>, modulus: u32) -> bool {
+pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>, modulus: u64) -> bool {
     // Check if all polynomials in set_a reduce to zero using set_b
     let mut all_ok = true;
     for (i, poly) in set_a.iter().enumerate() {
@@ -399,7 +399,7 @@ fn main() {
         for _ in 0..num_polynomials {
             let mut terms = Vec::new();
             for _ in 0..3 { // always 3 terms per polynomial
-                let coefficient = (rand.next_int() % (modulus as i32)) as u32;
+                let coefficient = (rand.next_int() as u64 % modulus);
                 // only working with 3 variables for now
                 let exponents = vec![(rand.next_int() % 4) as usize, (rand.next_int() % 4) as usize, (rand.next_int() % 4) as usize];
                 terms.push(Term {

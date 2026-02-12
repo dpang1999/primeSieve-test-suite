@@ -57,3 +57,6 @@ path = "src/helpers/cyclic_polynomials.rs"
 [[bin]]
 name = "testCyclicPolys"
 path = "src/specialized/test.rs"
+[[bin]]
+name = "finiteFFT"
+path = "src/specialized/FiniteFFT.rs"

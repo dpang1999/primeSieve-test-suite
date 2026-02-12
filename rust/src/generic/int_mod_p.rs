@@ -23,8 +23,8 @@ pub fn set_modulus(p: u64) {
 }
 
 fn mod_inverse(a: u64, p: u64) -> u64 {
-    let (mut t, mut new_t) = (0 as i128, 1 as i128);
-    let (mut r, mut new_r) = (p as i128, a.rem_euclid(p) as i128);
+    let (mut t, mut new_t) = (0 as i64, 1 as i64);
+    let (mut r, mut new_r) = (p as i64, a.rem_euclid(p) as i64);
     while new_r != 0 {
         let quotient = r / new_r;
         let temp_t = t - quotient * new_t;
@@ -38,7 +38,7 @@ fn mod_inverse(a: u64, p: u64) -> u64 {
         panic!("No modular inverse exists for {} mod {}", a, p);
     }
     if t < 0 {
-        t += p as i128;
+        t += p as i64;
     }
     t as u64
 }
