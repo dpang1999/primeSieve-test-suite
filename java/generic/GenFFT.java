@@ -105,7 +105,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		DoubleField num = new DoubleField(0);
 		GenFFT<ComplexField<DoubleField>> fft = new GenFFT<ComplexField<DoubleField>>(
 				c);
-		int type = 2;
+		int type = 1;
 		if (args.length == 0 && type == 0) {
 			int n = 4;
 			ComplexField<DoubleField>[] data = fft.makeRandom(n);
@@ -161,7 +161,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			System.out.println("Inverse Data2: " + Arrays.toString(data2));
 		}
 		else if (type == 1) {
-			int[] basic = {1,2,3,4};
+			/*int[] basic = {1,2,3,4};
 			IntModP basicNum = new IntModP(1);
 			GenFFT basicFft = new GenFFT(basicNum);
 			IntModP[] basicData = new IntModP[basic.length];
@@ -175,7 +175,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			basicFft.transform(basicData);
 			System.out.println("Transformed Basic Data: " + Arrays.toString(basicData));
 			basicFft.inverse(basicData);
-			System.out.println("Inverse Basic Data: " + Arrays.toString(basicData));
+			System.out.println("Inverse Basic Data: " + Arrays.toString(basicData));*/
 
 			
 			int[] in1 = {

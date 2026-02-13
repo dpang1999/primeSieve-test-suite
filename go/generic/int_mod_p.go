@@ -166,9 +166,6 @@ func modPow(base, exp, modulus uint64) uint64 {
 
 // Implement IPrimitiveRoots interface for IntModP
 func (i IntModP) primitiveRoots(n int64) IntModP {
-	if n == 0 || n >= int64(modulus) {
-		panic("n must be in range [1, p-1]")
-	}
 
 	factors := factorize(modulus - 1)
 	for g := uint64(2); g < modulus; g++ {
@@ -196,7 +193,7 @@ func (i IntModP) precomputeRootsOfUnity(n int, direction int) []IntModP {
 		panic("n must divide p-1 for roots of unity to exist in IntModP")
 	}
 
-	g := i.primitiveRoots(int64(modulus - 1))
+	g := i.primitiveRoots(int64(modulus))
 	omega := g.pow(int64((modulus - 1) / uint64(n)))
 	roots := make([]IntModP, n)
 	for k := 0; k < n; k++ {

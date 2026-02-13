@@ -2,6 +2,7 @@ import { find_prime_congruent_one_mod_n } from '../helpers/find_prime';
 import { LCG } from '../helpers/lcg';
 import { IField } from './iField';
 import { IMath } from './iMath';
+import { IntModP } from './intModP';
 import { IOrdered } from './iOrdered';
 import { IPrimitiveRoots } from './iPrimitiveRoots';
 
@@ -101,27 +102,51 @@ if(require.main == module) {
   const mode = parseInt(args[1] || '0', 10);
   const rand = new LCG(12345, 1345, 16645, 1013904);
 
-  if (mode === 1) {
-    const { ComplexField } = require('./complexField');
-    const { DoubleField } = require('./doubleField');
-    const data = [];
-    for (let i = 0; i < n; i++) {
-      data.push(new ComplexField(new DoubleField(rand.nextDouble()), new DoubleField(rand.nextDouble())));
-    }
-    const fft = new GenFFT(data[0]);
-    const error = fft.test(data);
+  const test = 1; // Set to 1 to run the test, 0 to just run the FFT without checking error
+  if (!test) {
+    if (mode === 1) {
+      const { ComplexField } = require('./complexField');
+      const { DoubleField } = require('./doubleField');
+      const data = [];
+      for (let i = 0; i < n; i++) {
+        data.push(new ComplexField(new DoubleField(rand.nextDouble()), new DoubleField(rand.nextDouble())));
+      }
+      const fft = new GenFFT(data[0]);
+      const error = fft.test(data);
 
-    console.log(`FFT test completed with RMS error: ${error}`);
-  } else {
-    const { IntModP } = require('./intModP');
-    const data = [];
-    const prime = find_prime_congruent_one_mod_n(n);
-    IntModP.setModulus(prime);
-    for (let i = 0; i < n; i++) {
-      data.push(new IntModP(rand.nextInt() % prime));
-    }
-    const fft = new GenFFT(data[0]);
-    const error = fft.test(data);
-    console.log(`FFT test completed with RMS error: ${error}`);
-  } 
+      console.log(`FFT test completed with RMS error: ${error}`);
+    } else {
+      const data = [];
+      const prime = find_prime_congruent_one_mod_n(n);
+      IntModP.setModulus(prime);
+      for (let i = 0; i < n; i++) {
+        data.push(new IntModP(rand.nextInt() % prime));
+      }
+      const fft = new GenFFT(data[0]);
+      const error = fft.test(data);
+      console.log(`FFT test completed with RMS error: ${error}`);
+    } 
+  }
+  else {
+      const in1 = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0];
+      const in2 = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
+      //let out = [3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0];
+      let prime = 40961;
+      IntModP.setModulus(prime);
+      const data1 = [];
+      const data2 = [];
+      for (let i = 0; i < n; i++) {
+        data1.push(new IntModP(in1[i]));
+        data2.push(new IntModP(in2[i]));
+      }
+      const fft = new GenFFT(data1[0]);
+      fft.transform(data1);
+      fft.transform(data2);
+      for (let i = 0; i < n; i++) {
+        data1[i] = data1[i].m(data2[i]);
+      }
+      fft.inverse(data1);
+      console.log("Result:", data1.map(d => d.toString()).join(", "));
+           
+  }
 }

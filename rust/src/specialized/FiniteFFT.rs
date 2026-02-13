@@ -107,8 +107,9 @@ impl FFT
         Self::transform_internal(data, 1, modulus);
         let nd = data.len();
         let n = nd;
+        let norm = mod_inverse(n as i32, modulus) as i64;
         for d in 0..nd {
-            data[d] = (data[d] * mod_inverse(n as i32, modulus) as i64) % (modulus as i64);
+            data[d] = (data[d] * norm) % (modulus as i64);
         }
     }
 
@@ -164,7 +165,7 @@ impl FFT
         Self::bitreverse(data);
 
         let roots = precomputeRootsOfUnity(n as i32, direction, modulus);
-        println!("Roots: {}", roots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        //println!("Roots: {}", roots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         let mut dual = 1;
         for _bit in 0..logn {
@@ -210,8 +211,7 @@ fn main() {
     if mode != 0 {
         let args: Vec<String> = std::env::args().collect();
         let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(16);
-        let modulus = find_prime_congruent_one_mod_n(n) as i32; // Example prime modulus
-        let root = primitive_root(modulus);
+        let modulus = find_prime_congruent_one_mod_n(n) as i32;
         let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let mut data: Vec<i64> = Vec::with_capacity(2*n);
         for _ in 0..n {

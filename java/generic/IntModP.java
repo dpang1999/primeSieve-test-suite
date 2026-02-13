@@ -181,9 +181,6 @@ public class IntModP implements IField<IntModP>,
     }
 
     public IntModP primitiveRoot(long n) {
-        if (n <= 0 || n >= modulus) {
-            throw new IllegalArgumentException("n must be in range [1, p-1]");
-        }
 
         // Factorize p-1
         List<Long> factors = factorize(modulus - 1);
@@ -229,12 +226,12 @@ public class IntModP implements IField<IntModP>,
 
     public IntModP[] precomputeRootsOfUnity(int n, int direction) {
 		// Ensure n divides (p - 1)
-		if ((modulus - 1) % n != 0) {
+        if ((modulus - 1) % n != 0) {
             throw new IllegalArgumentException("n must divide p-1 for roots of unity to exist");
 		}
 
 		// Find a primitive root modulo p
-		IntModP primitiveRoot = primitiveRoot(modulus - 1);
+		IntModP primitiveRoot = primitiveRoot(modulus);
         //System.out.println("Primitive root: " + primitiveRoot);
 
 		// Compute the primitive n-th root of unity

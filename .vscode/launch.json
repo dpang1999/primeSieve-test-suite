@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "GenFFT",
+            "request": "launch",
+            "mainClass": "generic.GenFFT",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
             "name": "FiniteFFT",
             "request": "launch",
             "mainClass": "specialized.FiniteFFT",

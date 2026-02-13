@@ -122,11 +122,11 @@ public class FiniteFFT {
 
 		// Find a primitive root modulo p
 		int primitiveRoot = primitiveRoot(modulus);
-        System.out.println("Primitive root: " + primitiveRoot);
+        //System.out.println("Primitive root: " + primitiveRoot);
 
 		// Compute the primitive n-th root of unity
 		int omega = modPow(primitiveRoot, (modulus - 1) / n, modulus);
-        System.out.println("Omega: " + omega + " p: " + modulus + " n: " + n + " p-1/n= " + (modulus - 1) / n);
+        //System.out.println("Omega: " + omega + " p: " + modulus + " n: " + n + " p-1/n= " + (modulus - 1) / n);
 
 		// Generate all n-th roots of unity
 		int[] roots = new int[n];
@@ -137,7 +137,7 @@ public class FiniteFFT {
 				exponent += (modulus - 1); // Ensure positive exponent
 			}
 			roots[k] = modPow(omega, exponent, modulus);
-            System.out.println("Root " + k + ": " + roots[k] + " exponent: " + exponent);
+            //System.out.println("Root " + k + ": " + roots[k] + " exponent: " + exponent);
 		}
 
 		return roots;
@@ -150,10 +150,6 @@ public class FiniteFFT {
   /** Compute Inverse Fast Fourier Transform of (complex) data, in place.*/
   public static void inverse (long data[], int modulus, int root) {
     transform_internal(data, +1, modulus, root);
-    // print data
-    for (int i = 0; i < data.length; i++) {
-        System.out.println("data[" + i + "] = " + data[i]);
-    }
     // Normalize
     int nd=data.length;
     int n =nd;
@@ -259,7 +255,7 @@ public class FiniteFFT {
     
     int[] roots = precomputeRootsOfUnity(n, direction, modulus);
     // print roots
-    System.out.println("Roots of unity: " + Arrays.toString(roots));
+    //System.out.println("Roots of unity: " + Arrays.toString(roots));
 
     int dual = 1;
     int w;

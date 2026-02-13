@@ -54,5 +54,67 @@ export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntMod
     if (x1 < 0) x1 += m0;
     return x1;
   }
+  primitive_root(p: number): IntModP {
+    let mod = IntModP.getModulus();
+    let factors = this.factorize(p-1);
+    for (let g = 2; g < mod; g++) {
+      let isPrimitiveRoot = true;
+      for (let factor of factors) {
+        if (this.mod_pow(g, (mod - 1) / factor) === 1) {
+          isPrimitiveRoot = false;
+          break;
+        }
+      }
+      if (isPrimitiveRoot) {
+        return new IntModP(g);
+      }
+    }
+    throw new Error('No primitive root found');
+  }
+  pow(exp: number): IntModP {
+    return new IntModP(this.mod_pow(this.value, exp));
+  }
+  precomputeRootsOfUnity(n: number, direction: number): IntModP[] {
+    let mod = IntModP.getModulus();
+    if ((mod - 1) % n !== 0) {
+      throw new Error('Modulus minus one must be divisible by n for precomputeRootsOfUnity');
+    }
+    let root = this.primitive_root(mod);
+    let omega = root.pow((mod - 1) / n);
+    let roots: IntModP[] = [];
+    for (let k = 0; k < n; k++) {
+      let exponent = (k * direction + (mod-1)) % (mod -1)
+      if (exponent < 0) exponent += (mod - 1);
+      roots.push(omega.pow(exponent));
+    }
+    return roots;
+  }
+  factorize(n: number): number[] {
+    let factors: number[] = [];
+    for (let i = 2; i * i <= n; i++) {
+      if (n % i === 0) {
+        factors.push(i);
+        while (n % i === 0) {
+          n = Math.floor(n / i);
+        }
+      }
+    }
+    if (n > 1) {
+      factors.push(n);
+    }
+    return factors;
+  }
+  mod_pow(base: number, exp: number): number {
+    let result = 1;
+    let modulus = IntModP.getModulus();
+    while (exp > 0) {
+      if (exp % 2 === 1) {
+        result = (result * base) % modulus;
+      }
+      exp = Math.floor(exp / 2);
+      base = (base * base) % modulus;
+    }
+    return result;
+  }
   
 }
