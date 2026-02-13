@@ -141,7 +141,7 @@ func bitreverse[N any](data []N) {
 }
 
 func TestGenFFT(n int, fieldType int) {
-	var mode = 1 // let mode = 0 be for testing
+	var mode = 0 // let mode = 0 be for testing
 	// fieldType: 1 = ComplexField[DoubleField], 2 = IntModP
 
 	if mode != 0 {

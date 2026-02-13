@@ -3,7 +3,7 @@ package main
 import (
 	"algos/generic"
 	"algos/helpers"
-	"algos/specialized"
+	finitefft "algos/specialized/finiteFFT"
 	"os"
 	"strconv"
 )
@@ -28,11 +28,9 @@ func main() {
 		return
 	} else {
 		println("specialized.TestFFT")
-		n, err := strconv.Atoi(args[1])
-		if err != nil {
-			n = 16
-		}
-		specialized.TestFFT(n)
+		n := 16
+		finitefft.TestFFT(n)
+		generic.TestGenFFT(n, 1)
 	}
 	//generic.TestGenSOR()
 	//generic.TestGenFFT(268435456, 1)

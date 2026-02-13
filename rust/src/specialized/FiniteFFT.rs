@@ -7,9 +7,9 @@ use rust::helpers::find_prime::{self, find_prime_congruent_one_mod_n};
 pub struct FFT {}
 
 
-fn mod_inverse(a: u64, m: u64) -> u64 {
-    let mut a = a as i64;
-    let mut m = m as i64;
+fn mod_inverse(a: i32, m: i32) -> i32 {
+    let mut m = m;
+    let mut a = a;
     let (mut x0, mut x1) = (0, 1);
     let m0 = m;
     while a > 1 {
@@ -22,10 +22,10 @@ fn mod_inverse(a: u64, m: u64) -> u64 {
         x1 = t;
     }
     if x1 < 0 { x1 += m0; }
-    x1 as u64
+    x1
 }
 
-fn modpow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
+fn modpow(mut base: i32, mut exp: i32, modulus: i32) -> i32 {
     if modulus == 0 { panic!("Modulus must be positive"); }
     let mut result = 1;
     base %= modulus;
@@ -39,8 +39,8 @@ fn modpow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
     result
 }
 
-fn primitive_root(modulus: u64) -> u64 {
-    fn factorize(mut n: u64) -> Vec<u64> {
+fn primitive_root(modulus: i32) -> i32 {
+    fn factorize(mut n: i32) -> Vec<i32> {
         let mut factors = Vec::new();
         let mut i = 2;
         while i * i <= n {
@@ -75,21 +75,20 @@ fn primitive_root(modulus: u64) -> u64 {
 
 }
 
-fn precomputeRootsOfUnity(n: usize, direction: i32, modulus: u64) -> Vec<u64> {
-    let p = modulus;
-    if (p - 1) % n as u64 != 0 {
+fn precomputeRootsOfUnity(n: i32, direction: i32, modulus: i32) -> Vec<i32> {
+    if (modulus - 1) % n != 0 {
         panic!("n must divide p-1 for roots of unity to exist in IntModP");
     }
     let g = primitive_root(modulus);
-    println!("Primitive root: {}", g);
-    let omega = modpow(g, (p-1)/n as u64, modulus);
+    //println!("Primitive root: {}", g);
+    let omega = modpow(g, (modulus-1)/n, modulus);
     let mut roots = Vec::with_capacity(n as usize);
-    for k in 0..n as i32 {
-        let mut exponent: u32 = (k * direction % (p - 1) as i32) as u32;
+    for k in 0..n {
+        let mut exponent = (k * direction % (modulus - 1));
         if exponent < 0 {
-            exponent += (p - 1) as u32;
+            exponent += (modulus - 1);
         }
-        roots.push(modpow(omega, exponent as u64, modulus));
+        roots.push(modpow(omega, exponent, modulus));
     }
     roots
 }
@@ -100,38 +99,38 @@ impl FFT
         Self {}
     }
 
-    pub fn transform(&self, data: &mut [u64], modulus: u64, root: u64) {
-        Self::transform_internal(data, -1, modulus, root);
+    pub fn transform(&self, data: &mut [i64], modulus: i32) {
+        Self::transform_internal(data, -1, modulus);
     }
 
-    pub fn inverse(&self, data: &mut [u64], modulus: u64, root: u64) {
-        Self::transform_internal(data, 1, modulus, root);
+    pub fn inverse(&self, data: &mut [i64], modulus: i32) {
+        Self::transform_internal(data, 1, modulus);
         let nd = data.len();
         let n = nd;
         for d in 0..nd {
-            data[d] = (data[d] * mod_inverse(n as u64, modulus)) % modulus;
+            data[d] = (data[d] * mod_inverse(n as i32, modulus) as i64) % (modulus as i64);
         }
     }
 
     
 
-    pub fn test(&self, data: &mut [u64], modulus: u64,root: u64) {
+    pub fn test(&self, data: &mut [i64], modulus: i32) {
         let nd = data.len();
-        let copy: Vec<u64> = data.iter().map(|x| *x).collect();
+        let copy: Vec<i64> = data.iter().map(|x| *x).collect();
 
-        self.transform(data, modulus, root);
+        self.transform(data, modulus);
 
         //println!("After transform: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-        self.inverse(data, modulus, root);
+        self.inverse(data, modulus);
         //println!("After inverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
     }
 
-    pub fn make_random(&self, n: usize) -> Vec<u64> {
+    pub fn make_random(&self, n: usize) -> Vec<i64> {
         let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let nd = 2*n;
         let mut data = Vec::with_capacity(nd);
         for _ in 0..nd {
-            data.push(rand.next_int() as u64);
+            data.push(rand.next_int() as i64);
         }
         data
     }
@@ -151,7 +150,7 @@ impl FFT
         log
     }
 
-    fn transform_internal(data: &mut [u64], direction: i32, modulus: u64, root: u64) {
+    fn transform_internal(data: &mut [i64], direction: i32, modulus: i32) {
         if data.is_empty() {
             return;
         }
@@ -164,7 +163,7 @@ impl FFT
         let logn = Self::log2(n);
         Self::bitreverse(data);
 
-        let roots = precomputeRootsOfUnity(n, direction, modulus);
+        let roots = precomputeRootsOfUnity(n as i32, direction, modulus);
         println!("Roots: {}", roots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         let mut dual = 1;
@@ -175,16 +174,16 @@ impl FFT
                     let i = b + a;
                     let j = b + a + dual;
 
-                    let wd = w * &data[j] % modulus; // Twiddle factor multiplication
-                    data[j] = (data[i] + modulus - wd) % modulus; // Subtract
-                    data[i] = (data[i] + wd) % modulus; // Add
+                    let wd = w as i64 * &data[j] % modulus as i64; // Twiddle factor multiplication
+                    data[j] = (data[i] + modulus as i64 - wd) % modulus as i64; // Subtract
+                    data[i] = (data[i] + wd) % modulus as i64; // Add
                 }
             }
             dual *= 2;
         }
     }
 
-    fn bitreverse(data: &mut [u64]) {
+    fn bitreverse(data: &mut [i64]) {
         let n = data.len();
         let nm1 = n - 1;
         let mut i = 0;
@@ -211,52 +210,52 @@ fn main() {
     if mode != 0 {
         let args: Vec<String> = std::env::args().collect();
         let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(16);
-        let modulus = find_prime_congruent_one_mod_n(n) as u64; // Example prime modulus
+        let modulus = find_prime_congruent_one_mod_n(n) as i32; // Example prime modulus
         let root = primitive_root(modulus);
         let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
-        let mut data: Vec<u64> = Vec::with_capacity(2*n);
+        let mut data: Vec<i64> = Vec::with_capacity(2*n);
         for _ in 0..n {
-            let r = (rand.next_int() as u64) % modulus;
-            data.push(r);
+            let r = rand.next_int() % modulus;
+            data.push(r as i64);
         }
         println!("Specialized Rust FFT Tests");
         println!("Specialized, Finite Field, n={}", n);
         for i in 0..10 {
-            fft.transform(&mut data, modulus, root);
-            fft.inverse(&mut data, modulus, root);
+            fft.transform(&mut data, modulus);
+            fft.inverse(&mut data, modulus);
             println!("Loop {} done", i);
         }
     }
     else {
-        let in1: [u64; 16] = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0] ;
-        let in2: [u64; 16] = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
+        let in1: [i64; 16] = [38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0] ;
+        let in2: [i64; 16] = [80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0];
         //let out = [3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0];
         let prime = 40961;
         
         let mut data1 = Vec::with_capacity(in1.len());
         let mut data2 = Vec::with_capacity(in2.len());
         for x in 0..in1.len() {
-            data1.push(in1[x] as u64);
-            data2.push(in2[x] as u64);
+            data1.push(in1[x] as i64);
+            data2.push(in2[x] as i64);
         }
 
         let root = primitive_root( prime );
 
-        println!("Using modulus: {}, primitive root: {}", prime, root);
-        fft.transform(&mut data1, prime, root);
-        fft.transform(&mut data2, prime, root);
+        //println!("Using modulus: {}, primitive root: {}", prime, root);
+        fft.transform(&mut data1, prime);
+        fft.transform(&mut data2, prime);
         
         println!("data1: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         println!("data2: {}", data2.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         let mut product = Vec::with_capacity(data1.len());
         for i in 0..data1.len() {
-            product.push((data1[i] * data2[i]) % prime);
+            product.push((data1[i] * data2[i]) % prime as i64);
         }
 
         println!("product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
-        fft.inverse(&mut product, prime, root);
+        fft.inverse(&mut product, prime);
         println!("inverse product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
        
     }

@@ -200,7 +200,7 @@ func (i IntModP) precomputeRootsOfUnity(n int, direction int) []IntModP {
 	omega := g.pow(int64((modulus - 1) / uint64(n)))
 	roots := make([]IntModP, n)
 	for k := 0; k < n; k++ {
-		exponent := uint64(k) * uint64(direction) % (modulus - 1)
+		exponent := int64(k) * int64(direction) % int64(modulus-1)
 		roots[k] = omega.pow(int64(exponent))
 	}
 	return roots

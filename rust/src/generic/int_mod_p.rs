@@ -258,7 +258,7 @@ impl IPrimitiveRoots<IntModP> for IntModP {
         let omega = g.pow((p - 1) / (n as u64));
         let mut roots = Vec::with_capacity(n as usize);
         for k in 0..n as i32 {
-            let mut exponent: u64 = (k * direction % (p - 1) as i32) as u64;
+            let mut exponent: u64 = ((k * direction + (p - 1) as i32) % (p - 1) as i32) as u64;
             if exponent < 0 {
                 exponent += (p - 1) as u64;
             }
