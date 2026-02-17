@@ -2,16 +2,14 @@ use std::collections::HashSet;
 
 use std::hash::{Hash, Hasher};
 
-use std::sync::OnceLock;
-
-static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
+static mut TERM_ORDER: TermOrder = TermOrder::Lex; // default to lex order, can be set to GrLex or RevLex as well
 
 use rust::helpers::lcg::Lcg;
 
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
-    pub coefficient: f64,
+    pub coefficient: u64,
     pub exponents: u64, // Bitpacking of exponents, 8 bits per variable, 6 variables, last 16 bits for degree
 }
 
@@ -24,7 +22,7 @@ pub enum TermOrder {
 
 impl Term {
     /// Create a new Term with human-readable exponents (array of 6 variables) and degree computed automatically.
-    pub fn from_exponents(coefficient: f64, exponents: [u8; 6]) -> Self {
+    pub fn from_exponents(coefficient: u64, exponents: [u8; 6]) -> Self {
         let mut bitpacked_exponents: u64 = 0;
 
         // Pack the exponents with the first exponent at the left (bits 47..40)
@@ -88,7 +86,7 @@ impl Term {
         Term::pack_exponents(er)
     } */
     pub fn compare(&self, other: &Term) -> std::cmp::Ordering {
-        let order = TERM_ORDER.get().expect("TERM_ORDER not initialized");
+        let order = unsafe { TERM_ORDER };
         match order {
             TermOrder::Lex => {
                 // Compare packed exponent fields directly (ignore degree)
@@ -160,11 +158,11 @@ impl Term {
     }
 
     pub fn debug_print(&self) {
-        println!("Coefficient: {}", self.coefficient);
+        print!("C:{} | ", self.coefficient);
 
         // Print the degree (top 16 bits) in hex
         let degree = (self.exponents >> 48) & 0xFFFF;
-        print!("Degree: {:04X}, Exponents (hex): ", degree);
+        print!("E(hex):{:04X} ", degree);
 
         // Print each 8-bit exponent in hex
         for i in (0..48).step_by(8).rev() {
@@ -180,7 +178,7 @@ impl Eq for Term {}
 
 impl Hash for Term {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.coefficient.to_bits().hash(state);
+        self.coefficient.hash(state);
         self.exponents.hash(state);
     }
 }
@@ -200,6 +198,28 @@ impl Hash for Polynomial {
     }
 }
 
+fn mod_inverse(a: u64, m: u64) -> u64 {
+    let (mut a, mut m) = (a as i64, m as i64);
+    let (mut x0, mut x1) = (0i64, 1i64);
+    let m0 = m;
+    if m == 1 {
+        return 0;
+    }
+    while a > 1 {
+        let q = a / m;
+        let t = m;
+        m = a % m;
+        a = t;
+        let tmp = x0;
+        x0 = x1 - q * x0;
+        x1 = tmp;
+    }
+    if x1 < 0 {
+        x1 += m0;
+    }
+    (x1 % m0) as u64
+}
+
 impl Polynomial {
     pub fn debug_print(&self) {
         println!("Polynomial:");
@@ -211,23 +231,18 @@ impl Polynomial {
     pub fn new(mut terms: Vec<Term>) -> Self {
         // Sort terms by sort order
         terms.sort_by(|a, b| b.compare(a));
-        //terms.retain(|t| t.coefficient != 0.0); // Remove zero coefficient terms
-        // remove terms that are very close but not equal to 0 to handle floating point errors
-        terms.retain(|t| (t.coefficient - 0.0).abs() > 1e-2);
-        // round coefficients to 5 decimal places to handle floating point errors
-        for term in &mut terms {
-            term.coefficient = (term.coefficient * 1e5).round() / 1e5;
-        }   
+        terms.retain(|t| t.coefficient != 0); // Remove zero coefficient terms
+       
         Polynomial { terms }
     }
 
-    pub fn add(&self, other: &Polynomial) -> Polynomial {
+    pub fn add(&self, other: &Polynomial, modulus: u64) -> Polynomial {
         let mut result = self.terms.clone();
         for term in &other.terms {
             let mut found = false;
             for res_term in &mut result {
                 if res_term.exponents == term.exponents {
-                    res_term.coefficient = res_term.coefficient + term.coefficient;
+                    res_term.coefficient = (res_term.coefficient + term.coefficient) % modulus;
                     found = true;
                     break;
                 }
@@ -245,20 +260,20 @@ impl Polynomial {
         Polynomial::new(result)
     }
 
-    pub fn subtract(&self, other: &Polynomial) -> Polynomial {
+    pub fn subtract(&self, other: &Polynomial, modulus: u64) -> Polynomial {
         let mut result = self.terms.clone();
         for term in &other.terms {
             let mut found = false;
             for res_term in &mut result {
                 if res_term.exponents == term.exponents {
-                    res_term.coefficient = res_term.coefficient - term.coefficient;
+                    res_term.coefficient = (modulus + res_term.coefficient - term.coefficient) % modulus;
                     found = true;
                     break;
                 }
             }
             if !found {
                 let mut neg_term = term.clone();
-                neg_term.coefficient = -term.coefficient;
+                neg_term.coefficient = (modulus + 0- term.coefficient) % modulus;
                 result.push(neg_term);
             }
         }
@@ -270,9 +285,20 @@ impl Polynomial {
         Polynomial::new(result)
     }
     
+    pub fn make_monic(&self, modulus: u64) -> Polynomial {
+        if self.terms.is_empty() { return self.clone(); }
+        let lead_coeff = self.terms[0].coefficient;
+        let inv = mod_inverse(lead_coeff, modulus);
+        let new_terms = self.terms.iter().map(|t| Term {
+            coefficient: (t.coefficient * inv) % modulus,
+            exponents: t.exponents.clone(),
+        }).collect();
+        Polynomial::new(new_terms)
+    }
 
-   pub fn reduce(&self, divisors: &[Polynomial]) -> Polynomial {
+   pub fn reduce(&self, divisors: &[Polynomial], modulus: u64) -> Polynomial {
         let mut result = self.clone(); // Start with the input polynomial
+        let mut remainder: Vec<Term> = Vec::new();
 
         loop {
             let mut reduced = false;
@@ -286,7 +312,7 @@ impl Polynomial {
                     if let Some(divisor_leading_term) = divisor.terms.first() {
                         // Check if the leading term can be reduced
                         if leading_term.can_reduce(&divisor_leading_term) {
-                            let coefficient = leading_term.coefficient / divisor_leading_term.coefficient;
+                            let coefficient = leading_term.coefficient * mod_inverse(divisor_leading_term.coefficient, modulus) % modulus;
                             let exponents = leading_term.exponents - divisor_leading_term.exponents;
 
                             let reduction_term = Term {
@@ -294,8 +320,8 @@ impl Polynomial {
                                 exponents,
                             };
 
-                            let scaled_divisor = divisor.multiply_by_term(&reduction_term);
-                            result = result.subtract(&scaled_divisor);
+                            let scaled_divisor = divisor.multiply_by_term(&reduction_term, modulus);
+                            result = result.subtract(&scaled_divisor, modulus);
 
                             reduced = true;
                             break; // Restart the loop after reducing
@@ -306,19 +332,27 @@ impl Polynomial {
 
             // If no reduction was performed, break the loop
             if !reduced {
-                break;
+                if let Some(leading_term) = result.terms.first().cloned() {
+                    //if(debug) { println!("No further reduction possible. Moving leading term {:?} to remainder.", leading_term); }
+                    remainder.push(leading_term);
+                    result.terms.remove(0);
+                }
+                else {
+                    break;
+                }
             }
         }
 
+        result.terms.append(&mut remainder);
         Polynomial::new(result.terms)
     }
 
-    pub fn multiply_by_term(&self, term: &Term) -> Polynomial {
+    pub fn multiply_by_term(&self, term: &Term, modulus: u64) -> Polynomial {
         let terms = self
             .terms
             .iter()
             .map(|t| Term {
-                coefficient: t.coefficient * term.coefficient,
+                coefficient: (t.coefficient * term.coefficient) % modulus,
                 exponents: t.exponents + term.exponents,
             })
             .collect();
@@ -326,7 +360,7 @@ impl Polynomial {
         Polynomial::new(terms)
     }
 
-    pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial) -> Polynomial {
+    pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial, modulus: u64) -> Polynomial {
         // Extract the leading terms of p1 and p2
         let leading_term_p1 = &p1.terms[0];
         let leading_term_p2 = &p2.terms[0];
@@ -338,66 +372,69 @@ impl Polynomial {
         let scale_factor_p2 = lcm_exponents - leading_term_p2.exponents;
 
         let scaled_p1 = p1.multiply_by_term(&Term {
-            coefficient: 1.0,
+            coefficient: 1,
             exponents: scale_factor_p1,
-        });
+        }, modulus);
 
         let scaled_p2 = p2.multiply_by_term(&Term {
-            coefficient: 1.0,
+            coefficient: 1,
             exponents: scale_factor_p2,
-        });
+        }, modulus);    
 
-        scaled_p1.subtract(&scaled_p2)
+        scaled_p1.subtract(&scaled_p2, modulus)
     }
 
 }
 
-pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
+pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u64) -> Vec<Polynomial> {
     let mut basis = polynomials.clone();
     let mut basis_set: HashSet<Polynomial> = HashSet::new();
     // print basis and polynomials
-    /*for poly in &basis {
-        poly.debug_print();
-        println!("---");
-    }*/
-
-    //println!("Begin the experiment, {}", basis.len());
-    loop { 
-        let basis_len = basis.len();
-        let mut added = false;
-        for i in 0..basis_len {
-            for j in i + 1..basis_len {
-                let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
-                let reduced = s_poly.reduce(&basis);
-                //print basis[i], basis[j], s_poly, reduced
-    
-                if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
-                    //println!("Basis 1: {:?} | Basis 2: {:?} | S-Polynomial: {:?}", basis[i], basis[j], s_poly);
-                    //println!("Reduced: {:?}", reduced);
-                    basis_set.insert(reduced.clone());
-                    basis.push(reduced);
-                    //println!("Adding new polynomial to basis, total size now: {}", basis.len());
-                    added = true;
-                }
-            }
-        }
-
-        if !added {
-            break;
-        }
-
-        //print basis with new lines separating each polynomial
-        //println!("New basis polynomials:");
-        /*for poly in &basis {
-            println!("{:?}", poly);
-        }*/
+    for poly in &basis {
+        //println!("{:?}", poly);
+        basis_set.insert(poly.clone());
     }
 
-    // print basis before reduction
-    /*println!("Basis before reduction:");
-    for poly in &basis {
-        println!("{:?}", poly);
-    }*/
+    let mut processed_pairs = HashSet::<(usize, usize)>::new();
+    let mut pairs = Vec::<(usize, usize)>::new();
+    for i in 0..basis.len() {
+        for j in i + 1..basis.len() {
+            pairs.push((i, j));
+        }
+    }
+    //println!("Begin the experiment, {}", basis.len());
+    while pairs.is_empty() == false {
+        let (i, j) = pairs.remove(0);
+        //println!("Processing pair ({}, {})", i, j);
+        processed_pairs.insert((i,j));
+        let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j], modulus);
+        /*let mut debug = false;
+        if(i == 0 && j == 7 || i == 3 && j == 4 || j ==4 && i==3) 
+        { debug = true; println!("Debugging S-Polynomial for basis[{}] and basis[{}]", i, j); 
+        // print basis
+        for poly in &basis {
+                println!("{:?}", poly);
+            }
+        }*/
+        let reduced = s_poly.reduce(&basis, modulus);
+        if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
+            //println!("Adding new polynomial to basis."); 
+            basis_set.insert(reduced.clone());
+      
+            basis.push(reduced);
+            let new_idx = basis.len() - 1;
+            pairs.extend((0..new_idx).map(|k| (k, new_idx)));
+        }
+    }
+       
+
+        //print basis with new lines separating each polynomial
+        /*println!("New basis polynomials:");
+        for poly in &basis {
+            println!("{:?}", poly);
+        }
+        println!("End of iteration {}\n", i);*/
+    
 
     //reduce basis by self
     let mut reduced_basis = Vec::new();
@@ -405,31 +442,21 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         // reduce poly by basis excluding itself
         let mut basis_excluding_self = basis.clone();
         basis_excluding_self.retain(|p| p != poly);
-        let reduced = poly.reduce(&basis_excluding_self);
+        let reduced = poly.reduce(&basis_excluding_self, modulus);
         if !reduced.terms.is_empty() && !reduced_basis.contains(&reduced) {
-            reduced_basis.push(reduced);
+            reduced_basis.push(reduced.make_monic(modulus));
         }
     }
-
-    /* I don't think this is necessary, but it does make for a nicer output
-    //if leading term of polynomial has negative coefficient flip all signs
-    for poly in &mut reduced_basis {
-        if let Some(leading_term) = poly.terms.first() {
-            if leading_term.coefficient < 0.0 {
-                for term in &mut poly.terms {
-                    term.coefficient = -term.coefficient;
-                }
-            }
-        }
-    }*/
-
     reduced_basis
+    //basis
+
+    
 }
 
-pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> bool {
+pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>, modulus: u64) -> bool {
     // Check if all polynomials in set_a reduce to zero using set_b
     for poly in &set_a {
-        let reduced = poly.reduce(&set_b);
+        let reduced = poly.reduce(&set_b, modulus);
         if !reduced.terms.is_empty() {
             return false; // Found a polynomial in set_a that does not reduce to zero
         }
@@ -437,7 +464,7 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 
     // Check if all polynomials in set_b reduce to zero using set_a
     for poly in &set_b {
-        let reduced = poly.reduce(&set_a);
+        let reduced = poly.reduce(&set_a, modulus);
         if !reduced.terms.is_empty() {
             return false; // Found a polynomial in set_b that does not reduce to zero
         }
@@ -460,17 +487,18 @@ fn main() {
         let term_order: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
 
         match term_order {
-            0 => TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"),
-            1 => TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized"),
-            2 => TERM_ORDER.set(TermOrder::RevLex).expect("TERM_ORDER already initialized"),
-            _ => TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"),
+            0 => unsafe {TERM_ORDER = TermOrder::Lex},
+            1 => unsafe {TERM_ORDER = TermOrder::GrLex},
+            2 => unsafe {TERM_ORDER = TermOrder::RevLex},
+            _ => unsafe {TERM_ORDER = TermOrder::Lex},
         }
 
         let mut input_basis = Vec::new();
+        let modulus = 13 as u64;
         for _ in 0..num_polynomials {
             let mut terms = Vec::new();
             for _ in 0..3 { // always 3 terms per polynomial
-                let coefficient = (rand.next_double() * 2.0 - 1.0) as f64;
+                let coefficient = (rand.next_int() as u64 % modulus); // Coefficient between 0 and modulus-1
                 let mut exponents = [0u8; 6];
                 for i in 0..3 { // only working with 3 variables for now
                     exponents[i] = (rand.next_int() % 4) as u8; // Exponent between 0 and 3
@@ -480,7 +508,7 @@ fn main() {
             input_basis.push(Polynomial::new(terms));
         }
 
-        let basis = naive_grobner_basis(input_basis);
+        let basis = naive_grobner_basis(input_basis, modulus);
         println!("{}", basis.len());
         /*println!("Computed Grobner Basis Polynomials:");
         for poly in &basis {
@@ -490,91 +518,47 @@ fn main() {
         return;
     }
     else {
-        //Lex, GrLex, RevLex
-        TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
+        let modulus = 7 as u64;
+        unsafe { TERM_ORDER = TermOrder::Lex; }
 
-        // x^2 * y + y^2 * z + z^2 * x
+        // Cyclic 4 system: x0+x1+x2+x3, x0x1+x1x2+x2x3+x3x0, x0x1x2+x1x2x3+x2x3x0+x3x0x1, x0x1x2x3-1
+        // f1 = x0 + x1 + x2 + x3
         let p1 = Polynomial::new(vec![
-            Term::from_exponents(1.0, [2, 1, 0, 0, 0, 0]),
-            Term::from_exponents(1.0, [0, 2, 1, 0, 0, 0]),
-            Term::from_exponents(1.0, [1, 0, 2, 0, 0, 0]),
+            Term::from_exponents(1, [1, 0, 0, 0, 0, 0]),
+            Term::from_exponents(1, [0, 1, 0, 0, 0, 0]),
+            Term::from_exponents(1, [0, 0, 1, 0, 0, 0]),
+            Term::from_exponents(1, [0, 0, 0, 1, 0, 0]),
         ]);
 
-        // x * y * z - 1
+        // f2 = x0x1 + x1x2 + x2x3 + x3x0
         let p2 = Polynomial::new(vec![
-            Term::from_exponents(1.0, [1, 1, 1, 0, 0, 0]),
-            Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
+            Term::from_exponents(1, [1, 1, 0, 0, 0, 0]),
+            Term::from_exponents(1, [0, 1, 1, 0, 0, 0]),
+            Term::from_exponents(1, [0, 0, 1, 1, 0, 0]),
+            Term::from_exponents(1, [1, 0, 0, 1, 0, 0]),
         ]);
 
-        // x + y + z
+        // f3 = x0x1x2 + x1x2x3 + x2x3x0 + x3x0x1
         let p3 = Polynomial::new(vec![
-            Term::from_exponents(1.0, [1, 0, 0, 0, 0, 0]),
-            Term::from_exponents(1.0, [0, 1, 0, 0, 0, 0]),
-            Term::from_exponents(1.0, [0, 0, 1, 0, 0, 0]),
+            Term::from_exponents(1, [1, 1, 1, 0, 0, 0]),
+            Term::from_exponents(1, [0, 1, 1, 1, 0, 0]),
+            Term::from_exponents(1, [1, 0, 1, 1, 0, 0]),
+            Term::from_exponents(1, [1, 1, 0, 1, 0, 0]),
         ]);
 
-        // x^2 - y
+        // f4 = x0x1x2x3 - 1
         let p4 = Polynomial::new(vec![
-            Term::from_exponents(1.0, [2, 0, 0, 0, 0, 0]),
-            Term::from_exponents(-1.0, [0, 1, 0, 0, 0, 0]),
+            Term::from_exponents(1, [1, 1, 1, 1, 0, 0]),
+            Term::from_exponents(modulus-1, [0, 0, 0, 0, 0, 0]),
         ]);
 
-        // xy - 1
-        let p5 = Polynomial::new(vec![
-            Term::from_exponents(1.0, [1, 1, 0, 0, 0, 0]),
-            Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
-        ]);
+        let input_basis = vec![p1, p2, p3, p4];
+        let basis = naive_grobner_basis(input_basis, modulus);
 
-        // 3*x + 2*z^7 - 7*z^4 - 7*z
-        let test_poly_1 = Polynomial::new(vec![
-            Term::from_exponents(3.0, [1, 0, 0, 0, 0, 0]),
-            Term::from_exponents(2.0, [0, 0, 7, 0, 0, 0]),
-            Term::from_exponents(-7.0, [0, 0, 4, 0, 0, 0]),
-            Term::from_exponents(-7.0, [0, 0, 1, 0, 0, 0]),
-        ]);
-
-        // 3*y - 2*z^7 + 7*z^4 + 10*z
-        let test_poly_2 = Polynomial::new(vec![
-            Term::from_exponents(3.0, [0, 1, 0, 0, 0, 0]),
-            Term::from_exponents(-2.0, [0, 0, 7, 0, 0, 0]),
-            Term::from_exponents(7.0, [0, 0, 4, 0, 0, 0]),
-            Term::from_exponents(10.0, [0, 0, 1, 0, 0, 0]),
-        ]);
-
-        // z^9 - 3*z^6 - 6*z^3 - 1
-        let test_poly_3 = Polynomial::new(vec![
-            Term::from_exponents(1.0, [0, 0, 9, 0, 0, 0]),
-            Term::from_exponents(-3.0, [0, 0, 6, 0, 0, 0]),
-            Term::from_exponents(-6.0, [0, 0, 3, 0, 0, 0]),
-            Term::from_exponents(-1.0, [0, 0, 0, 0, 0, 0]),
-        ]);
-        //test s-poly
-        let s_poly = Polynomial::s_polynomial(&p1, &p2);
-        println!("S-Polynomial of p1 and p2:");
-        s_poly.debug_print();
-        let input_basis = vec![p1, p2,p3];
-        let basis = naive_grobner_basis(input_basis);
-        let test_basis = vec![test_poly_1, test_poly_2, test_poly_3];
-
-        // print computed basis
-        println!("Computed Grobner Basis Polynomials:");
+        println!("Cyclic 4 Grobner Basis:");
         for poly in &basis {
             poly.debug_print();
-            //println!("{:?}", poly);
             println!("---");
         }
-
-        // print test_basis
-        println!("Test Basis Polynomials:");
-        for poly in &test_basis {
-            poly.debug_print();
-            println!("---");
-        }
-
-
-        let is_equivalent = are_bases_equivalent(basis, test_basis);
-        println!("Are the computed basis and test basis equivalent? {}", is_equivalent);
-
-        
     }
 }

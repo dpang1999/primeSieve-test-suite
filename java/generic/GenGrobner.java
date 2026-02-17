@@ -3,12 +3,16 @@ package generic;
 
 import java.util.*;
 import helpers.LCG;
+import helpers.ModInverse;
+
+
 
 
 public class GenGrobner {
     public enum TermOrder {
         Lex, GrLex, RevLex
     }
+    public static TermOrder termOrder = TermOrder.Lex;
 
     public static class Term<C extends IField<C>, E extends IExponent<E>> {
         public final C coefficient;
@@ -23,8 +27,8 @@ public class GenGrobner {
             return exponents.degree();
         }
 
-        public int compareTo(Term<C, E> other, TermOrder order) {
-            switch (order) {
+        public int compareTo(Term<C, E> other) {
+            switch (termOrder) {
                 case Lex:
                     return exponents.compareTo(other.exponents);
                 case GrLex:
@@ -72,26 +76,26 @@ public class GenGrobner {
     }
 
     public static class Polynomial<C extends IField<C>, E extends IExponent<E>> {
-        public final List<Term<C, E>> terms;
+        public List<Term<C, E>> terms;
 
-        public Polynomial(List<Term<C, E>> terms, TermOrder order) {
+        public Polynomial(List<Term<C, E>> terms) {
             List<Term<C, E>> filtered = new ArrayList<>();
             for (Term<C, E> t : terms) {
                 if (Math.abs(t.coefficient.coerce() - 0.0) > 1e-2) filtered.add(t);
             }
-            filtered.sort((a, b) -> b.compareTo(a, order));
-            this.terms = Collections.unmodifiableList(filtered);
+            filtered.sort((a, b) -> b.compareTo(a));
+            this.terms = filtered;
         }
 
-        public Polynomial<C,E> deepCopy(TermOrder order) {
+        public Polynomial<C,E> deepCopy() {
             List<Term<C, E>> copiedTerms = new ArrayList<>();
             for (Term<C, E> t : terms) {
                 copiedTerms.add(new Term<>(t.coefficient, t.exponents));
             }
-            return new Polynomial<>(copiedTerms, order);
+            return new Polynomial<>(copiedTerms);
         }
 
-        public Polynomial<C, E> add(Polynomial<C, E> other, TermOrder order) {
+        public Polynomial<C, E> add(Polynomial<C, E> other) {
             //List<Term<C, E>> result = this.deepCopy(order).terms;
             List<Term<C, E>> result = new ArrayList<>(terms);
             for (Term<C, E> t : other.terms) {
@@ -107,10 +111,10 @@ public class GenGrobner {
                 }
                 if (!found) result.add(t);
             }
-            return new Polynomial<>(result, order);
+            return new Polynomial<>(result);
         }
 
-        public Polynomial<C, E> subtract(Polynomial<C, E> other, TermOrder order) {
+        public Polynomial<C, E> subtract(Polynomial<C, E> other) {
             List<Term<C, E>> result = new ArrayList<>(terms);
             for (Term<C, E> t : other.terms) {
                 boolean found = false;
@@ -125,51 +129,75 @@ public class GenGrobner {
                 }
                 if (!found) result.add(new Term<>(t.coefficient.zero().s(t.coefficient), t.exponents));
             }
-            return new Polynomial<>(result, order);
+            return new Polynomial<>(result);
         }
 
-        public Polynomial<C, E> multiplyByTerm(Term<C, E> term, TermOrder order) {
+        public Polynomial<C,E> makeMonic() {
+            if (terms.isEmpty()) return new Polynomial<C, E>(terms);
+            C leadCoeff = terms.get(0).coefficient;
+            List<Term<C, E>> newTerms = new ArrayList<>();
+            for (Term<C, E> t : terms) {
+                C newCoeff = t.coefficient.d(leadCoeff);
+                newTerms.add(new Term<>(newCoeff, t.exponents));
+            }
+            return new Polynomial<>(newTerms);
+        }
+
+        public Polynomial<C, E> multiplyByTerm(Term<C, E> term) {
             List<Term<C, E>> result = new ArrayList<>();
             for (Term<C, E> t : terms) {
                 result.add(new Term<>(t.coefficient.m(term.coefficient), t.exponents.add(term.exponents)));
             }
-            return new Polynomial<>(result, order);
+            return new Polynomial<>(result);
         }
 
-        public Polynomial<C, E> reduce(List<Polynomial<C, E>> divisors, TermOrder order) {
-            Polynomial<C, E> result = this;
-            boolean reduced;
-            do {
-                reduced = false;
-                for (Polynomial<C, E> divisor : divisors) {
+        public Polynomial<C, E> reduce(List<Polynomial<C, E>> divisors) {
+            Polynomial<C, E> result = this.deepCopy();
+            List<Term<C, E>> remainder = new ArrayList<>();
+            while (true) {
+                boolean reduced = false;
+                //System.out.println("Current polynomial to reduce: " + result.toString());
+                for (Polynomial<C,E> divisor : divisors) {
+                    // debug
+                    //System.out.println("Attempting to reduce by divisor: " + divisor.toString());
                     if (result.terms.isEmpty() || divisor.terms.isEmpty()) continue;
-                    Term<C, E> lead = result.terms.get(0);
-                    Term<C, E> divLead = divisor.terms.get(0);
-                    //System.out.println("Attempting to reduce " + lead + " by " + divLead);
-                    if (lead.canReduce(divLead)) {
-                        C coeff = lead.coefficient.d(divLead.coefficient);
-                        E exps = lead.exponents.sub(divLead.exponents);
-                        Term<C, E> reductionTerm = new Term<>(coeff, exps);
-                        Polynomial<C, E> scaledDivisor = divisor.multiplyByTerm(reductionTerm, order);
-                        result = result.subtract(scaledDivisor, order);
+                    Term<C,E> leadingTerm = result.terms.get(0);
+                    Term<C,E> divisorLeadingTerm = divisor.terms.get(0);
+                    if (leadingTerm.canReduce(divisorLeadingTerm)) {
+                        // debug
+                        //System.out.println("leading term: " + leadingTerm.toString() + " can be reduced by divisor leading term: " + divisorLeadingTerm.toString());
+                        E exponents = leadingTerm.exponents.sub(divisorLeadingTerm.exponents);
+                        C coefficient = leadingTerm.coefficient.d(divisorLeadingTerm.coefficient);
+                        Term<C,E> reductionTerm = new Term<C,E>(coefficient, exponents);
+                        //System.out.println("reduction term: " + reductionTerm.toString());
+                        Polynomial<C,E> scaledDivisor = divisor.multiplyByTerm(reductionTerm);
+                        //System.out.println("scaled divisor: " + scaledDivisor.toString());
+                        result = result.subtract(scaledDivisor);
                         reduced = true;
-                        //System.out.println("Reduced to: " + result + "\n\n");
+                        //System.out.println("Reduced polynomial: " + result.toString());
                         break;
                     }
                 }
-            } while (reduced);
-            return new Polynomial<>(result.terms, order);
+                if (!reduced) {
+                    if (result.terms.isEmpty()) break;
+                    //System.out.println("No reduction possible for leading term: " + result.terms.get(0).toString() + ", moving to remainder");
+                    remainder.add(result.terms.get(0));
+                    result.terms.remove(0);
+                }
+            }
+            result.terms.addAll(remainder);
+            return new Polynomial<>(result.terms);
         }
 
-        public static <C extends IField<C>, E extends IExponent<E>> Polynomial<C, E> sPolynomial(Polynomial<C, E> p1, Polynomial<C, E> p2, TermOrder order) {
+        public static <C extends IField<C>, E extends IExponent<E>> Polynomial<C, E> sPolynomial(Polynomial<C, E> p1, Polynomial<C, E> p2) {
             Term<C, E> lead1 = p1.terms.get(0);
             Term<C, E> lead2 = p2.terms.get(0);
             E lcmExps = lead1.lcm(lead2);
             E scale1 = lcmExps.sub(lead1.exponents);
             E scale2 = lcmExps.sub(lead2.exponents);
-            Polynomial<C, E> scaled1 = p1.multiplyByTerm(new Term<>(lead1.coefficient.one(), scale1), order);
-            Polynomial<C, E> scaled2 = p2.multiplyByTerm(new Term<>(lead2.coefficient.one(), scale2), order);
-            return scaled1.subtract(scaled2, order);
+            Polynomial<C, E> scaled1 = p1.multiplyByTerm(new Term<>(lead1.coefficient.one(), scale1));
+            Polynomial<C, E> scaled2 = p2.multiplyByTerm(new Term<>(lead2.coefficient.one(), scale2));
+            return scaled1.subtract(scaled2);
         }
 
         @Override
@@ -184,7 +212,7 @@ public class GenGrobner {
         }
     }
 
-    public static <C extends IField<C>, E extends IExponent<E>> List<Polynomial<C, E>> naiveGrobnerBasis(List<Polynomial<C, E>> polys, TermOrder order) {
+    public static <C extends IField<C>, E extends IExponent<E>> List<Polynomial<C, E>> naiveGrobnerBasis(List<Polynomial<C, E>> polys) {
         List<Polynomial<C, E>> basis = new ArrayList<>(polys);
         Set<Polynomial<C, E>> basisSet = new HashSet<>(basis);
         boolean added;
@@ -194,8 +222,8 @@ public class GenGrobner {
             //System.out.println("Basis length:"+n);
             for (int i = 0; i < n; i++) {
                 for (int j = i + 1; j < n; j++) {
-                    Polynomial<C, E> sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j), order);
-                    Polynomial<C, E> reduced = sPoly.reduce(basis, order);
+                    Polynomial<C, E> sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j));
+                    Polynomial<C, E> reduced = sPoly.reduce(basis);
                     if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
                         //System.out.println("Reduced S-Polynomial of basis[" + i + "] and basis[" + j + "]: " + reduced);
                         basisSet.add(reduced);
@@ -215,10 +243,10 @@ public class GenGrobner {
         for (Polynomial<C, E> poly : basis) {
             List<Polynomial<C, E>> basisExcludingSelf = new ArrayList<>(basis);
             basisExcludingSelf.remove(poly);
-            Polynomial<C, E> reduced = poly.reduce(basisExcludingSelf, order);
+            Polynomial<C, E> reduced = poly.reduce(basisExcludingSelf);
             //System.out.println("Reducing");
             if (!reduced.terms.isEmpty() && !reducedBasis.contains(reduced)) {
-                reducedBasis.add(reduced);
+                reducedBasis.add(reduced.makeMonic());
             }
         }
         return reducedBasis;
@@ -237,19 +265,19 @@ public class GenGrobner {
     public static void main(String[] args) {
         int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
         int numTerms = args.length > 1 ? Integer.parseInt(args[1]) : 3;
-        int coeffType = args.length > 2 ? Integer.parseInt(args[2]) : 0;
-        int expType = args.length > 3 ? Integer.parseInt(args[3]) : 0;
+        int coeffType = args.length > 2 ? Integer.parseInt(args[2]) : 10;
+        int expType = args.length > 3 ? Integer.parseInt(args[3]) : 10;
         int orderArg = args.length > 4 ? Integer.parseInt(args[4]) : 0;
-        int modulus = args.length > 5 ? Integer.parseInt(args[5]) : 13;
+        int modulus = args.length > 5 ? Integer.parseInt(args[5]) : 7;
         IntModP.setModulus(modulus);
-        TermOrder order;
         switch (orderArg) {
-            case 0: order = TermOrder.Lex; break;
-            case 1: order = TermOrder.GrLex; break;
-            case 2: order = TermOrder.RevLex; break;
-            default: order = TermOrder.Lex;
+            case 0: termOrder = TermOrder.Lex; break;
+            case 1: termOrder = TermOrder.GrLex; break;
+            case 2: termOrder = TermOrder.RevLex; break;
+            default: termOrder = TermOrder.Lex;
         }
-        System.out.println("Using term order: " + order);
+        System.out.println("Using term order: " + termOrder);
+        System.out.println("Modulus for IntModP: " + IntModP.getModulus());
         LCG rand = new LCG(12345, 1345, 16645, 1013904);
         if (coeffType == 0 && expType == 0) {
             // SingleField + VecExponent
@@ -261,7 +289,7 @@ public class GenGrobner {
                     VecExponent exponents = new VecExponent(Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4));
                     terms.add(new Term<>(coefficient, exponents));
                 }
-                inputBasis.add(new Polynomial<>(terms, order));
+                inputBasis.add(new Polynomial<>(terms));
             }
             
 
@@ -278,7 +306,7 @@ public class GenGrobner {
             System.out.println(test);*/
 
 
-            List<Polynomial<SingleField, VecExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            List<Polynomial<SingleField, VecExponent>> basis = naiveGrobnerBasis(inputBasis);
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<SingleField, VecExponent> poly : basis) {
                 System.out.println(poly);
@@ -293,9 +321,9 @@ public class GenGrobner {
                     BitPackedExponent exponents = BitPackedExponent.fromArray(new int[]{rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4, 0, 0, 0});
                     terms.add(new Term<>(coefficient, exponents));
                 }
-                inputBasis.add(new Polynomial<>(terms, order));
+                inputBasis.add(new Polynomial<>(terms));
             }
-            List<Polynomial<SingleField, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            List<Polynomial<SingleField, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis);
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<SingleField, BitPackedExponent> poly : basis) {
                 System.out.println(poly);
@@ -310,9 +338,9 @@ public class GenGrobner {
                     VecExponent exponents = new VecExponent(Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4));
                     terms.add(new Term<>(coefficient, exponents));
                 }
-                inputBasis.add(new Polynomial<>(terms, order));
+                inputBasis.add(new Polynomial<>(terms));
             }
-            List<Polynomial<DoubleField, VecExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            List<Polynomial<DoubleField, VecExponent>> basis = naiveGrobnerBasis(inputBasis);
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<DoubleField, VecExponent> poly : basis) {
                 System.out.println(poly);
@@ -327,9 +355,9 @@ public class GenGrobner {
                     BitPackedExponent exponents = BitPackedExponent.fromArray(new int[]{rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4, 0, 0, 0});
                     terms.add(new Term<>(coefficient, exponents));
                 }
-                inputBasis.add(new Polynomial<>(terms, order));
+                inputBasis.add(new Polynomial<>(terms));
             }
-            List<Polynomial<DoubleField, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            List<Polynomial<DoubleField, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis);
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<DoubleField, BitPackedExponent> poly : basis) {
                 System.out.println(poly);
@@ -344,9 +372,9 @@ public class GenGrobner {
                     VecExponent exponents = new VecExponent(Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4));
                     terms.add(new Term<>(coefficient, exponents));
                 }
-                inputBasis.add(new Polynomial<>(terms, order));
+                inputBasis.add(new Polynomial<>(terms));
             }
-            List<Polynomial<IntModP, VecExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            List<Polynomial<IntModP, VecExponent>> basis = naiveGrobnerBasis(inputBasis);
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<IntModP, VecExponent> poly : basis) {
                 System.out.println(poly);
@@ -361,15 +389,50 @@ public class GenGrobner {
                     BitPackedExponent exponents = BitPackedExponent.fromArray(new int[]{rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4, 0, 0, 0});
                     terms.add(new Term<>(coefficient, exponents));
                 }
-                inputBasis.add(new Polynomial<>(terms, order));
+                inputBasis.add(new Polynomial<>(terms));
             }
-            List<Polynomial<IntModP, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis, order);
+            List<Polynomial<IntModP, BitPackedExponent>> basis = naiveGrobnerBasis(inputBasis);
             System.out.println("Computed Grobner Basis Polynomials:");
             for (Polynomial<IntModP, BitPackedExponent> poly : basis) {
                 System.out.println(poly);
             }
         } else {
-            System.out.println("Invalid coefficient or exponent type selection.");
+            System.out.println("Cyclic 4 time");
+
+            // IntModP + Vec Exponent
+            // Cyclic 4
+
+            // a + b + c + d
+            Term<IntModP, VecExponent> t1 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(1,0,0,0)));
+            Term<IntModP, VecExponent> t2 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(0,1,0,0)));
+            Term<IntModP, VecExponent> t3 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(0,0,1,0)));
+            Term<IntModP, VecExponent> t4 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(0,0,0,1)));
+            Polynomial<IntModP, VecExponent> p1 = new Polynomial<>(Arrays.asList(t1, t2, t3, t4));
+
+            // ab + bc + cd + da
+            Term<IntModP, VecExponent> t5 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(1,1,0,0)));
+            Term<IntModP, VecExponent> t6 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(0,1,1,0)));
+            Term<IntModP, VecExponent> t7 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(0,0,1,1)));
+            Term<IntModP, VecExponent> t8 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(1,0,0,1)));
+            Polynomial<IntModP, VecExponent> p2 = new Polynomial<>(Arrays.asList(t5, t6, t7, t8));
+
+            // abc + bcd + cda + dab
+            Term<IntModP, VecExponent> t9 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(1,1,1,0)));
+            Term<IntModP, VecExponent> t10 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(0,1,1,1)));
+            Term<IntModP, VecExponent> t11 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(1,0,1,1)));
+            Term<IntModP, VecExponent> t12 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(1,1,0,1)));
+            Polynomial<IntModP, VecExponent> p3 = new Polynomial<>(Arrays.asList(t9, t10, t11, t12));
+
+            // abcd + 1
+            Term<IntModP, VecExponent> t13 = new Term<>(new IntModP(1), new VecExponent(Arrays.asList(1,1,1,1)));
+            Term<IntModP, VecExponent> t14 = new Term<>(new IntModP(modulus-1), new VecExponent(Arrays.asList(0,0,0,0)));
+            Polynomial<IntModP, VecExponent> p4 = new Polynomial<>(Arrays.asList(t13, t14));
+
+            List<Polynomial<IntModP, VecExponent>> basis = naiveGrobnerBasis(Arrays.asList(p1, p2, p3, p4));
+            System.out.println("Computed Grobner Basis Polynomials:");
+            for (Polynomial<IntModP, VecExponent> poly : basis) {
+                System.out.println(poly);
+            }
         }
     }
 }

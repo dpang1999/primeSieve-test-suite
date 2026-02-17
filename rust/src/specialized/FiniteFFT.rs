@@ -239,8 +239,6 @@ fn main() {
             data2.push(in2[x] as i64);
         }
 
-        let root = primitive_root( prime );
-
         //println!("Using modulus: {}, primitive root: {}", prime, root);
         fft.transform(&mut data1, prime);
         fft.transform(&mut data2, prime);

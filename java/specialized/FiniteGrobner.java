@@ -7,6 +7,7 @@ import helpers.ModInverse;
 
 
 public class FiniteGrobner {
+    public static TermOrder termOrder = TermOrder.Lex;
     public static int modulus;
     public static class Term {
         public int coefficient;
@@ -25,7 +26,8 @@ public class FiniteGrobner {
             return exponents.stream().mapToInt(Integer::intValue).sum();
         }
 
-        public int compareTo(Term other, TermOrder order) {
+        public int compareTo(Term other) {
+            TermOrder order = termOrder;
             switch (order) {
                 case Lex:
                     for (int i = 0; i < exponents.size(); i++) {
@@ -79,18 +81,18 @@ public class FiniteGrobner {
     public static class Polynomial {
         public List<Term> terms;
 
-        public Polynomial(List<Term> terms, TermOrder order) {
+        public Polynomial(List<Term> terms) {
             this.terms = new ArrayList<>(terms);
             this.terms.removeIf(t -> t.coefficient == 0);
-            this.terms.sort((a, b) -> b.compareTo(a, order));
+            this.terms.sort((a, b) -> b.compareTo(a));
         }
 
-        public Polynomial deepCopy(TermOrder order) {
+        public Polynomial deepCopy() {
             List<Term> newTerms = new ArrayList<>();
             for (Term t : this.terms) {
                 newTerms.add(new Term(t.coefficient, t.exponents));
             }
-            return new Polynomial(newTerms, order);
+            return new Polynomial(newTerms);
         }
 
         @Override
@@ -104,8 +106,8 @@ public class FiniteGrobner {
             return sb.toString();
         }
 
-        public Polynomial add(Polynomial other, TermOrder order) {
-            List<Term> result = this.deepCopy(order).terms;
+        public Polynomial add(Polynomial other) {
+            List<Term> result = this.deepCopy().terms;
             for (Term term : other.terms) {
                 boolean found = false;
                 for (Term resTerm : result) {
@@ -119,29 +121,42 @@ public class FiniteGrobner {
                     result.add(new Term(term.coefficient, term.exponents));
                 }
             }
-            return new Polynomial(result, order);
+            return new Polynomial(result);
         }
 
-        public Polynomial subtract(Polynomial other, TermOrder order) {
-            List<Term> result = this.deepCopy(order).terms;
+        public Polynomial subtract(Polynomial other) {
+            List<Term> result = this.deepCopy().terms;
             for (Term term : other.terms) {
                 boolean found = false;
                 for (Term resTerm : result) {
                     if (resTerm.exponents.equals(term.exponents)) {
-                        resTerm.coefficient = (resTerm.coefficient - term.coefficient) % modulus;
+                        resTerm.coefficient = (modulus + resTerm.coefficient - term.coefficient) % modulus;
                         found = true;
                         break;
                     }
                 }
                 if (!found) {
-                    int negCoeff = (modulus - (term.coefficient % modulus)) % modulus;
+                    int negCoeff = (modulus - term.coefficient) % modulus;
                     result.add(new Term(negCoeff, term.exponents));
                 }
             }
-            return new Polynomial(result, order);
+            return new Polynomial(result);
         }
 
-        public Polynomial multiplyByTerm(Term term, TermOrder order) {
+        public Polynomial makeMonic() {
+            if (terms.isEmpty()) return this.deepCopy();
+            int leadCoeff = terms.get(0).coefficient;
+            int inv = ModInverse.modInverse(leadCoeff, modulus);
+            List<Term> newTerms = new ArrayList<>();
+            for (Term t : terms) {
+                int newCoeff = (t.coefficient * inv) % modulus;
+                if (newCoeff < 0) newCoeff += modulus;
+                newTerms.add(new Term(newCoeff, t.exponents));
+            }
+            return new Polynomial(newTerms);
+        }
+
+        public Polynomial multiplyByTerm(Term term) {
             List<Term> result = new ArrayList<>();
             for (Term t : terms) {
                 List<Integer> newExponents = new ArrayList<>();
@@ -150,13 +165,14 @@ public class FiniteGrobner {
                 }
                 result.add(new Term((t.coefficient * term.coefficient) % modulus, newExponents));
             }
-            return new Polynomial(result, order);
+            return new Polynomial(result);
         }
 
-        public Polynomial reduce(List<Polynomial> divisors, TermOrder order) {
+        public Polynomial reduce(List<Polynomial> divisors) {
             // deep copy of self
             //Polynomial result = this.deepCopy(order);
-            Polynomial result = new Polynomial(this.terms, order);
+            Polynomial result = new Polynomial(this.terms);
+            List<Term> remainder = new ArrayList<>();
             while (true) {
                 boolean reduced = false;
                 for (Polynomial divisor : divisors) {
@@ -177,18 +193,24 @@ public class FiniteGrobner {
                             exps.add(leadingTerm.exponents.get(i) - divisorLeadingTerm.exponents.get(i));
                         }
                         Term reductionTerm = new Term(coefficient, exps);
-                        Polynomial scaledDivisor = divisor.multiplyByTerm(reductionTerm, order);
-                        result = result.subtract(scaledDivisor, order);
+                        Polynomial scaledDivisor = divisor.multiplyByTerm(reductionTerm);
+                        result = result.subtract(scaledDivisor);
                         reduced = true;
                         break;
                     }
                 }
-                if (!reduced) break;
+                if (!reduced) {
+                    if (result.terms.isEmpty()) break;
+                    //System.out.println("No reduction possible for leading term: " + result.terms.get(0).toString() + ", moving to remainder");
+                    remainder.add(result.terms.get(0));
+                    result.terms.remove(0);
+                }
             }
-            return new Polynomial(result.terms, order);
+            result.terms.addAll(remainder);
+            return new Polynomial(result.terms);
         }
 
-        public static Polynomial sPolynomial(Polynomial p1, Polynomial p2, TermOrder order) {
+        public static Polynomial sPolynomial(Polynomial p1, Polynomial p2) {
             Term leadingTermP1 = p1.terms.get(0);
             Term leadingTermP2 = p2.terms.get(0);
             int n = leadingTermP1.exponents.size();
@@ -219,13 +241,13 @@ public class FiniteGrobner {
                 }
                 scaledTermsP2.add(new Term(t.coefficient, newExponents));
             }
-            Polynomial scaledP1 = new Polynomial(scaledTermsP1, order);
-            Polynomial scaledP2 = new Polynomial(scaledTermsP2, order);
-            return scaledP1.subtract(scaledP2, order);
+            Polynomial scaledP1 = new Polynomial(scaledTermsP1);
+            Polynomial scaledP2 = new Polynomial(scaledTermsP2);
+            return scaledP1.subtract(scaledP2);
         }
     }
 
-    public static List<Polynomial> naiveGrobnerBasis(List<Polynomial> polynomials, TermOrder order) {
+    public static List<Polynomial> naiveGrobnerBasis(List<Polynomial> polynomials) {
         List<Polynomial> basis = new ArrayList<>();
         for (Polynomial poly : polynomials) {
             //basis.add(poly.deepCopy(order));
@@ -237,12 +259,12 @@ public class FiniteGrobner {
             int basisLen = basis.size();
             for (int i = 0; i < basisLen; i++) {
                 for (int j = i + 1; j < basisLen; j++) {
-                    Polynomial sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j), order);
+                    Polynomial sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j));
                     // print basis terms and s polynomial
                     //System.out.print("Basis 1: " + basis.get(i).terms);
                     //System.out.print(" | Basis 2: " + basis.get(j).terms);
                     //System.out.println(" | S-Polynomial: " + sPoly.terms);
-                    Polynomial reduced = sPoly.reduce(basis, order);
+                    Polynomial reduced = sPoly.reduce(basis);
                     if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
                         //basis.add(reduced.deepCopy(order));
                         //basisSet.add(reduced.deepCopy(order));
@@ -264,9 +286,9 @@ public class FiniteGrobner {
                     basisExcludingSelf.add(p);
                 }
             }
-            Polynomial reduced = poly.reduce(basisExcludingSelf, order);
+            Polynomial reduced = poly.reduce(basisExcludingSelf);
             if (!reduced.terms.isEmpty() && !reducedBasis.contains(reduced)) {
-                reducedBasis.add(reduced);
+                reducedBasis.add(reduced.makeMonic());
             }
         }
         return reducedBasis;
@@ -274,11 +296,11 @@ public class FiniteGrobner {
 
     public static boolean areBasesEquivalent(List<Polynomial> setA, List<Polynomial> setB, TermOrder order) {
         for (Polynomial poly : setA) {
-            Polynomial reduced = poly.reduce(setB, order);
+            Polynomial reduced = poly.reduce(setB);
             if (!reduced.terms.isEmpty()) return false;
         }
         for (Polynomial poly : setB) {
-            Polynomial reduced = poly.reduce(setA, order);
+            Polynomial reduced = poly.reduce(setA);
             if (!reduced.terms.isEmpty()) return false;
         }
         return true;
@@ -286,15 +308,15 @@ public class FiniteGrobner {
 
     public static void main(String[] args) {
         // let mode = 0 be for testing
-        int mode = 1;
-        TermOrder order = TermOrder.Lex;
+        int mode = 0;
+        FiniteGrobner.termOrder = TermOrder.Lex;
         if (args.length > 1) {
             int orderArg = Integer.parseInt(args[1]);
             switch (orderArg) {
-                case 0: order = TermOrder.Lex; break;
-                case 1: order = TermOrder.GrLex; break;
-                case 2: order = TermOrder.RevLex; break;
-                default: order = TermOrder.Lex;
+                case 0: FiniteGrobner.termOrder = TermOrder.Lex; break;
+                case 1: FiniteGrobner.termOrder = TermOrder.GrLex; break;
+                case 2: FiniteGrobner.termOrder = TermOrder.RevLex; break;
+                default: FiniteGrobner.termOrder = TermOrder.Lex;
             }
         }
         if (mode != 0) {
@@ -311,9 +333,9 @@ public class FiniteGrobner {
                     List<Integer> exponents = Arrays.asList(rand.nextInt() % 4, rand.nextInt() % 4, rand.nextInt() % 4);
                     terms.add(new Term(coefficient, exponents));
                 }
-                inputBasis.add(new Polynomial(terms, order));
+                inputBasis.add(new Polynomial(terms));
             }
-            List<Polynomial> basis = naiveGrobnerBasis(inputBasis, order);
+            List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
             System.out.println(basis.size());
             
             System.out.println("Computed Grobner Basis Polynomials:");
@@ -322,48 +344,44 @@ public class FiniteGrobner {
             }
             
         } else {
-            int modulus = 13;
+            int modulus = 7;
             FiniteGrobner.modulus = modulus;
-            // x^2 - y
+            
+            
+            // x + y + z + w
             List<Term> terms1 = new ArrayList<>();
-            terms1.add(new Term(1, Arrays.asList(2, 0)));
-            terms1.add(new Term(-1, Arrays.asList(0, 1)));
-            Polynomial p1 = new Polynomial(terms1, order);
-            // xy - 1   
+            terms1.add(new Term(1, Arrays.asList(1, 0, 0, 0)));
+            terms1.add(new Term(1, Arrays.asList(0, 1, 0, 0)));
+            terms1.add(new Term(1, Arrays.asList(0, 0, 1, 0)));
+            terms1.add(new Term(1, Arrays.asList(0, 0, 0, 1)));
+            Polynomial p1 = new Polynomial(terms1);
+
+            // x*y + y*z + z*w + w*x
             List<Term> terms2 = new ArrayList<>();
-            terms2.add(new Term(1, Arrays.asList(1, 1)));
-            terms2.add(new Term(-1, Arrays.asList(0, 0)));
-            Polynomial p2 = new Polynomial(terms2, order);
-            List<Polynomial> inputBasis = Arrays.asList(p1, p2);
-            List<Polynomial> basis = naiveGrobnerBasis(inputBasis, order);
-            System.out.println("Computed Grobner Basis Polynomials:");
-            for (Polynomial poly : basis) {
-                System.out.println(poly.terms);
-            }
+            terms2.add(new Term(1, Arrays.asList(1, 1, 0, 0)));
+            terms2.add(new Term(1, Arrays.asList(0, 1, 1, 0)));
+            terms2.add(new Term(1, Arrays.asList(0, 0, 1, 1)));
+            terms2.add(new Term(1, Arrays.asList(1, 0, 0, 1)));
+            Polynomial p2 = new Polynomial(terms2);
 
-
-            // x^3 + y^3 + z^3
+            // x*y*z + y*z*w + z*w*x + w*x*y
             List<Term> terms3 = new ArrayList<>();
-            terms3.add(new Term(1, Arrays.asList(3, 0, 0)));
-            terms3.add(new Term(1, Arrays.asList(0, 3, 0)));
-            terms3.add(new Term(1, Arrays.asList(0, 0, 3)));
-            Polynomial p3 = new Polynomial(terms3, order);
-            // x*y + y*z + z*x
+            terms3.add(new Term(1, Arrays.asList(1, 1, 1, 0)));
+            terms3.add(new Term(1, Arrays.asList(0, 1, 1, 1)));
+            terms3.add(new Term(1, Arrays.asList(1, 0, 1, 1)));
+            terms3.add(new Term(1, Arrays.asList(1, 1, 0, 1)));
+            Polynomial p3 = new Polynomial(terms3);
+
+            // x*y*z*w - 1
             List<Term> terms4 = new ArrayList<>();
-            terms4.add(new Term(1, Arrays.asList(1, 1, 0)));
-            terms4.add(new Term(1, Arrays.asList(0, 1, 1)));
-            terms4.add(new Term(1, Arrays.asList(1, 0, 1)));
-            Polynomial p4 = new Polynomial(terms4, order);
-            // x+y+z
-            List<Term> terms5 = new ArrayList<>();
-            terms5.add(new Term(1, Arrays.asList(1, 0, 0)));
-            terms5.add(new Term(1, Arrays.asList(0, 1, 0)));
-            terms5.add(new Term(1, Arrays.asList(0, 0, 1)));
-            Polynomial p5 = new Polynomial(terms5   , order);
-            List<Polynomial> inputBasis2 = Arrays.asList(p3, p4, p5);
-            List<Polynomial> basis2 = naiveGrobnerBasis(inputBasis2, order);
-            System.out.println("Computed Grobner Basis Polynomials for second example:");
-            for (Polynomial poly : basis2) {
+            terms4.add(new Term(1, Arrays.asList(1, 1, 1, 1)));
+            terms4.add(new Term(modulus-1, Arrays.asList(0, 0, 0, 0)));
+            Polynomial p4 = new Polynomial(terms4);
+
+            List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4);
+            List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
+            System.out.println("Cyclic 4 Grobner Basis:");
+            for (Polynomial poly : basis) {
                 System.out.println(poly.terms);
             }
         }

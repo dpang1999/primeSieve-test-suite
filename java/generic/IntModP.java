@@ -31,14 +31,14 @@ public class IntModP implements IField<IntModP>,
         //fCount++;
         if (o == null)
             return new IntModP(d);
-        if (Long.MAX_VALUE - d < o.d) {
+       /*  if (Long.MAX_VALUE - d < o.d) {
             //System.out.println("OVERFLOW: d=" + d + ", o.d=" + o.d);
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
             BigInteger bigP = BigInteger.valueOf(modulus);
             long result = bigD.add(bigOD).mod(bigP).longValue();
             return new IntModP(result);
-        }
+        } */
         else
             return new IntModP(d + o.d);
     }
@@ -46,14 +46,14 @@ public class IntModP implements IField<IntModP>,
         //fCount++;
         if (o != null)
             d = (d + o.d) % modulus;
-        if (Long.MAX_VALUE - d < o.d) {
+       /*  if (Long.MAX_VALUE - d < o.d) {
             //System.out.println("OVERFLOW: d=" + d + ", o.d=" + o.d);
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
             BigInteger bigP = BigInteger.valueOf(modulus);
             long result = bigD.add(bigOD).mod(bigP).longValue();
             d = result;
-        }
+        } */
     }
     public IntModP s(IntModP o) {
         //fCount++;
@@ -72,26 +72,26 @@ public class IntModP implements IField<IntModP>,
         if (o == null) {
             return new IntModP(0);
         }
-        if (d != 0 && (Long.MAX_VALUE / d) + 1 < o.d) { // Add 1 to compensate for edge case with integer division
+       /*  if (d != 0 && (Long.MAX_VALUE / d) + 1 < o.d) { // Add 1 to compensate for edge case with integer division
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
             BigInteger bigP = BigInteger.valueOf(modulus);
             long result = bigD.multiply(bigOD).mod(bigP).longValue();
             return new IntModP(result);
-        }
+        } */
         return new IntModP(d * o.d);
             
     }
     public void me(IntModP o) {
         //fCount++;
-        if (d != 0 && (Long.MAX_VALUE / d) + 1 < o.d) { // Add 1 to compensate for edge case with integer division
+        /* if (d != 0 && (Long.MAX_VALUE / d) + 1 < o.d) { // Add 1 to compensate for edge case with integer division
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigOD = BigInteger.valueOf(o.d);
             BigInteger bigP = BigInteger.valueOf(modulus);
             d = bigD.multiply(bigOD).mod(bigP).longValue();
-        }
-        else 
-            d = (d * o.d) % modulus;
+        } 
+        else*/ 
+        d = (d * o.d) % modulus;
     }
 
     public IntModP d(IntModP o) {
@@ -99,15 +99,15 @@ public class IntModP implements IField<IntModP>,
             throw new ArithmeticException("Division by zero in IntModP");
         }
         long inverse = modInverse(o.d, modulus); // Compute modular inverse of o.d
-        if (d != 0 && (Long.MAX_VALUE / d) + 1 < inverse) // Add 1 to compensate for edge case with integer division
+      /*   if (d != 0 && (Long.MAX_VALUE / d) + 1 < inverse) // Add 1 to compensate for edge case with integer division
         {
-            System.out.println("OVERFLOW: d=" + d + ", inverse=" + inverse);
+            //System.out.println("OVERFLOW: d=" + d + ", inverse=" + inverse);
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigInverse = BigInteger.valueOf(inverse);
             BigInteger bigP = BigInteger.valueOf(modulus);
             d = bigD.multiply(bigInverse).mod(bigP).longValue();
             return new IntModP(d);
-        }
+        } */
         return new IntModP(d * inverse); // Multiply by the inverse modulo p
     }
     
@@ -118,7 +118,7 @@ public class IntModP implements IField<IntModP>,
         long inverse = modInverse(o.d, modulus); // Compute modular inverse of o.d
         long temp = d;
         d = (d * inverse) % modulus; // Update the current value
-        if (d != 0 && (Long.MAX_VALUE / temp) + 1 < inverse) // Add 1 to compensate for edge case with integer division
+       /*  if (d != 0 && (Long.MAX_VALUE / temp) + 1 < inverse) // Add 1 to compensate for edge case with integer division
         {
             BigInteger bigD = BigInteger.valueOf(d);
             BigInteger bigInverse = BigInteger.valueOf(modInverse(o.d, modulus));
@@ -126,7 +126,7 @@ public class IntModP implements IField<IntModP>,
 
             // Compute (d * inverse) % p using BigInteger
             d = bigD.multiply(bigInverse).mod(bigP).longValue();
-        }
+        } */
     }
 
     private static long modInverse(long b, long p) {

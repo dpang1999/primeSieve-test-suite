@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use std::hash::{Hash, Hasher};
+use std::vec;
 
 static mut TERM_ORDER: TermOrder = TermOrder::Lex; // default to lex order, can be set to GrLex or RevLex as well
 
@@ -210,7 +211,7 @@ impl Polynomial {
             // If no reduction was performed, break the loop
             if !reduced {
                 if let Some(leading_term) = result.terms.first().cloned() {
-                    //if(debug) { println!("No further reduction possible. Moving leading term {:?} to remainder.", leading_term); }
+                    //println!("No reduction possible for leading term: {:?}, moving to remainder", leading_term);
                     remainder.push(leading_term);
                     result.terms.remove(0);
                 }
@@ -219,7 +220,8 @@ impl Polynomial {
                 }
             }
         }
-
+        
+    
         result.terms.append(&mut remainder);
         Polynomial::new(result.terms)
     }
@@ -644,49 +646,36 @@ fn main() {
             assert_eq!(hash1, hash3);
         }
         else {
-            // x + y + z
+            // cyclic 4
+            // a + b + c + d
             let q1 = Polynomial::new(vec![
-                Term {
-                    coefficient: 1,
-                    exponents: vec![1, 0, 0], // x
-                },
-                Term {
-                    coefficient: 1,
-                    exponents: vec![0, 1, 0], // y
-                },
-                Term {
-                    coefficient: 1,
-                    exponents: vec![0, 0, 1], // z
-                },
+                Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
+                Term { coefficient: 1, exponents: vec![0, 1, 0, 0] },
+                Term { coefficient: 1, exponents: vec![0, 0, 1, 0] },
+                Term { coefficient: 1, exponents: vec![0, 0, 0, 1] },
             ]);
-            // xy + xz + yz
+            // ab + bc + cd + ad
             let q2 = Polynomial::new(vec![
-                Term {
-                    coefficient: 1,
-                    exponents: vec![1, 1, 0], // xy
-                },
-                Term {
-                    coefficient: 1,
-                    exponents: vec![1, 0, 1], // xz
-                },
-                Term {
-                    coefficient: 1,
-                    exponents: vec![0, 1, 1], // yz 
-                },
+                Term { coefficient: 1, exponents: vec![1, 1, 0, 0] },
+                Term { coefficient: 1, exponents: vec![0, 1, 1, 0] },
+                Term { coefficient: 1, exponents: vec![0, 0, 1, 1] },
+                Term { coefficient: 1, exponents: vec![1, 0, 0, 1] },
             ]);
-            // xyz - 1
+            // abc + bcd + cda + dab
             let q3 = Polynomial::new(vec![
-                Term {
-                    coefficient: 1,
-                    exponents: vec![1, 1, 1], // xyz
-                },
-                Term {
-                    coefficient: modulus - 1,
-                    exponents: vec![0, 0, 0], // -1
-                },
-            ]); 
+                Term { coefficient: 1, exponents: vec![1, 1, 1, 0] },
+                Term { coefficient: 1, exponents: vec![0, 1, 1, 1] },
+                Term { coefficient: 1, exponents: vec![1, 0, 1, 1] },
+                Term { coefficient: 1, exponents: vec![1, 1, 0, 1] },
+            ]);
+            // abcd - 1
+            let q4 = Polynomial::new(vec![
+                Term { coefficient: 1, exponents: vec![1, 1, 1, 1] },
+                Term { coefficient: modulus - 1, exponents: vec![0, 0, 0, 0] },
+            ]);
+
             let p1clone = p1.clone();
-            let basis = naive_grobner_basis(vec![p1,p2,p3,p4,p5], modulus);
+            let basis = naive_grobner_basis(vec![q1,q2,q3,q4], modulus);
             // copy basis
             let mut copied_basis = basis.clone();
             println!("Final Grobner Basis:");

@@ -16,9 +16,8 @@ use crate::helpers::lcg::Lcg;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
-use std::sync::OnceLock;
 
-static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
+static mut TERM_ORDER: TermOrder = TermOrder::Lex; // default to lex order, can be set to GrLex or RevLex as well
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Term<C, E> 
@@ -48,7 +47,8 @@ where
     }
 
     pub fn compare(&self, other: &Term<C, E>) -> std::cmp::Ordering {
-        match TERM_ORDER.get().unwrap() {
+        let order = unsafe { TERM_ORDER };
+        match order {
             TermOrder::Lex => self.exponents.lex_compare(&other.exponents),
             TermOrder::GrLex => {
                 let degree_self = self.exponents.degree();
@@ -168,8 +168,21 @@ where
         Polynomial::new(result)
     }
 
+    pub fn make_monic(&self) -> Polynomial<C, E> {
+        if self.terms.is_empty() { return self.clone(); }
+        let lead_coeff = self.terms[0].coefficient.clone();
+        let new_terms = self.terms.iter().map(|t| Term {
+            coefficient: t.coefficient.d(&lead_coeff),
+            exponents: t.exponents.clone(),
+        }).collect();
+        Polynomial::new(new_terms)
+    }
+
+
+
     pub fn reduce(&self, divisors: &[Polynomial<C, E>]) -> Polynomial<C, E> {
         let mut result = self.clone();
+        let mut remainder = Vec::new();
 
         loop {
             let mut reduced = false;
@@ -200,11 +213,19 @@ where
                 }
             }
 
-            if !reduced {
-                break;
+              if !reduced {
+                if let Some(leading_term) = result.terms.first().cloned() {
+                    //println!("No reduction possible for leading term: {:?}, moving to remainder", leading_term);
+                    remainder.push(leading_term);
+                    result.terms.remove(0);
+                }
+                else {
+                    break;
+                }
             }
         }
-
+        
+        result.terms.append(&mut remainder);
         Polynomial::new(result.terms)
     }
 
@@ -299,7 +320,7 @@ where
         basis_excluding_self.retain(|p| p != poly);
         let reduced = poly.reduce(&basis_excluding_self);
         if !reduced.terms.is_empty() && !reduced_basis.contains(&reduced) {
-            reduced_basis.push(reduced);
+            reduced_basis.push(reduced.make_monic());
         }
     }
     reduced_basis
@@ -307,7 +328,7 @@ where
 
 fn main() {
     // let mode = 0 be for testing
-    let mode = 1;
+    let mode = 0;
     println!("This is a generic Grobner basis computation module.");
     if mode != 0 {
         let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
@@ -338,10 +359,10 @@ fn main() {
             0
         };
         match term_order {
-            0 => { TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"); },
-            1 => { TERM_ORDER.set(TermOrder::GrLex).expect("TERM_ORDER already initialized"); },
-            2 => { TERM_ORDER.set(TermOrder::RevLex).expect("TERM_ORDER already initialized"); },
-            _ => { TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized"); },
+            0 => unsafe { TERM_ORDER = TermOrder::Lex; },
+            1 => unsafe { TERM_ORDER = TermOrder::GrLex; },
+            2 => unsafe { TERM_ORDER = TermOrder::RevLex; },
+            _ => unsafe { TERM_ORDER = TermOrder::Lex; },
         }
 
         let prime = 67;
@@ -403,35 +424,43 @@ fn main() {
 
     }
     else if mode == 0 {
-        TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
-        //x^2*y + y^2*z + z^2*x
-        let p1 = Polynomial::new(vec![
-            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([2,1,0,0,0,0])),
-            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,2,1,0,0,0])),
-            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1,0,2,0,0,0])),
-        ]);
-        //xyz - 1
-        let p2 = Polynomial::new(vec![
-            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1, 1,1,0,0,0])),
-            Term::from_exponents(SingleField::new(-1.0), BitPackedExponent::from_vec([0, 0,0,0,0,0])),
-        ]);
-        // x+ y + z
-        let p3 = Polynomial::new(vec![
-            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([1,0,0,0,0,0])),
-            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,1,0,0,0,0])),
-            Term::from_exponents(SingleField::new(1.0), BitPackedExponent::from_vec([0,0,1,0,0,0])),
-        ]);
-        let initial_basis = vec![p1.clone(), p2.clone(), p3.clone()];
-        for(i, poly) in initial_basis.iter().enumerate() {
-            println!("Initial Polynomial {}: {}", i + 1, poly);
-        }
-        let basis = naive_grobner_basis(vec![p1, p2, p3]);
-        println!("Computed Grobner basis with {} polynomials.", basis.len());
-        // print basis
-        for (i, poly) in basis.iter().enumerate() {
-            println!("Polynomial {}: {}", i + 1, poly);
-        }
+        unsafe { TERM_ORDER = TermOrder::Lex; }
+
+    let modulus = 7;
+    set_modulus(modulus as u64);
+    let p1 = Polynomial::new(vec![
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,0,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,0,0,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,0,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,1,0,0])),
+    ]);
+
+    let p2 = Polynomial::new(vec![
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,0,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,0,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,1,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,1,0,0])),
+    ]);
+
+    let p3 = Polynomial::new(vec![
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,0,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,1,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,1,1,0,0])),
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,1,0,0])),
+    ]);
+
+    let p4 = Polynomial::new(vec![
+        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,0,0])),
+        Term::from_exponents(IntModP::new(modulus-1), BitPackedExponent::from_vec([0,0,0,0,0,0])),
+    ]);
+
+    let basis = naive_grobner_basis(vec![p1, p2, p3, p4]);
+    println!("Computed Grobner basis with {} polynomials.", basis.len());
+    for (i, poly) in basis.iter().enumerate() {
+        println!("Polynomial {}: {}", i + 1, poly);
     }
+}
+
 }
 
 // Helper function to generate a vector of polynomials for all type combinations
