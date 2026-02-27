@@ -1,7 +1,6 @@
 import { IField } from './iField';
 import { IMath } from './iMath';
 import { IOrdered } from './iOrdered';
-import { ICopiable } from './iCopiable';
 
 // Generic Term and Polynomial for any field and exponent type
 export class Term<C, E> {

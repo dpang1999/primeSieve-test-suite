@@ -33,22 +33,26 @@ func NewIntModP(value uint64) IntModP {
 
 // Modular inverse using Extended Euclidean Algorithm
 func modInverse(a, p uint64) uint64 {
-	var t, newT int64 = 0, 1
-	var r, newR int64 = int64(p), int64(a % p)
-
-	for newR != 0 {
-		quotient := r / newR
-		t, newT = newT, t-quotient*newT
-		r, newR = newR, r-quotient*newR
+	a = a % p
+	m := p
+	x0 := int64(0)
+	x1 := int64(1)
+	if m == 1 {
+		return 0
 	}
-
-	if r > 1 {
-		panic(fmt.Sprintf("No modular inverse exists for %d mod %d", a, p))
+	for a > 1 {
+		q := a / m
+		t := m
+		m = a % m
+		a = t
+		temp := x0
+		x0 = x1 - int64(q)*x0
+		x1 = temp
 	}
-	if t < 0 {
-		t += int64(p)
+	if x1 < 0 {
+		x1 += int64(p)
 	}
-	return uint64(t)
+	return uint64(x1)
 }
 
 // Implement IField interface for IntModP

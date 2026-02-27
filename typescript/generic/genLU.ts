@@ -147,7 +147,7 @@ if (require.main === module) {
     } else {
       const { IntModP } = require('./intModP');
       const primes = primeSieve(Math.floor(rand.nextDouble() * 36340 + 10000));
-      const prime = primes.findLastIndex((isComposite) => !isComposite);
+      const prime = primes.lastIndexOf(false);
       IntModP.setModulus(prime);
       console.log(prime);
       const a = Array.from({ length: n }, () => Array.from({ length: n }, () => new IntModP(rand.nextInt())));

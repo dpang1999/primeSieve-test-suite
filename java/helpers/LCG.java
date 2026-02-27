@@ -14,11 +14,12 @@ public class LCG {
     }
 
     public int nextInt() {
-        lastNumber = (a * lastNumber + c) % m;
-        return lastNumber;
+        lastNumber = (a * lastNumber + c); // modulus is treated as 2^32, 32 bit overflow will automatically wrap around
+        return lastNumber & 0x7FFFFFFF; // ignore bit sign bit to ensure non-negative output
     }
 
     public double nextDouble() {
-        return (double) nextInt() / m;
+        return (double) nextInt() / 4294967296.0; // 2^32
     }
 }
+

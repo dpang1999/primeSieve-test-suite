@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "LCG",
+            "request": "launch",
+            "mainClass": "helpers.LCG",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
+            "name": "FindPrime",
+            "request": "launch",
+            "mainClass": "helpers.FindPrime",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
             "name": "GenFFT",
             "request": "launch",
             "mainClass": "generic.GenFFT",

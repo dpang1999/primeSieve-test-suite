@@ -23,24 +23,26 @@ pub fn set_modulus(p: u64) {
 }
 
 fn mod_inverse(a: u64, p: u64) -> u64 {
-    let (mut t, mut new_t) = (0 as i64, 1 as i64);
-    let (mut r, mut new_r) = (p as i64, a.rem_euclid(p) as i64);
-    while new_r != 0 {
-        let quotient = r / new_r;
-        let temp_t = t - quotient * new_t;
-        t = new_t;
-        new_t = temp_t;
-        let temp_r = r - quotient * new_r;
-        r = new_r;
-        new_r = temp_r;
+    let mut a = a % p;
+    let mut m = p;
+    let mut x0: i64 = 0;
+    let mut x1: i64 = 1;
+    if m == 1 {
+        return 0;
     }
-    if r > 1 {
-        panic!("No modular inverse exists for {} mod {}", a, p);
+    while a > 1 {
+        let q = a / m;
+        let t = m;
+        m = a % m;
+        a = t;
+        let temp = x0;
+        x0 = x1 - q as i64 * x0;
+        x1 = temp;
     }
-    if t < 0 {
-        t += p as i64;
+    if x1 < 0 {
+        x1 += p as i64;
     }
-    t as u64
+    x1 as u64
 }
 
 impl IntModP {

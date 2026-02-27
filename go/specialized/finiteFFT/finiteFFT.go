@@ -67,6 +67,7 @@ func primitiveRoots(modulus int) int {
 
 func precomputeRootsOfUnity(n int, direction int, modulus int) []int {
 	if (modulus-1)%n != 0 {
+		print(n, "  ", modulus)
 		panic("n must divide p-1 for roots of unity to exist in IntModP")
 	}
 
@@ -202,7 +203,7 @@ func bitreverse(data []int64) {
 
 func TestFFT(n int) {
 	// let mode = 0 be for testing
-	mode := 1
+	mode := 0
 
 	if n <= 0 {
 		n = 16 // default size
@@ -210,14 +211,24 @@ func TestFFT(n int) {
 	if mode == 0 {
 		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		//rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
+		modulus := 7
+		switch n {
+		case 1048576:
+			modulus = 7340033
+		case 16777216:
+			modulus = 167772161
+		case 67108864:
+			modulus = 469762049
+		default:
+			modulus = helpers.FindCongruentPrime(n)
+		}
 		data1 := make([]int64, n)
 		for i := 0; i < n; i++ {
-			data1[i] = int64(rand.NextInt())
+			data1[i] = int64(rand.NextInt() % modulus)
 		}
 		fft := FFT{}
-		modulus := helpers.FindCongruentPrime(n)
 
-		fmt.Printf("Go Specialized f64 FFT Test: n=%d\n", n)
+		fmt.Printf("Go Specialized intmodp FFT Test: n=%d\n", n)
 		for i := 0; i < 10; i++ {
 			fft.transformInternal(data1, -1, modulus)
 			fft.transformInternal(data1, 1, modulus)

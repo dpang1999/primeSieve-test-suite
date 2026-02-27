@@ -4,6 +4,8 @@ use rust::helpers::lcg::Lcg;
 use rust::helpers::prime_sieve::prime_sieve;
 use rust::helpers::find_prime::{self, find_prime_congruent_one_mod_n};
 
+static mut MODULUS: i32 = 0;
+
 pub struct FFT {}
 
 
@@ -25,7 +27,8 @@ fn mod_inverse(a: i32, m: i32) -> i32 {
     x1
 }
 
-fn modpow(mut base: i32, mut exp: i32, modulus: i32) -> i32 {
+fn modpow(mut base: i32, mut exp: i32) -> i32 {
+    let modulus = unsafe {MODULUS};
     if modulus == 0 { panic!("Modulus must be positive"); }
     let mut result = 1;
     base %= modulus;
@@ -39,7 +42,8 @@ fn modpow(mut base: i32, mut exp: i32, modulus: i32) -> i32 {
     result
 }
 
-fn primitive_root(modulus: i32) -> i32 {
+fn primitive_root() -> i32 {
+    let modulus = unsafe {MODULUS};
     fn factorize(mut n: i32) -> Vec<i32> {
         let mut factors = Vec::new();
         let mut i = 2;
@@ -62,7 +66,7 @@ fn primitive_root(modulus: i32) -> i32 {
     for g in 2..p {
         let mut is_root = true;
         for &factor in &factors {
-            if modpow(g, (p - 1) / factor, p) == 1 {
+            if modpow(g, (p - 1) / factor) == 1 {
                 is_root = false;
                 break;
             }
@@ -75,20 +79,21 @@ fn primitive_root(modulus: i32) -> i32 {
 
 }
 
-fn precomputeRootsOfUnity(n: i32, direction: i32, modulus: i32) -> Vec<i32> {
+fn precomputeRootsOfUnity(n: i32, direction: i32) -> Vec<i32> {
+    let modulus = unsafe {MODULUS};
     if (modulus - 1) % n != 0 {
         panic!("n must divide p-1 for roots of unity to exist in IntModP");
     }
-    let g = primitive_root(modulus);
+    let g = primitive_root();
     //println!("Primitive root: {}", g);
-    let omega = modpow(g, (modulus-1)/n, modulus);
+    let omega = modpow(g, (modulus-1)/n);
     let mut roots = Vec::with_capacity(n as usize);
     for k in 0..n {
         let mut exponent = (k * direction % (modulus - 1));
         if exponent < 0 {
             exponent += (modulus - 1);
         }
-        roots.push(modpow(omega, exponent, modulus));
+        roots.push(modpow(omega, exponent));
     }
     roots
 }
@@ -99,12 +104,13 @@ impl FFT
         Self {}
     }
 
-    pub fn transform(&self, data: &mut [i64], modulus: i32) {
-        Self::transform_internal(data, -1, modulus);
+    pub fn transform(&self, data: &mut [i64]) {
+        Self::transform_internal(data, -1);
     }
 
-    pub fn inverse(&self, data: &mut [i64], modulus: i32) {
-        Self::transform_internal(data, 1, modulus);
+    pub fn inverse(&self, data: &mut [i64]) {
+        let modulus = unsafe {MODULUS};
+        Self::transform_internal(data, 1);
         let nd = data.len();
         let n = nd;
         let norm = mod_inverse(n as i32, modulus) as i64;
@@ -119,10 +125,10 @@ impl FFT
         let nd = data.len();
         let copy: Vec<i64> = data.iter().map(|x| *x).collect();
 
-        self.transform(data, modulus);
+        self.transform(data);
 
         //println!("After transform: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-        self.inverse(data, modulus);
+        self.inverse(data);
         //println!("After inverse: {}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
     }
 
@@ -151,7 +157,8 @@ impl FFT
         log
     }
 
-    fn transform_internal(data: &mut [i64], direction: i32, modulus: i32) {
+    fn transform_internal(data: &mut [i64], direction: i32) {
+        let modulus = unsafe {MODULUS};
         if data.is_empty() {
             return;
         }
@@ -164,7 +171,7 @@ impl FFT
         let logn = Self::log2(n);
         Self::bitreverse(data);
 
-        let roots = precomputeRootsOfUnity(n as i32, direction, modulus);
+        let roots = precomputeRootsOfUnity(n as i32, direction);
         //println!("Roots: {}", roots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
         let mut dual = 1;
@@ -206,23 +213,33 @@ impl FFT
 }
 fn main() {
     // let mode = 0 be for testing
-    let mode = 0;
+    let mode = 1;
     let fft = FFT::new();
     if mode != 0 {
         let args: Vec<String> = std::env::args().collect();
         let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(16);
-        let modulus = find_prime_congruent_one_mod_n(n) as i32;
+        let prime: i32;
+        match n {
+                1048576 => prime = 7340033,
+                16777216 => prime = 167772161,
+                67108864 => prime = 469762049,
+                
+                _ => {
+                    prime = find_prime_congruent_one_mod_n(n) as i32;
+                }
+            }
+        unsafe { MODULUS = prime; }
         let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let mut data: Vec<i64> = Vec::with_capacity(2*n);
         for _ in 0..n {
-            let r = rand.next_int() % modulus;
+            let r = rand.next_int() % prime;
             data.push(r as i64);
         }
         println!("Specialized Rust FFT Tests");
         println!("Specialized, Finite Field, n={}", n);
         for i in 0..10 {
-            fft.transform(&mut data, modulus);
-            fft.inverse(&mut data, modulus);
+            fft.transform(&mut data);
+            fft.inverse(&mut data);
             println!("Loop {} done", i);
         }
     }
@@ -240,8 +257,8 @@ fn main() {
         }
 
         //println!("Using modulus: {}, primitive root: {}", prime, root);
-        fft.transform(&mut data1, prime);
-        fft.transform(&mut data2, prime);
+        fft.transform(&mut data1);
+        fft.transform(&mut data2);
         
         println!("data1: {}", data1.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         println!("data2: {}", data2.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
@@ -253,7 +270,7 @@ fn main() {
 
         println!("product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
 
-        fft.inverse(&mut product, prime);
+        fft.inverse(&mut product);
         println!("inverse product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
        
     }

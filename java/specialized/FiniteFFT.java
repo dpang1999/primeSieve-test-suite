@@ -1,10 +1,8 @@
 package specialized;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import generic.IntModP;
 import helpers.LCG;
 import helpers.FindPrime;
 
@@ -189,11 +187,17 @@ public class FiniteFFT {
 
   /** Simple Test routine. */
   public static void main(String args[]){
-    int mode = 1;
+    int mode = 0;
     if (mode == 0) {
       int n = Integer.parseInt(args[0]);
       System.out.println("FFT with " + n);
-      int modulus = FindPrime.findPrimeCongruentOneModN(n);
+      int modulus;
+      switch (n){ 
+        case 1048576: modulus = 7340033;
+        case 16777216: modulus = 167772161;
+        case 67108864: modulus = 469762049;
+        default: modulus = FindPrime.findPrimeCongruentOneModN(n);
+      }
       int root = primitiveRoot(modulus);
       LCG rand = new LCG(12345, 1345, 16645, 1013904);
       long data[] = new long[n];

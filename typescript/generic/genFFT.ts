@@ -1,11 +1,12 @@
-import { find_prime_congruent_one_mod_n } from '../helpers/find_prime';
+import { find_prime_congruent_one_mod_n } from '../helpers/find_prime.js';
 import { LCG } from '../helpers/lcg';
 import { IField } from './iField';
 import { IMath } from './iMath';
 import { IntModP } from './intModP';
 import { IOrdered } from './iOrdered';
 import { IPrimitiveRoots } from './iPrimitiveRoots';
-
+import { ComplexField } from './complexField';
+import { DoubleField } from './doubleField';
 // Class-based generic FFT, similar to the Rust GenFFT
 export class GenFFT<C extends IField<C> & IOrdered<C> & IPrimitiveRoots<C> & IMath<C>> {
   c: C;
@@ -15,11 +16,11 @@ export class GenFFT<C extends IField<C> & IOrdered<C> & IPrimitiveRoots<C> & IMa
   }
 
   transform(data: C[]): void {
-    this.transformInternal(data, -1);
+    this.transform_internal(data, -1);
   }
 
   inverse(data: C[]): void {
-    this.transformInternal(data, 1);
+    this.transform_internal(data, 1);
     const n = data.length;
     const norm = this.c.coerce(n);
     for (let i = 0; i < n; i++) {
@@ -52,7 +53,7 @@ export class GenFFT<C extends IField<C> & IOrdered<C> & IPrimitiveRoots<C> & IMa
     return Math.sqrt(diff / n);
   }
 
-  private transformInternal(data: C[], direction: number): void {
+  public transform_internal(data: C[], direction: number): void {
     const n = data.length;
     if (n === 0 || n === 1) return;
 
@@ -102,29 +103,48 @@ if(require.main == module) {
   const mode = parseInt(args[1] || '0', 10);
   const rand = new LCG(12345, 1345, 16645, 1013904);
 
-  const test = 1; // Set to 1 to run the test, 0 to just run the FFT without checking error
+  const test = 0; // Set to 0 to run manual test, 1 to just run the FFT 
   if (!test) {
     if (mode === 1) {
-      const { ComplexField } = require('./complexField');
-      const { DoubleField } = require('./doubleField');
       const data = [];
       for (let i = 0; i < n; i++) {
         data.push(new ComplexField(new DoubleField(rand.nextDouble()), new DoubleField(rand.nextDouble())));
       }
       const fft = new GenFFT(data[0]);
-      const error = fft.test(data);
-
-      console.log(`FFT test completed with RMS error: ${error}`);
-    } else {
-      const data = [];
-      const prime = find_prime_congruent_one_mod_n(n);
+      console.log("Typescript generic float FFT, n=" + n)
+        for (let i = 0; i < 10; i++) {
+            fft.transform_internal(data, -1);
+            fft.transform_internal(data, 1);
+            console.log(`Loop ${i} done`);
+        }
+     } else {
+      const data: IntModP[] = [];
+      var prime = 7;
+      switch (n) {
+          case 1048576:
+            prime = 7340033;
+            break;
+          case 16777216:
+            prime = 167772161;
+            break;
+          case 67108864:
+            prime = 469762049;
+            break;
+          default:
+            prime = find_prime_congruent_one_mod_n(n);
+            break;
+        }
       IntModP.setModulus(prime);
       for (let i = 0; i < n; i++) {
         data.push(new IntModP(rand.nextInt() % prime));
       }
       const fft = new GenFFT(data[0]);
-      const error = fft.test(data);
-      console.log(`FFT test completed with RMS error: ${error}`);
+      console.log("Typescript generic finite field FFT, n=" + n)
+        for (let i = 0; i < 10; i++) {
+            fft.transform_internal(data, -1);
+            fft.transform_internal(data, 1);
+            console.log(`Loop ${i} done`);
+        }
     } 
   }
   else {

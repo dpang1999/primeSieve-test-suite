@@ -130,30 +130,21 @@ public class IntModP implements IField<IntModP>,
     }
 
     private static long modInverse(long b, long p) {
-        long t = 0, newT = 1;
-        long r = p, newR = b;
-
-        while (newR != 0) {
-            long quotient = r / newR;
-
-            // Update t and r
-            long tempT = t;
-            t = newT;
-            newT = tempT - quotient * newT;
-
-            long tempR = r;
-            r = newR;
-            newR = tempR - quotient * newR;
+        b = b % p;
+        long m = p;
+        long x0 = 0, x1 = 1;
+        if (m == 1) return 0;
+        while (b > 1) {
+            long q = b / m;
+            long t = m;
+            m = b % m;
+            b = t;
+            long temp = x0;
+            x0 = x1 - q * x0;
+            x1 = temp;
         }
-
-        if (r > 1) {
-            throw new ArithmeticException("b is not invertible modulo p");
-        }
-        if (t < 0) {
-            t += p;
-        }
-
-        return t;
+        if (x1 < 0) x1 += p;
+        return x1;
     }
 
 
@@ -300,7 +291,7 @@ public class IntModP implements IField<IntModP>,
         }
         long result = 1;
         base = base % mod; // Ensure base is within the range of mod
-        if (Long.MAX_VALUE / base  < base) {
+        /*if (Long.MAX_VALUE / base  < base) {
             //System.out.println("Too big, do BigInteger modPow instead");
             BigInteger bigBase = BigInteger.valueOf(base);
             BigInteger bigMod = BigInteger.valueOf(mod);
@@ -308,33 +299,36 @@ public class IntModP implements IField<IntModP>,
 
             // Use BigInteger's modPow method
             return bigBase.modPow(bigExp, bigMod).longValue();
-        }
+        }*/
         while (exp > 0) {
             // If exp is odd, multiply result with base
             if ((exp & 1) == 1) {
-                long temp = result;
+                //long temp = result;
                 result = (result * base) % mod;
                 // Check for overflow
-                if (base != 0 && Long.MAX_VALUE / base < temp) {
+                /*if (base != 0 && Long.MAX_VALUE / base < temp) {
                     //System.out.println("OVERFLOW: result=" + temp + ", base=" + base + ", mod=" + mod);
                     BigInteger bigTemp = BigInteger.valueOf(temp);
                     BigInteger bigBase = BigInteger.valueOf(base);
                     BigInteger bigResult = bigTemp.multiply(bigBase).mod(BigInteger.valueOf(mod));
                     result = bigResult.longValue();
-                }
+                }*/
             }
 
             // Square the base and reduce modulo mod
-            long temp = base;
+            //long temp = base;
             base = (base * base) % mod;
             // Check for overflow
-            if (temp != 0 && Long.MAX_VALUE / temp < temp) {
-                //System.out.println("OVERFLOW: base=" + temp + ", exp=" + exp + ", mod=" + mod);
+            /* if (temp != 0 && Long.MAX_VALUE / temp < temp) {
+                System.out.println("OVERFLOW: base=" + temp + ", exp=" + exp + ", mod=" + mod);
+                if(Long.MAX_VALUE / temp < temp) {
+                    System.out.println("Definitely overflow, using BigInteger for this step");
+                }
                 BigInteger bigTemp = BigInteger.valueOf(temp);
                 BigInteger bigMod = BigInteger.valueOf(mod);
                 BigInteger bigResult = bigTemp.multiply(bigTemp).mod(bigMod);
                 base = bigResult.longValue();
-            }
+            }  */
 
             // Divide exp by 2
             exp >>= 1;

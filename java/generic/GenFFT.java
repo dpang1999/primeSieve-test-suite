@@ -105,7 +105,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		DoubleField num = new DoubleField(0);
 		GenFFT<ComplexField<DoubleField>> fft = new GenFFT<ComplexField<DoubleField>>(
 				c);
-		int type = 1;
+		int type = 5;
 		if (args.length == 0 && type == 0) {
 			int n = 4;
 			ComplexField<DoubleField>[] data = fft.makeRandom(n);
@@ -261,10 +261,16 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 			int fieldType = Integer.parseInt(args[1]); // 0 for finite field, 1 for complex field
 			if (fieldType == 0) {
 				IntModP[] data = new IntModP[n];
-				int prime = FindPrime.findPrimeCongruentOneModN(n);
-				IntModP.setModulus(prime);
+				int modulus;
+				switch (n){ 
+					case 1048576: modulus = 7340033;
+					case 16777216: modulus = 167772161;
+					case 67108864: modulus = 469762049;
+					default: modulus = FindPrime.findPrimeCongruentOneModN(n);
+				}
+				IntModP.setModulus(modulus);
 				for (int i = 0; i < n; i++) {
-					data[i] = new IntModP(rand.nextInt() % prime);
+					data[i] = new IntModP(rand.nextInt() % modulus);
 				}
 				GenFFT<IntModP> finiteFft = new GenFFT<IntModP>(new IntModP(0));
 				System.out.println("Generic Java FFT Tests");

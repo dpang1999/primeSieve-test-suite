@@ -14,15 +14,15 @@ export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntMod
     return IntModP.modulus;
   }
   constructor(value: number) {
-    this.value = ((value % IntModP.modulus) + IntModP.modulus) % IntModP.modulus;
+    this.value = value % IntModP.modulus;
   }
-  a(o: IntModP): IntModP { return new IntModP((this.value + o.value) % IntModP.modulus); }
+  a(o: IntModP): IntModP { return new IntModP((this.value + o.value)); }
   ae(o: IntModP): void { this.value = (this.value + o.value) % IntModP.modulus; }
-  s(o: IntModP): IntModP { return new IntModP((this.value - o.value + IntModP.modulus) % IntModP.modulus); }
+  s(o: IntModP): IntModP { return new IntModP((this.value - o.value + IntModP.modulus)); }
   se(o: IntModP): void { this.value = (this.value - o.value + IntModP.modulus) % IntModP.modulus; }
-  m(o: IntModP): IntModP { return new IntModP((this.value * o.value) % IntModP.modulus); }
+  m(o: IntModP): IntModP { return new IntModP((this.value * o.value)); }
   me(o: IntModP): void { this.value = (this.value * o.value) % IntModP.modulus; }
-  d(o: IntModP): IntModP { return new IntModP((this.value * IntModP.modInv(o.value, IntModP.modulus)) % IntModP.modulus); }
+  d(o: IntModP): IntModP { return new IntModP((this.value * IntModP.modInv(o.value, IntModP.modulus))); }
   de(o: IntModP): void { this.value = (this.value * IntModP.modInv(o.value, IntModP.modulus)) % IntModP.modulus; }
   coerce(o: number): IntModP { return new IntModP(o); }
   coerce_to_number(): number { return this.value; }
@@ -40,16 +40,18 @@ export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntMod
   copy(): IntModP { return new IntModP(this.value); }
   toString(): string { return this.value.toString(); }
   static modInv(a: number, m: number): number {
-    let m0 = m, t, q;
+    a = a % m;
+    let m0 = m;
     let x0 = 0, x1 = 1;
     if (m === 1) return 0;
     while (a > 1) {
-      q = Math.floor(a / m);
-      t = m;
-      m = a % m; a = t;
-      t = x0;
+      let q = Math.floor(a / m);
+      let t = m;
+      m = a % m;
+      a = t;
+      let temp = x0;
       x0 = x1 - q * x0;
-      x1 = t;
+      x1 = temp;
     }
     if (x1 < 0) x1 += m0;
     return x1;
@@ -77,7 +79,7 @@ export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntMod
   precomputeRootsOfUnity(n: number, direction: number): IntModP[] {
     let mod = IntModP.getModulus();
     if ((mod - 1) % n !== 0) {
-      throw new Error('Modulus minus one must be divisible by n for precomputeRootsOfUnity');
+      throw new Error('Modulus (' + mod + ') minus one must be divisible by n (' + n + ') for precomputeRootsOfUnity');
     }
     let root = this.primitive_root(mod);
     let omega = root.pow((mod - 1) / n);

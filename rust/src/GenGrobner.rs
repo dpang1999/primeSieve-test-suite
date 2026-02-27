@@ -254,12 +254,12 @@ where
 
 
         let scaled_p1 = p1.multiply_by_term(&Term{
-            coefficient: leading_term_p1.coefficient.one(),
+            coefficient: leading_term_p2.coefficient.clone(),
             exponents: scale_factor_p1
         });
 
         let scaled_p2 = p2.multiply_by_term(&Term{
-            coefficient: leading_term_p2.coefficient.one(),
+            coefficient: leading_term_p1.coefficient.clone(),
             exponents: scale_factor_p2
         });
         scaled_p1.subtract(&scaled_p2)
@@ -272,39 +272,28 @@ where
     E: IExponent + Clone + Hash + Eq + fmt::Display,
 {
     let mut basis = polynomials.clone();
-    let mut basis_set: HashSet<Polynomial<C, E>> = HashSet::new();
+    let mut basis_set: HashSet<Polynomial<C, E>> = basis.iter().cloned().collect();
 
-    for poly in &basis {
-        //println!("Initial basis polynomial: {}", poly);
-        basis_set.insert(poly.clone());
+    //let mut processed_pairs = HashSet::<(usize, usize)>::new();
+    let mut pairs = Vec::<(usize, usize)>::new();
+    for i in 0..basis.len() {
+        for j in i + 1..basis.len() {
+            pairs.push((i, j));
+        }
     }
 
-    let mut polyAdded = 0;
-    loop {
-        polyAdded += 1;
-        println!("Grobner basis iteration {}", polyAdded);
-        let mut added = false;
-        let basis_len = basis.len();
+    while pairs.is_empty() == false 
+    {
+        let (i, j) = pairs.remove(0);
+        let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
+        let reduced = s_poly.reduce(&basis);
 
-        for i in 0..basis_len {
-            for j in i + 1..basis_len {
-                let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
-                let reduced = s_poly.reduce(&basis);
-                //print basis i and basis j
-
-                if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
-                    //println!("Reducing S-Polynomial of basis polynomials {} and {}", &basis[i], &basis[j]);
-                    //println!("Reduced S-Polynomial of basis[{}] and basis[{}]: {}", i, j, &reduced);
-                    basis_set.insert(reduced.clone());
-                    basis.push(reduced);
-                    //println!("Added new polynomial to basis, total size now: {}", basis.len());
-                    added = true;
-                }
+        if !reduced.terms.is_empty() && basis_set.insert(reduced.clone()) {
+            let new_poly_idx = basis.len();
+            basis.push(reduced);
+            for k in 0..new_poly_idx {
+                pairs.push((k, new_poly_idx));
             }
-        }
-
-        if !added {
-            break;
         }
     }
 
@@ -329,7 +318,7 @@ where
 fn main() {
     // let mode = 0 be for testing
     let mode = 0;
-    println!("This is a generic Grobner basis computation module.");
+   // println!("This is a generic Grobner basis computation module.");
     if mode != 0 {
         let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let args: Vec<String> = env::args().collect();
@@ -424,41 +413,336 @@ fn main() {
 
     }
     else if mode == 0 {
+        let args: Vec<String> = std::env::args().collect();
+        let n = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(4);
+        let vec_type = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
+        // vec_type: 0 = VecExponent, 1 = BitPackedExponent
+        let modulus = 7;
+        set_modulus(modulus as u64);
         unsafe { TERM_ORDER = TermOrder::Lex; }
+        if n == 4 {
+            // cyclic 4
+            if (vec_type == 0) {
+                println!("Rust generic finite coeff vecexponent cyclic 4");
+                let p1 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,1])),
+                ]);
 
-    let modulus = 7;
-    set_modulus(modulus as u64);
-    let p1 = Polynomial::new(vec![
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,0,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,0,0,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,0,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,1,0,0])),
-    ]);
+                let p2 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,1])),
+                ]);
 
-    let p2 = Polynomial::new(vec![
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,0,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,0,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,1,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,1,0,0])),
-    ]);
+                let p3 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,1])),
+                ]);
 
-    let p3 = Polynomial::new(vec![
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,0,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,1,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,1,1,0,0])),
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,1,0,0])),
-    ]);
+                let p4 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,1])),
+                    Term::from_exponents(IntModP::new(modulus-1), VecExponent::new(vec![0,0,0,0])),
+                ]);
 
-    let p4 = Polynomial::new(vec![
-        Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,0,0])),
-        Term::from_exponents(IntModP::new(modulus-1), BitPackedExponent::from_vec([0,0,0,0,0,0])),
-    ]);
+                let start = vec! [p1,p2,p3,p4];
+                for i in 0..10 {
+                    let basis = naive_grobner_basis(start.clone());
+                    println!("Iteration {}: complete", i);
+                    if i == 9 {
+                        println!("Final Grobner Basis:");
+                        for poly in basis {
+                            println!("{}\n", poly);
+                        }
+                    }
+                }
+            }
+            else {
+                println!("Rust generic finite coeff bitpacked exp cyclic 4");
+                let p1 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,1,0,0])),
+                ]);
 
-    let basis = naive_grobner_basis(vec![p1, p2, p3, p4]);
-    println!("Computed Grobner basis with {} polynomials.", basis.len());
-    for (i, poly) in basis.iter().enumerate() {
-        println!("Polynomial {}: {}", i + 1, poly);
-    }
+                let p2 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,1,0,0])),
+                ]);
+
+                let p3 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,1,0,0])),
+                ]);
+
+                let p4 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(modulus-1), BitPackedExponent::from_vec([0,0,0,0,0,0])),
+                ]);
+
+                let start = vec! [p1,p2,p3,p4];
+                for i in 0..10 {
+                    let basis = naive_grobner_basis(start.clone());
+                    println!("Iteration {}: complete", i);
+                    if i == 9 {
+                        println!("Final Grobner Basis:");
+                        for poly in basis {
+                            println!("{}\n", poly);
+                        }
+                    }
+                }
+            }
+
+            
+        }
+        else if n == 5 {
+            // cyclic 5
+            if (vec_type == 0) {
+                println!("Rust generic finite coeff vecexponent cyclic 5");
+                let p1 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,0,1])),
+                ]);
+
+                let p2 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,0,1])),
+                ]);
+
+                let p3 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,0,1])),
+                ]);
+
+                let p4 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,0,1])),
+                ]);
+                let p5 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(modulus-1), VecExponent::new(vec![0,0,0,0,0])),
+                ]);
+                let start = vec! [p1,p2,p3,p4,p5];
+                for i in 0..10 {
+                    let basis = naive_grobner_basis(start.clone());
+                    println!("Iteration {}: complete", i);
+                    if i == 9 {
+                        println!("Final Grobner Basis:");
+                        for poly in basis {
+                            println!("{}\n", poly);
+                        }
+                    }
+                }
+            }
+            else {
+                println!("Rust generic finite coeff bitpacked exp cyclic 5");
+                let p1 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,0,1,0])),
+                ]);
+
+                let p2 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,0,1,0])),
+                ]);
+
+                let p3 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,0,1,0])),
+                ]);
+                
+                let p4 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,0,1,0])),
+                ]);
+                let p5 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(modulus-1), BitPackedExponent::from_vec([0,0,0,0,0,0])),
+                ]);
+                let start = vec! [p1,p2,p3,p4,p5];
+                for i in 0..10 {
+                    let basis = naive_grobner_basis(start.clone());
+                    println!("Iteration {}: complete", i);
+                    if i == 9 {
+                        println!("Final Grobner Basis:");
+                        for poly in basis {
+                            println!("{}\n", poly);
+                        }
+                    }
+                }
+            }
+
+
+        }
+        else if n == 6 {
+            // cyclic 6
+            if (vec_type == 0) {
+                println!("Rust generic finite coeff vecexponent cyclic 6");
+                let p1 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,0,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,0,0,1])),
+                ]);
+
+                let p2 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,0,0,1])),
+                ]);
+
+                let p3 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,0,0,1])),
+                ]);
+
+                let p4 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,0,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,0,0,1])),
+                ]);
+
+                let p5 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![0,1,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,0,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,1,0,1])),
+                ]);
+
+                let p6 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), VecExponent::new(vec![1,1,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(modulus-1), VecExponent::new(vec![0,0,0,0,0,0])),
+                ]);
+                let start = vec! [p1,p2,p3,p4,p5,p6];
+                for i in 0..10 {
+                    let basis = naive_grobner_basis(start.clone());
+                    println!("Iteration {}: complete", i);
+                    if i == 9 {
+                        println!("Final Grobner Basis:");
+                        for poly in basis {
+                            println!("{}\n", poly);
+                        }
+                    }
+                }
+            }
+            else {
+                println!("Rust generic finite coeff bitpacked exp cyclic 6");
+                let p1 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,0,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,0,0,1])),
+
+                ]);
+
+                let p2 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,0,0,1])),
+                ]);
+
+                let p3 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,0,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,0,0,1])),
+                ]);
+                
+                let p4 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,0,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,0,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,0,0,1])),
+                ]);
+
+                let p5 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,1,0])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([0,1,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,0,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,0,1,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,0,1,1])),
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,0,1])),
+                ]);
+
+                let p6 = Polynomial::new(vec![
+                    Term::from_exponents(IntModP::new(1), BitPackedExponent::from_vec([1,1,1,1,1,1])),
+                    Term::from_exponents(IntModP::new(modulus-1), BitPackedExponent::from_vec([0,0,0,0,0,0])),
+                ]);
+                let start = vec! [p1,p2,p3,p4,p5,p6];
+                for i in 0..10 {
+                    let basis = naive_grobner_basis(start.clone());
+                    println!("Iteration {}: complete", i);
+                    if i == 9 {
+                        println!("Final Grobner Basis:");
+                        for poly in basis {
+                            println!("{}\n", poly);
+                        }
+                    }
+                }
+            }
+        }
+        else if n == 7 {
+            // cyclic 7
+        }
+
+   
 }
 
 }

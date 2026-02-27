@@ -141,7 +141,7 @@ func bitreverse[N any](data []N) {
 }
 
 func TestGenFFT(n int, fieldType int) {
-	var mode = 0 // let mode = 0 be for testing
+	var mode = 1 // let mode = 0 be for testing
 	// fieldType: 1 = ComplexField[DoubleField], 2 = IntModP
 
 	if mode != 0 {
@@ -166,6 +166,20 @@ func TestGenFFT(n int, fieldType int) {
 			}
 		} else {
 			fmt.Println("Go Generic FFT IntModP, ", n)
+			switch n {
+			case 1048576:
+				SetModulus(7340033)
+			case 16777216:
+				SetModulus(167772161)
+			case 67108864:
+				SetModulus(469762049)
+			case 268435456:
+				SetModulus(3221225473)
+			default:
+				prime := helpers.FindCongruentPrime(n)
+				fmt.Println("Using prime:", prime)
+				SetModulus(uint64(prime))
+			}
 			varRandomNumbers := make([]IntModP, n)
 			for i := 0; i < n; i++ {
 				varRandomNumbers[i] = NewIntModP(uint64(rand.NextInt()))

@@ -7,3 +7,4 @@ framework_key
 framework_key.pub
 .~lock.framework_key.pub#
 node_modules
+*.js

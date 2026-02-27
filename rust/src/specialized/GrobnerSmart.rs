@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
 static mut TERM_ORDER: TermOrder = TermOrder::Lex; // default to lex order, can be set to GrLex or RevLex as well
+static mut MODULUS: u64 = 7; // default modulus for coefficients, can be changed as needed
 
 use rust::helpers::lcg::Lcg;
 
@@ -236,7 +237,8 @@ impl Polynomial {
         Polynomial { terms }
     }
 
-    pub fn add(&self, other: &Polynomial, modulus: u64) -> Polynomial {
+    pub fn add(&self, other: &Polynomial) -> Polynomial {
+        let modulus = unsafe { MODULUS };
         let mut result = self.terms.clone();
         for term in &other.terms {
             let mut found = false;
@@ -260,8 +262,8 @@ impl Polynomial {
         Polynomial::new(result)
     }
 
-    pub fn subtract(&self, other: &Polynomial, modulus: u64) -> Polynomial {
-        let mut result = self.terms.clone();
+    pub fn subtract(&self, other: &Polynomial) -> Polynomial {
+        let modulus = unsafe {MODULUS};        let mut result = self.terms.clone();
         for term in &other.terms {
             let mut found = false;
             for res_term in &mut result {
@@ -285,7 +287,8 @@ impl Polynomial {
         Polynomial::new(result)
     }
     
-    pub fn make_monic(&self, modulus: u64) -> Polynomial {
+    pub fn make_monic(&self) -> Polynomial {
+        let modulus = unsafe {MODULUS};
         if self.terms.is_empty() { return self.clone(); }
         let lead_coeff = self.terms[0].coefficient;
         let inv = mod_inverse(lead_coeff, modulus);
@@ -296,7 +299,8 @@ impl Polynomial {
         Polynomial::new(new_terms)
     }
 
-   pub fn reduce(&self, divisors: &[Polynomial], modulus: u64) -> Polynomial {
+   pub fn reduce(&self, divisors: &[Polynomial]) -> Polynomial {
+        let modulus = unsafe {MODULUS};
         let mut result = self.clone(); // Start with the input polynomial
         let mut remainder: Vec<Term> = Vec::new();
 
@@ -320,8 +324,8 @@ impl Polynomial {
                                 exponents,
                             };
 
-                            let scaled_divisor = divisor.multiply_by_term(&reduction_term, modulus);
-                            result = result.subtract(&scaled_divisor, modulus);
+                            let scaled_divisor = divisor.multiply_by_term(&reduction_term);
+                            result = result.subtract(&scaled_divisor);
 
                             reduced = true;
                             break; // Restart the loop after reducing
@@ -347,7 +351,8 @@ impl Polynomial {
         Polynomial::new(result.terms)
     }
 
-    pub fn multiply_by_term(&self, term: &Term, modulus: u64) -> Polynomial {
+    pub fn multiply_by_term(&self, term: &Term) -> Polynomial {
+        let modulus = unsafe {MODULUS};
         let terms = self
             .terms
             .iter()
@@ -360,7 +365,8 @@ impl Polynomial {
         Polynomial::new(terms)
     }
 
-    pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial, modulus: u64) -> Polynomial {
+    pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial) -> Polynomial {
+        let modulus = unsafe {MODULUS};
         // Extract the leading terms of p1 and p2
         let leading_term_p1 = &p1.terms[0];
         let leading_term_p2 = &p2.terms[0];
@@ -372,21 +378,21 @@ impl Polynomial {
         let scale_factor_p2 = lcm_exponents - leading_term_p2.exponents;
 
         let scaled_p1 = p1.multiply_by_term(&Term {
-            coefficient: 1,
+            coefficient: leading_term_p2.coefficient.clone(),
             exponents: scale_factor_p1,
-        }, modulus);
+        });
 
         let scaled_p2 = p2.multiply_by_term(&Term {
-            coefficient: 1,
+            coefficient: leading_term_p1.coefficient.clone(),
             exponents: scale_factor_p2,
-        }, modulus);    
+        });
 
-        scaled_p1.subtract(&scaled_p2, modulus)
+        scaled_p1.subtract(&scaled_p2)
     }
 
 }
 
-pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u64) -> Vec<Polynomial> {
+pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     let mut basis = polynomials.clone();
     let mut basis_set: HashSet<Polynomial> = HashSet::new();
     // print basis and polynomials
@@ -407,7 +413,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u64) -> Vec<Po
         let (i, j) = pairs.remove(0);
         //println!("Processing pair ({}, {})", i, j);
         processed_pairs.insert((i,j));
-        let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j], modulus);
+        let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
         /*let mut debug = false;
         if(i == 0 && j == 7 || i == 3 && j == 4 || j ==4 && i==3) 
         { debug = true; println!("Debugging S-Polynomial for basis[{}] and basis[{}]", i, j); 
@@ -416,7 +422,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u64) -> Vec<Po
                 println!("{:?}", poly);
             }
         }*/
-        let reduced = s_poly.reduce(&basis, modulus);
+        let reduced = s_poly.reduce(&basis);
         if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
             //println!("Adding new polynomial to basis."); 
             basis_set.insert(reduced.clone());
@@ -442,9 +448,9 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u64) -> Vec<Po
         // reduce poly by basis excluding itself
         let mut basis_excluding_self = basis.clone();
         basis_excluding_self.retain(|p| p != poly);
-        let reduced = poly.reduce(&basis_excluding_self, modulus);
+        let reduced = poly.reduce(&basis_excluding_self);
         if !reduced.terms.is_empty() && !reduced_basis.contains(&reduced) {
-            reduced_basis.push(reduced.make_monic(modulus));
+            reduced_basis.push(reduced.make_monic());
         }
     }
     reduced_basis
@@ -456,7 +462,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>, modulus: u64) -> Vec<Po
 pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>, modulus: u64) -> bool {
     // Check if all polynomials in set_a reduce to zero using set_b
     for poly in &set_a {
-        let reduced = poly.reduce(&set_b, modulus);
+        let reduced = poly.reduce(&set_b);
         if !reduced.terms.is_empty() {
             return false; // Found a polynomial in set_a that does not reduce to zero
         }
@@ -464,7 +470,7 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>, modu
 
     // Check if all polynomials in set_b reduce to zero using set_a
     for poly in &set_b {
-        let reduced = poly.reduce(&set_a, modulus);
+        let reduced = poly.reduce(&set_a);
         if !reduced.terms.is_empty() {
             return false; // Found a polynomial in set_b that does not reduce to zero
         }
@@ -508,7 +514,7 @@ fn main() {
             input_basis.push(Polynomial::new(terms));
         }
 
-        let basis = naive_grobner_basis(input_basis, modulus);
+        let basis = naive_grobner_basis(input_basis);
         println!("{}", basis.len());
         /*println!("Computed Grobner Basis Polynomials:");
         for poly in &basis {
@@ -519,46 +525,166 @@ fn main() {
     }
     else {
         let modulus = 7 as u64;
+        let args: Vec<String> = std::env::args().collect();
+        let n = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(4);
         unsafe { TERM_ORDER = TermOrder::Lex; }
 
-        // Cyclic 4 system: x0+x1+x2+x3, x0x1+x1x2+x2x3+x3x0, x0x1x2+x1x2x3+x2x3x0+x3x0x1, x0x1x2x3-1
-        // f1 = x0 + x1 + x2 + x3
-        let p1 = Polynomial::new(vec![
-            Term::from_exponents(1, [1, 0, 0, 0, 0, 0]),
-            Term::from_exponents(1, [0, 1, 0, 0, 0, 0]),
-            Term::from_exponents(1, [0, 0, 1, 0, 0, 0]),
-            Term::from_exponents(1, [0, 0, 0, 1, 0, 0]),
-        ]);
+        if n == 4 {
+            println!("Rust specialized finite coeff bitpacked cyclic 4");
+            // Cyclic 4 system: x0+x1+x2+x3, x0x1+x1x2+x2x3+x3x0, x0x1x2+x1x2x3+x2x3x0+x3x0x1, x0x1x2x3-1
+            // f1 = x0 + x1 + x2 + x3
+            let p1 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 0, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 1, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 1, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 0, 1, 0, 0]),
+            ]);
 
-        // f2 = x0x1 + x1x2 + x2x3 + x3x0
-        let p2 = Polynomial::new(vec![
-            Term::from_exponents(1, [1, 1, 0, 0, 0, 0]),
-            Term::from_exponents(1, [0, 1, 1, 0, 0, 0]),
-            Term::from_exponents(1, [0, 0, 1, 1, 0, 0]),
-            Term::from_exponents(1, [1, 0, 0, 1, 0, 0]),
-        ]);
+            // f2 = x0x1 + x1x2 + x2x3 + x3x0
+            let p2 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 1, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 1, 1, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 1, 1, 0, 0]),
+                Term::from_exponents(1, [1, 0, 0, 1, 0, 0]),
+            ]);
 
-        // f3 = x0x1x2 + x1x2x3 + x2x3x0 + x3x0x1
-        let p3 = Polynomial::new(vec![
-            Term::from_exponents(1, [1, 1, 1, 0, 0, 0]),
-            Term::from_exponents(1, [0, 1, 1, 1, 0, 0]),
-            Term::from_exponents(1, [1, 0, 1, 1, 0, 0]),
-            Term::from_exponents(1, [1, 1, 0, 1, 0, 0]),
-        ]);
+            // f3 = x0x1x2 + x1x2x3 + x2x3x0 + x3x0x1
+            let p3 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 1, 1, 0, 0, 0]),
+                Term::from_exponents(1, [0, 1, 1, 1, 0, 0]),
+                Term::from_exponents(1, [1, 0, 1, 1, 0, 0]),
+                Term::from_exponents(1, [1, 1, 0, 1, 0, 0]),
+            ]);
 
-        // f4 = x0x1x2x3 - 1
-        let p4 = Polynomial::new(vec![
-            Term::from_exponents(1, [1, 1, 1, 1, 0, 0]),
-            Term::from_exponents(modulus-1, [0, 0, 0, 0, 0, 0]),
-        ]);
+            // f4 = x0x1x2x3 - 1
+            let p4 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 1, 1, 1, 0, 0]),
+                Term::from_exponents(modulus-1, [0, 0, 0, 0, 0, 0]),
+            ]);
+            let start = vec![p1,p2,p3,p4];
+            for i in 0..10 {
+                let basis = naive_grobner_basis(start.clone());
+                println!("Iteration {}: complete", i);
+                if i == 9 {
+                    println!("Final Grobner Basis:");
+                    for poly in &basis {
+                        poly.debug_print();
+                        println!("---");
+                    }
+                }
 
-        let input_basis = vec![p1, p2, p3, p4];
-        let basis = naive_grobner_basis(input_basis, modulus);
-
-        println!("Cyclic 4 Grobner Basis:");
-        for poly in &basis {
-            poly.debug_print();
-            println!("---");
+            }
+        }
+        else if n == 5 {
+            println!("Rust specialized finite coeff bitpacked cyclic 5");
+            // Cyclic 5
+            let p1 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 0, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 1, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 1, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 0, 1, 0, 0]),
+                Term::from_exponents(1, [0, 0, 0, 0, 1, 0]),
+            ]);
+            let p2 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 1, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 1, 1, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 1, 1, 0, 0]),
+                Term::from_exponents(1, [0, 0, 0, 1, 1, 0]),
+                Term::from_exponents(1, [1, 0, 0, 0, 1, 0]),
+            ]);
+            let p3 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 1, 1, 0, 0, 0]),
+                Term::from_exponents(1, [0, 1, 1, 1, 0, 0]),
+                Term::from_exponents(1, [0, 0, 1, 1, 1, 0]),
+                Term::from_exponents(1, [1, 0, 0, 1, 1, 0]),
+                Term::from_exponents(1, [1, 1, 0, 0, 1, 0]),
+            ]);
+            let p4 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 1, 1, 1, 0, 0]),
+                Term::from_exponents(1, [0, 1, 1, 1, 1, 0]),
+                Term::from_exponents(1, [1, 0, 1, 1, 1, 0]),
+                Term::from_exponents(1, [1, 1, 0, 1, 1, 0]),
+                Term::from_exponents(1, [1, 1, 1, 0, 1, 0]),
+            ]);
+            let p5 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 1, 1, 1, 1, 0]),
+                Term::from_exponents(modulus-1, [0, 0, 0, 0, 0, 0]),
+            ]);
+            let start = vec![p1,p2,p3,p4,p5];
+            for i in 0..10 {
+                let basis = naive_grobner_basis(start.clone());
+                println!("Iteration {}: complete", i);
+                if i == 9 {
+                    println!("Final Grobner Basis:");
+                    for poly in &basis {
+                        poly.debug_print();
+                        println!("---");
+                    }
+                }
+            }
+        }
+        else if n == 6 {
+            println!("Rust specialized finite coeff bitpacked cyclic 6");
+            // Cyclic 6
+            let p1 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 0, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 1, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 1, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 0, 1, 0, 0]),
+                Term::from_exponents(1, [0, 0, 0, 0, 1, 0]),
+                Term::from_exponents(1, [0, 0, 0, 0, 0, 1]),
+            ]);
+             let p2 = Polynomial::new(vec![
+                Term::from_exponents(1, [1, 1, 0, 0, 0, 0]),
+                Term::from_exponents(1, [0, 1, 1, 0, 0, 0]),
+                Term::from_exponents(1, [0, 0, 1, 1, 0, 0]),
+                Term::from_exponents(1, [0, 0, 0, 1, 1, 0]),
+                Term::from_exponents(1, [0, 0, 0, 0, 1, 1]),
+                Term::from_exponents(1, [1 ,0 ,0 ,0 ,0 ,1]),
+            ]);
+             let p3 = Polynomial::new(vec![
+                Term::from_exponents(1,[1 ,1 ,1 ,0 ,0 ,0]),
+                Term::from_exponents(1,[0 ,1 ,1 ,1 ,0 ,0]),
+                Term::from_exponents(1,[0 ,0 ,1 ,1 ,1 ,0]),
+                Term::from_exponents(1,[0 ,0 ,0 ,1 ,1 ,1]),
+                Term::from_exponents(1,[1 ,0 ,0 ,0 ,1 ,1]),
+                Term::from_exponents(1,[1 ,1 ,0 ,0 ,0 ,1]),
+            ]);
+             let p4 = Polynomial::new(vec![
+                Term::from_exponents(1,[1 ,1 ,1 ,1 ,0 ,0]),
+                Term::from_exponents(1,[0 ,1 ,1 ,1 ,1 ,0]),
+                Term::from_exponents(1,[0 ,0 ,1 ,1 ,1 ,1]),
+                Term::from_exponents(1,[1 ,0 ,0 ,1 ,1 ,1]),
+                Term::from_exponents(1,[1 ,1 ,0 ,0 ,1 ,1]),
+                Term::from_exponents(1,[1 ,1 ,1 ,0 ,0 ,1]),
+            ]);
+             let p5 = Polynomial::new(vec![
+                Term::from_exponents(1,[1 ,1 ,1 ,1 ,1 ,0]),
+                Term::from_exponents(1,[0 ,1 ,1 ,1 ,1 ,1]),
+                Term::from_exponents(1,[1 ,0 ,1 ,1 ,1 ,1]),
+                Term::from_exponents(1,[1 ,1 ,0 ,1 ,1 ,1]),
+                Term::from_exponents(1,[1 ,1 ,1 ,0 ,1 ,1]),
+                Term::from_exponents(1,[1 ,1 ,1 ,1 ,0 ,1]),
+            ]);
+             let p6 = Polynomial::new(vec![
+                Term::from_exponents(1,[1 ,1 ,1 ,1 ,1 ,1]),
+                Term::from_exponents(modulus-1,[0 ,0 ,0 ,0 ,0 ,0]),
+            ]);
+            let start = vec![p1,p2,p3,p4,p5,p6];
+            for i in 0..10 {
+                let basis = naive_grobner_basis(start.clone());
+                println!("Iteration {}: complete", i);
+                if i == 9 {
+                    println!("Final Grobner Basis:");
+                    for poly in &basis {
+                        poly.debug_print();
+                        println!("---");
+                    }
+                }
+            }
+        }
+        else if n == 7 {
+            //bitpacked cant fit 7 variables
         }
     }
 }

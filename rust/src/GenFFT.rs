@@ -159,7 +159,7 @@ where
 }
 fn main() {
     // let mode = 0 be for testing
-    let mode = 0;
+    let mode = 1;
     if mode != 0 { 
         // arg 1 = size (N = power of 2)
         // arg 2 = field type (0 = finite field, 1 = complex field)
@@ -172,7 +172,15 @@ fn main() {
             //let mut data2 = Vec::<IntModP>::with_capacity(n);
     
             // prime is the largest prime less than num
-            let prime = find_prime_congruent_one_mod_n(n);
+            let prime: u64;
+            match n {
+                1048576 => prime = 7340033,
+                16777216 => prime = 167772161,
+                67108864 => prime = 469762049,
+                _ => {
+                    prime = find_prime_congruent_one_mod_n(n) as u64;
+                }
+            }
             set_modulus(prime as u64);
             for _ in 0..n {
                 data1.push(IntModP::new(rand.next_int() as u64 % prime as u64));

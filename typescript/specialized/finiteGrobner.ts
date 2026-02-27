@@ -186,12 +186,13 @@ export function naiveGrobnerBasis(polys: Polynomial[], order: TermOrder): Polyno
 
 function main() {
   // let mode == 0 for testing
+  const args = process.argv.slice(2);
   const mode = 0;
   if (mode != 0) {
     // arg1 = number of polynomials
     // arg2 = term order (0=Lex, 1=GrLex, 2=RevLex)
     // arg3 = modulus
-    const args = process.argv.slice(2);
+    
     const numPolys = parseInt(args[0] || '3', 10);
     const orderArg = parseInt(args[1] || '0', 10);
     modulus = parseInt(args[2] || '13', 10);
@@ -230,32 +231,82 @@ function main() {
     }
   }
   else {
-    // Example: x^3 + y^3 + z^3
-    const modulus = 13;
-    const p1 = new Polynomial([
-      { coefficient: 1, exponents: [3, 0, 0] },
-      { coefficient: 1, exponents: [0, 3, 0] },
-      { coefficient: 1, exponents: [0, 0, 3] },
-    ], TermOrder.Lex);
-    // xy + yz + xz
-    const p2 = new Polynomial([
-      { coefficient: 1, exponents: [1, 1, 0] },
-      { coefficient: 1, exponents: [0, 1, 1] },
-      { coefficient: 1, exponents: [1, 0, 1] },
-    ], TermOrder.Lex);
-    // x+y+z
-    const p = new Polynomial([
-      { coefficient: 1, exponents: [1, 0, 0] },
-      { coefficient: 1, exponents: [0, 1, 0] },
-      { coefficient: 1, exponents: [0, 0, 1] },
-    ], TermOrder.Lex);
-    const basis = naiveGrobnerBasis([p1, p2, p], TermOrder.Lex);
-    console.log('Final Grobner Basis:');
-    for (const poly of basis) {
-      for (const term of poly.terms) {
-        process.stdout.write(`${term.coefficient}*x^${term.exponents[0]}y^${term.exponents[1]}z^${term.exponents[2]} + `);
+    const n = args[0] ? parseInt(args[0], 10) : 4;
+    if ([4, 5, 6, 7].includes(n)) {
+      modulus = 13;
+      const polys: Polynomial[] = [];
+      // f1: x0 + x1 + ... + x_{n-1}
+      const f1_terms: Term[] = [];
+      for (let i = 0; i < n; i++) {
+        const exponents = Array(n).fill(0);
+        exponents[i] = 1;
+        f1_terms.push({ coefficient: 1, exponents });
       }
-      console.log();
+      polys.push(new Polynomial(f1_terms, TermOrder.Lex));
+      // f2: x0x1 + x1x2 + ... + x_{n-1}x0
+      const f2_terms: Term[] = [];
+      for (let i = 0; i < n; i++) {
+        const exponents = Array(n).fill(0);
+        exponents[i] = 1;
+        exponents[(i + 1) % n] = 1;
+        f2_terms.push({ coefficient: 1, exponents });
+      }
+      polys.push(new Polynomial(f2_terms, TermOrder.Lex));
+      // f3: x0x1x2 + x1x2x3 + ... + x_{n-1}x0x1
+      const f3_terms: Term[] = [];
+      for (let i = 0; i < n; i++) {
+        const exponents = Array(n).fill(0);
+        exponents[i] = 1;
+        exponents[(i + 1) % n] = 1;
+        exponents[(i + 2) % n] = 1;
+        f3_terms.push({ coefficient: 1, exponents });
+      }
+      polys.push(new Polynomial(f3_terms, TermOrder.Lex));
+      // Continue for f4, f5, ..., f_{n-1}
+      for (let k = 4; k < n; k++) {
+        const fk_terms: Term[] = [];
+        for (let i = 0; i < n; i++) {
+          const exponents = Array(n).fill(0);
+          for (let j = 0; j < k; j++) {
+            exponents[(i + j) % n] = 1;
+          }
+          fk_terms.push({ coefficient: 1, exponents });
+        }
+        polys.push(new Polynomial(fk_terms, TermOrder.Lex));
+      }
+      // fn: x0x1...x_{n-1} - 1
+      const fn_terms: Term[] = [];
+      fn_terms.push({ coefficient: 1, exponents: Array(n).fill(1) });
+      fn_terms.push({ coefficient: modulus - 1, exponents: Array(n).fill(0) }); // -1 mod modulus
+      polys.push(new Polynomial(fn_terms, TermOrder.Lex));
+
+      // print polys
+      console.log(`Input Polynomials for Cyclic-${n}:`);
+      for (const poly of polys) {
+        for (const term of poly.terms) {
+          process.stdout.write(`${term.coefficient}*`);
+          for (let i = 0; i < term.exponents.length; i++) {
+            process.stdout.write(`x${i}^${term.exponents[i]}`);
+            if (i < term.exponents.length - 1) process.stdout.write(" ");
+          }
+          process.stdout.write(" + ");
+        }
+        console.log();
+      }
+
+      const basis = naiveGrobnerBasis(polys, TermOrder.Lex);
+      console.log(`Final Grobner Basis for Cyclic-${n}:`);
+      for (const poly of basis) {
+        for (const term of poly.terms) {
+          process.stdout.write(`${term.coefficient}*`);
+          for (let i = 0; i < term.exponents.length; i++) {
+            process.stdout.write(`x${i}^${term.exponents[i]}`);
+            if (i < term.exponents.length - 1) process.stdout.write(" ");
+          }
+          process.stdout.write(" + ");
+        }
+        console.log();
+      }
     }
   }
 }

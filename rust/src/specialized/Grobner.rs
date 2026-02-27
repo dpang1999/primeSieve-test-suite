@@ -327,6 +327,8 @@ pub fn are_bases_equivalent(set_a: Vec<Polynomial>, set_b: Vec<Polynomial>) -> b
 fn main() {
     // let mode = 0 be for testing
     let mode = 0;
+    let args: Vec<String> = std::env::args().collect();
+    let n: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(4);
     if mode != 0 {
         /*
         // arg1 = # of polynomials
@@ -366,48 +368,96 @@ fn main() {
         }*/
         return;*/
     }
-    else {    
-        // Cyclic-4 benchmark
-        TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
+    else { 
+        if (n == 4) {   
+            // Cyclic-4 benchmark
+            TERM_ORDER.set(TermOrder::Lex).expect("TERM_ORDER already initialized");
 
-        // f1 = x0 + x1 + x2 + x3
-        let p1 = Polynomial::new(vec![
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 0] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 0, 0] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 0] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 1] },
-        ]);
+            // f1 = x0 + x1 + x2 + x3
+            let p1 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 1] },
+            ]);
 
-        // f2 = x0*x1 + x1*x2 + x2*x3 + x3*x0
-        let p2 = Polynomial::new(vec![
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 0] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 0] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 1] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 1] },
-        ]);
+            // f2 = x0*x1 + x1*x2 + x2*x3 + x3*x0
+            let p2 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 1] },
+            ]);
 
-        // f3 = x0*x1*x2 + x1*x2*x3 + x2*x3*x0 + x3*x0*x1
-        let p3 = Polynomial::new(vec![
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 0] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 1] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 1, 1] },
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 1] },
-        ]);
+            // f3 = x0*x1*x2 + x1*x2*x3 + x2*x3*x0 + x3*x0*x1
+            let p3 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 1] },
+            ]);
 
-        // f4 = x0*x1*x2*x3 - 1
-        let p4 = Polynomial::new(vec![
-            Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 1] },
-            Term { numerator: BigInt::from(-1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 0] },
-        ]);
+            // f4 = x0*x1*x2*x3 - 1
+            let p4 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 1] },
+                Term { numerator: BigInt::from(-1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 0] },
+            ]);
 
-        println!("Computing Grobner basis for Cyclic-4...");
+            println!("Computing Grobner basis for Cyclic-4...");
 
-        let basis = naive_grobner_basis(vec![p1, p2, p3, p4]);
+            let basis = naive_grobner_basis(vec![p1, p2, p3, p4]);
 
-        println!("Final Grobner Basis for Cyclic-4:");
-        println!("Number of polynomials in basis: {}", basis.len());
-        for (i, poly) in basis.iter().enumerate() {
-            println!("Polynomial {}: {:?}", i + 1, poly);
+            println!("Final Grobner Basis for Cyclic-4:");
+            println!("Number of polynomials in basis: {}", basis.len());
+            for (i, poly) in basis.iter().enumerate() {
+                println!("Polynomial {}: {:?}", i + 1, poly);
+            }
+        }
+        else if (n ==5 ) {
+            // Cyclic-5 benchmark
+            let p1 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 0, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 1, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 0, 1] },
+            ]);
+            let p2 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 1, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 0, 1] },
+            ]);
+            let p3 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 0, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 1, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 0, 1, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 0, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 0, 1] },
+            ]);
+            let p4 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 1, 0] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![0, 1, 1, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 0, 1, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 0, 1, 1] },
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 0, 1] },
+            ]);
+            let p5 = Polynomial::new(vec![
+                Term { numerator: BigInt::from(1), denominator: BigInt::from(1), exponents: vec![1, 1, 1, 1, 1] },
+                Term { numerator: BigInt::from(-1), denominator: BigInt::from(1), exponents: vec![0, 0, 0, 0, 0] },
+            ]);
+        }
+        else if (n == 6) {
+            // Cyclic-6 benchmark
+            println!("Cyclic-6 benchmark not implemented yet.");
+        }
+        else if (n == 7){
+            // Cyclic-7 benchmark
+            println!("Cyclic-7 benchmark not implemented yet.");
+        }
+        else {
+            println!("Invalid input for n. Please enter a value between 4 and 7.");
         }
 /*
         // q1 = x0 + x1 + x2 + x3

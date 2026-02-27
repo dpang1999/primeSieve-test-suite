@@ -1,4 +1,4 @@
-C++: 
+cd C++: 
 g++ -o (output file name) (source file name)
 ./(output file name)
 
