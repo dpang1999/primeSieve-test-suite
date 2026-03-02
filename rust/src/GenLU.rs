@@ -5,11 +5,12 @@ use crate::generic::i_math::IMath;
 use crate::generic::int_mod_p::IntModP;
 use crate::generic::int_mod_p::set_modulus;
 use crate::generic::complex_field::ComplexField;
+use crate::generic::i_copiable::ICopiable;
 use std::fmt::Display;
 use rust::helpers::lcg::Lcg;
 pub mod generic;
 
-pub fn solve<U: IField>(
+pub fn solve<U: IField + ICopiable>(
     lu: &Vec<Vec<U>>,
     pvt: &Vec<usize>,
     b: &mut Vec<U>,
@@ -62,7 +63,7 @@ fn print_vector<T: Display>(b: &Vec<T>) {
 
 
 
-pub fn factor<U: IField + IMath>(
+pub fn factor<U: IField + ICopiable + IMath>(
     a: &mut Vec<Vec<U>>,
     pivot: &mut Vec<usize>,
 ) -> i32 {
@@ -114,7 +115,7 @@ pub fn factor<U: IField + IMath>(
     0
 }
 
-fn run<T: IField + IMath + Clone + Display>(
+fn run<T: IField + IMath + ICopiable + Display + Clone>(
     mut a: Vec<Vec<T>>,
     mut b: Vec<T>,
     mut pivot: Vec<usize>,

@@ -3,6 +3,7 @@ use crate::generic::i_field::IField;
 use crate::generic::i_ordered::IOrdered;
 use crate::generic::i_math::IMath;
 use crate::generic::i_primitive_roots::IPrimitiveRoots;
+use crate::generic::i_copiable::ICopiable;
 use std::hash::Hash;
 use std::cmp::Eq;
 #[derive(Debug)]
@@ -51,17 +52,13 @@ impl IntModP {
         IntModP { i: i.rem_euclid(p) }
     }
 
-    pub fn copy(&self) -> IntModP {
-        IntModP::new(self.i)
-    }
-
-    pub fn coerce(&self, value: f64) -> IntModP {
+/*     pub fn coerce(&self, value: f64) -> IntModP {
         IntModP::new(value as u64)
     }
 
     pub fn coerce_to_f64(&self) -> f64 {
         self.i as f64
-    }
+    } */
 }
 
 impl IField for IntModP {
@@ -118,6 +115,10 @@ impl IField for IntModP {
         self.i as f64
     }
 
+    fn coerce_from_int(&self, value: i32) -> Self {
+        IntModP::new(value as u64)
+    }
+
     fn coerce(&self, value: f64) -> IntModP {
         IntModP::new(value as u64)
     }
@@ -135,7 +136,16 @@ impl IField for IntModP {
     fn one(&self) -> IntModP {
         IntModP::new(1)
     }
+}
+
+impl ICopiable for IntModP{
     fn copy(&self) -> IntModP {
+        IntModP::new(self.i)
+    }
+}
+
+impl Clone for IntModP {
+    fn clone(&self) -> Self {
         self.copy()
     }
 }
@@ -175,12 +185,6 @@ impl IMath for IntModP {
 impl fmt::Display for IntModP {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "IntModP({})", self.i)
-    }
-}
-
-impl Clone for IntModP {
-    fn clone(&self) -> Self {
-        self.copy()
     }
 }
 

@@ -1,10 +1,11 @@
+import { ICopiable } from './iCopiable';
 import { IField } from './iField';
 import { IMath } from './iMath';
 import { IOrdered } from './iOrdered';
 import { IPrimitiveRoots } from './iPrimitiveRoots';
 
 // Generic ComplexField<T> where T is a field (e.g., DoubleField, IntModP, etc.)
-export class ComplexField<T extends IField<T> & IMath<T> & IOrdered<T>> implements IField<ComplexField<T>>, IMath<ComplexField<T>>, IOrdered<ComplexField<T>>, IPrimitiveRoots<ComplexField<T>>  {
+export class ComplexField<T extends IField<T> & IMath<T> & IOrdered<T> & ICopiable<T>> implements IField<ComplexField<T>>, IMath<ComplexField<T>>, IOrdered<ComplexField<T>>, IPrimitiveRoots<ComplexField<T>>, ICopiable<ComplexField<T>> {
   re: T;
   im: T;
 

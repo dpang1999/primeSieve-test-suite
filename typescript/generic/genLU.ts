@@ -2,9 +2,10 @@
 import { IField } from './iField';
 import { IMath } from './iMath';
 import { LCG } from '../helpers/lcg';
+import { ICopiable } from './iCopiable';
 
 // In-place LU factorization with partial pivoting, Rust-style
-export function factor<C extends IField<C> & IMath<C>>(a: C[][], pivot: number[]): number {
+export function factor<C extends IField<C> & IMath<C> & ICopiable<C>>(a: C[][], pivot: number[]): number {
   const n = a.length;
   const m = a[0].length;
   const min_mn = Math.min(m, n);
@@ -48,7 +49,7 @@ export function factor<C extends IField<C> & IMath<C>>(a: C[][], pivot: number[]
 }
 
 // Solve Ax = b using LU factorization and pivot vector
-export function solve<C extends IField<C> & IMath<C>>(lu: C[][], pvt: number[], b: C[],): void {
+export function solve<C extends IField<C> & IMath<C> & ICopiable<C>>(lu: C[][], pvt: number[], b: C[],): void {
   const m = lu.length;
   const n = lu[0].length;
   let ii = 0;
@@ -75,7 +76,7 @@ export function solve<C extends IField<C> & IMath<C>>(lu: C[][], pvt: number[], 
 }
 
 // Utility: multiply matrix and vector
-export function multiplyMatrixVector<C extends IField<C> & IMath<C>>(a: C[][], b: C[]): C[] {
+export function multiplyMatrixVector<C extends IField<C> & IMath<C> & ICopiable<C>>(a: C[][], b: C[]): C[] {
   const m = a.length;
   const n = a[0].length;
   const product: C[] = Array(m).fill(a[0][0].zero());

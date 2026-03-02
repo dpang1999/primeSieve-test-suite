@@ -16,6 +16,4 @@ export interface IField<T> {
 
     zero(): T;
     one(): T;
-
-    copy(): T;
 }

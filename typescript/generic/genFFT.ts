@@ -7,8 +7,9 @@ import { IOrdered } from './iOrdered';
 import { IPrimitiveRoots } from './iPrimitiveRoots';
 import { ComplexField } from './complexField';
 import { DoubleField } from './doubleField';
+import { ICopiable } from './iCopiable.js';
 // Class-based generic FFT, similar to the Rust GenFFT
-export class GenFFT<C extends IField<C> & IOrdered<C> & IPrimitiveRoots<C> & IMath<C>> {
+export class GenFFT<C extends IField<C> & IOrdered<C> & IPrimitiveRoots<C> & IMath<C> & ICopiable<C>> {
   c: C;
 
   constructor(data: C) {

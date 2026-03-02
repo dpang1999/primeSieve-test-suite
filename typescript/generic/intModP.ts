@@ -1,8 +1,9 @@
+import { ICopiable } from './iCopiable';
 import { IField } from './iField';
 import { IMath } from './iMath';
 import { IOrdered } from './iOrdered';
 
-export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntModP> {
+export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntModP>, ICopiable<IntModP> {
   value: number;
   static modulus: number;
   static setModulus(modulus: number) {

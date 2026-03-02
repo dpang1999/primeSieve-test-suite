@@ -5,6 +5,7 @@ use crate::generic::single_field::SingleField;
 use crate::generic::int_mod_p::IntModP;
 use crate::generic::int_mod_p::set_modulus;
 use crate::generic::complex_field::ComplexField;
+use crate::generic::i_copiable::ICopiable;
 use std::fmt::Display;
 use rust::helpers::lcg::Lcg;
 pub mod generic;
@@ -16,7 +17,7 @@ pub fn num_flops(m: usize, n: usize, num_iterations: usize) -> f64 {
     (md - 1.0) * (nd - 1.0) * num_iter_d * 6.0
 }
 
-pub fn execute<U: IField + Display>(omega: U, g: &mut Vec<Vec<U>>, num_iterations: usize) {
+pub fn execute<U: IField + Display + ICopiable>(omega: U, g: &mut Vec<Vec<U>>, num_iterations: usize) {
     let m = g.len();
     let n = g[0].len();
 
@@ -152,7 +153,7 @@ fn main() {
             println!("Using SingleField");
             let omega = ComplexField::new(SingleField::new(1.5), SingleField::new(0.0));
             let mut g = vec![vec![omega.zero(); n]; m];
-
+            
             // Set boundary conditions
             for i in 0..m {
                 g[i][0] = omega.zero();         // Left edge
@@ -175,7 +176,7 @@ fn main() {
             println!("Using DoubleField");
             let omega = ComplexField::new(DoubleField::new(1.5), DoubleField::new(0.0));
             let mut g = vec![vec![omega.zero(); n]; m];
-
+            
             // Set boundary conditions
             for i in 0..m {
                 g[i][0] = omega.zero();         // Left edge

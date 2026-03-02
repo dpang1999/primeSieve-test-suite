@@ -11,18 +11,19 @@ use crate::generic::i_ordered::IOrdered;
 pub mod generic;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
+use crate::generic::i_copiable::ICopiable;
 use crate::generic::int_mod_p::set_modulus;
 
 pub struct GenFFT<N>
 where
-    N: IField + IMath + IOrdered + IPrimitiveRoots<N> + Clone + fmt::Display,
+    N: IField + IMath + IOrdered + IPrimitiveRoots<N> + ICopiable + fmt::Display,
 {
     c: N,
 }
 
 impl<N> GenFFT<N>
 where
-    N: IField + IMath + IOrdered + IPrimitiveRoots<N> + Clone + fmt::Display,
+    N: IField + IMath + IOrdered + IPrimitiveRoots<N> + ICopiable + fmt::Display,
 {
     pub fn new(data: N) -> Self {
         Self {
@@ -123,7 +124,7 @@ where
         let mut dual = 1;
         for _bit in 0..logn {
             for a in 0..dual {
-                let w = roots[a * (n / (2 * dual))].clone(); // Use precomputed root
+                let w = roots[a * (n / (2 * dual))].copy(); // Use precomputed root
                 for b in (0..n).step_by(2 * dual) {
                     let i = b + a;
                     let j = b + a + dual;

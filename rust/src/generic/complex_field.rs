@@ -7,6 +7,7 @@ use crate::generic::single_field::SingleField;
 use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
 use crate::generic::i_primitive_roots::IPrimitiveRoots;
+use crate::generic::i_copiable::ICopiable;
 use std::hash::Hash;
 use std::cmp::Eq;
 #[derive(Debug)]
@@ -15,17 +16,13 @@ pub struct ComplexField<T> {
     pub im: T,
 }
 
-impl<T: IField + IOrdered> ComplexField<T> {
+impl<T: IField> ComplexField<T> {
     pub fn new(re: T, im: T) -> Self {
         ComplexField { re, im }
     }
 }
 
-impl <T: IField + IOrdered> IField for ComplexField<T> {
-    fn copy(&self) -> Self {
-        ComplexField::new(self.re.copy(), self.im.copy())
-    }
-
+impl <T: IField> IField for ComplexField<T> {
     fn a(&self, o: &ComplexField<T>) -> ComplexField<T> {
         ComplexField::new(self.re.a(&o.re), self.im.a(&o.im))
     }
@@ -79,8 +76,13 @@ impl <T: IField + IOrdered> IField for ComplexField<T> {
     fn coerce_to_f64(&self) -> f64 {
         (self.re.coerce_to_f64().powi(2) + self.im.coerce_to_f64().powi(2)).sqrt()
     }
+
+    fn coerce_from_int(&self, value: i32) -> Self {
+        ComplexField::new(self.re.coerce_from_int(value), self.im.zero())
+    }
+
     fn coerce(&self, value: f64) -> ComplexField<T> {
-        ComplexField::new(self.re.coerce(value), self.im.coerce(0.0))
+        ComplexField::new(self.re.coerce(value), self.im.zero())
     }
 
     fn is_zero(&self) -> bool {
@@ -94,6 +96,18 @@ impl <T: IField + IOrdered> IField for ComplexField<T> {
     }
     fn one(&self) -> ComplexField<T> {
         ComplexField::new(T::one(&self.re), T::zero(&self.im))
+    }
+}
+
+impl<T: IOrdered + ICopiable> ICopiable for ComplexField<T> {
+    fn copy(&self) -> Self {
+        ComplexField::new(self.re.copy(), self.im.copy())
+    }
+}
+
+impl <T: IOrdered + ICopiable> Clone for ComplexField<T> {
+    fn clone(&self) -> Self {
+        self.copy()
     }
 }
 
@@ -137,7 +151,7 @@ impl<T: IField + IOrdered + fmt::Display> fmt::Display for ComplexField<T> {
     }
 }
 
-impl<T: IField + IOrdered + IMath> IMath for ComplexField<T> {
+impl<T: IField + ICopiable + IMath> IMath for ComplexField<T> {
     fn abs(&self) -> f64 {
         let re = self.re.copy();
         let im = self.im.copy();
@@ -149,15 +163,6 @@ impl<T: IField + IOrdered + IMath> IMath for ComplexField<T> {
     fn sqrt(&mut self) {
         // Square root of a complex number is not straightforward and is not implemented here.
         panic!("Square root not implemented for ComplexField");
-    }
-}
-
-impl<T> Clone for ComplexField<T>
-where
-    T: IField + IOrdered + Clone,
-{
-    fn clone(&self) -> Self {
-        ComplexField::new(self.re.clone(), self.im.clone())
     }
 }
 

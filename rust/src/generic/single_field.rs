@@ -1,4 +1,5 @@
 use std::fmt;
+use crate::generic::i_copiable::ICopiable;
 use crate::generic::i_field::IField;
 use crate::generic::i_math::IMath;
 use crate::generic::i_ordered::IOrdered;
@@ -17,9 +18,6 @@ impl SingleField {
         SingleField { f }
     }
 
-    pub fn copy(&self) -> SingleField {
-        SingleField::new(self.f)
-    }
 
     /* pub fn new_array(size: usize) -> Vec<SingleField> {
         vec![SingleField::new(0.0); size]
@@ -72,6 +70,11 @@ impl IField for SingleField {
     fn coerce_to_f64(&self) -> f64 {
         self.f as f64
     }
+
+    fn coerce_from_int(&self, value: i32) -> Self {
+        SingleField::new(value as f32)
+    }
+
     fn coerce(&self, value: f64) -> SingleField {
         SingleField::new(value as f32)
     }
@@ -91,9 +94,16 @@ impl IField for SingleField {
     fn one(&self) -> SingleField {
         SingleField::new(1.0)
     }
+}
 
-    fn copy(&self) -> SingleField {
+impl ICopiable for SingleField {
+    fn copy(&self) -> Self {
         SingleField::new(self.f)
+    }
+}
+impl Clone for SingleField {
+    fn clone(&self) -> Self {
+        self.copy()
     }
 }
 
@@ -142,12 +152,6 @@ impl ITrigonometric for SingleField {
 impl fmt::Display for SingleField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.f)
-    }
-}
-
-impl Clone for SingleField {
-    fn clone(&self) -> Self {
-        SingleField::new(self.f)
     }
 }
 

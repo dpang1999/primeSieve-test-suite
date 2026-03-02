@@ -1,4 +1,5 @@
 use std::fmt;
+use crate::generic::i_copiable::ICopiable;
 use crate::generic::i_field::IField;
 use crate::generic::i_math::IMath;
 use crate::generic::i_ordered::IOrdered;
@@ -17,9 +18,6 @@ impl DoubleField {
         DoubleField { d }
     }
 
-    pub fn copy(&self) -> DoubleField {
-        DoubleField::new(self.d)
-    }
 
     /* pub fn new_array(size: usize) -> Vec<DoubleField> {
         vec![DoubleField::new(0.0); size]
@@ -72,6 +70,11 @@ impl IField for DoubleField {
     fn coerce_to_f64(&self) -> f64 {
         self.d
     }
+
+    fn coerce_from_int(&self, value: i32) -> Self {
+        DoubleField::new(value as f64)
+    }
+
     fn coerce(&self, value: f64) -> DoubleField {
         DoubleField::new(value)
     }
@@ -91,9 +94,16 @@ impl IField for DoubleField {
     fn one(&self) -> DoubleField {
         DoubleField::new(1.0)
     }
+}
 
-    fn copy(&self) -> DoubleField {
+impl ICopiable for DoubleField {
+    fn copy(&self) -> Self {
         DoubleField::new(self.d)
+    }
+}
+impl Clone for DoubleField {
+    fn clone(&self) -> Self {
+        self.copy()
     }
 }
 
@@ -142,11 +152,6 @@ impl ITrigonometric for DoubleField {
 impl fmt::Display for DoubleField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.d)
-    }
-}
-impl Clone for DoubleField {
-    fn clone(&self) -> Self {
-        DoubleField::new(self.d)
     }
 }
 

@@ -49,7 +49,7 @@ export enum TermOrder {
 
 
 
-class Polynomial<C extends IField<C>, E extends IExponent<E>> {
+class Polynomial<C extends IField<C> & ICopiable<C>, E extends IExponent<E>> {
   terms: Term<C, E>[];
   constructor(terms: Term<C, E>[], order: TermOrder) {
     // Remove near-zero coefficients, round, and sort
@@ -121,7 +121,7 @@ class Polynomial<C extends IField<C>, E extends IExponent<E>> {
     return new Polynomial(result.terms, order);
   }
 
-  static sPolynomial<C extends IField<C>, E extends IExponent<E>>(p1: Polynomial<C, E>, p2: Polynomial<C, E>, order: TermOrder): Polynomial<C, E> {
+  static sPolynomial<C extends IField<C> & ICopiable<C>, E extends IExponent<E>>(p1: Polynomial<C, E>, p2: Polynomial<C, E>, order: TermOrder): Polynomial<C, E> {
     const lead1 = p1.terms[0];
     const lead2 = p2.terms[0];
     const lcmExps = lead1.lcm(lead2);
@@ -137,7 +137,7 @@ toString() {
   }
 }
 
-export function naiveGrobnerBasis<C extends IField<C>, E extends IExponent<E>>(polys: Polynomial<C, E>[], order: TermOrder): Polynomial<C, E>[] {
+export function naiveGrobnerBasis<C extends IField<C> & ICopiable<C>,  E extends IExponent<E>>(polys: Polynomial<C, E>[], order: TermOrder): Polynomial<C, E>[] {
   let basis = polys.map(p => new Polynomial(p.terms, order));
   const basisSet = new Set<string>();
   let added = true;
@@ -187,6 +187,7 @@ export function naiveGrobnerBasis<C extends IField<C>, E extends IExponent<E>>(p
 import { DoubleField } from "./doubleField";
 import { VecExponents } from "./vecExponents";
 import { IntModP } from "./intModP";
+import { ICopiable } from "./iCopiable";
 
 function main() {
   // args: numPolys, numTerms, coeffType, expType, orderArg

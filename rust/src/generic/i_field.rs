@@ -9,12 +9,11 @@ pub trait IField: {
     fn de(&mut self, o: &Self);
 
     fn coerce_to_f64(&self) -> f64;
+    fn coerce_from_int(&self, value: i32) -> Self;
     fn coerce(&self, value: f64) -> Self;
 
     fn is_zero(&self) -> bool;
     fn is_one(&self) -> bool;
     fn zero(&self) -> Self;
     fn one(&self) -> Self;
-
-    fn copy(&self) -> Self;
 }

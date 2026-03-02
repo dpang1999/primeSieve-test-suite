@@ -1,8 +1,9 @@
+import { ICopiable } from './iCopiable';
 import { IField } from './iField';
 import { IMath } from './iMath';
 import { IOrdered } from './iOrdered';
 
-export class DoubleField implements IField<DoubleField>, IMath<DoubleField>, IOrdered<DoubleField>{
+export class DoubleField implements IField<DoubleField>, IMath<DoubleField>, IOrdered<DoubleField>, ICopiable<DoubleField> {
   value: number;
   constructor(value: number) {
     this.value = value;

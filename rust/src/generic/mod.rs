@@ -10,3 +10,4 @@ pub mod i_primitive_roots;
 pub mod i_exponent;
 pub mod vec_exponent;
 pub mod bit_packed_exponent;
+pub mod i_copiable;
