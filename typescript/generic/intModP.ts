@@ -31,7 +31,7 @@ export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntMod
   is_one(): boolean { return this.value === 1; }
   zero(): IntModP { return new IntModP(0); }
   one(): IntModP { return new IntModP(1); }
-  abs(): number { return Math.abs(this.value); }
+  abs(): IntModP { return new IntModP(Math.abs(this.value)); }
   sqrt(): IntModP { throw new Error('sqrt not implemented for IntModP'); }
   lt(o: IntModP): boolean { return this.value < o.value; }
   le(o: IntModP): boolean { return this.value <= o.value; }

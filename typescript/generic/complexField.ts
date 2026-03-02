@@ -72,11 +72,14 @@ export class ComplexField<T extends IField<T> & IMath<T> & IOrdered<T> & ICopiab
   one(): ComplexField<T> {
     return new ComplexField(this.re.one(), this.im.zero());
   }
-  abs(): number{
+  abs(): ComplexField<T>{
     // sqrt(re^2 + im^2)
-    return Math.sqrt(this.re.m(this.re).a(this.im.m(this.im)).abs());
+    const sum = this.re.m(this.re).a(this.im.m(this.im)).abs();
+    const sqrtSum = sum.sqrt();
+    return new ComplexField(sqrtSum, this.im.zero());
+    
   }
-  sqrt(): void {
+  sqrt(): ComplexField<T> {
     // sqrt(a + bi) = sqrt((|z| + a)/2) + sign(b) * sqrt((|z| - a)/2) i
     const modulus = this.re.m(this.re).a(this.im.m(this.im));
     const two = this.re.coerce(2);
@@ -87,8 +90,7 @@ export class ComplexField<T extends IField<T> & IMath<T> & IOrdered<T> & ICopiab
     if (this.im.lt(this.im.zero())) {
       imag = imag.m(this.re.coerce(-1));
     }
-    this.re = real;
-    this.im = imag;
+    return new ComplexField(real, imag);
   }
   lt(o: ComplexField<T>): boolean {
     // Compare real, then imaginary

@@ -22,7 +22,7 @@ export class DoubleField implements IField<DoubleField>, IMath<DoubleField>, IOr
   is_one(): boolean { return this.value === 1; }
   zero(): DoubleField { return new DoubleField(0); }
   one(): DoubleField { return new DoubleField(1); }
-  abs(): number { return Math.abs(this.value); }
+  abs(): DoubleField { return new DoubleField(Math.abs(this.value)); }
   sqrt(): DoubleField { return new DoubleField(Math.sqrt(this.value)); }
   lt(o: DoubleField): boolean { return this.value < o.value; }
   le(o: DoubleField): boolean { return this.value <= o.value; }

@@ -27,9 +27,9 @@ export function factor<C extends IField<C> & IMath<C> & ICopiable<C>>(a: C[][], 
     }
     if (j < m - 1) {
       const recp = (a[j][j].one()).d(a[j][j]);
-      if (recp.abs() > 1000000)
+      if (recp.abs().coerce_to_number() > 1000000)
       {
-        console.log(`recp: ${recp.toString()}, ${recp.abs()%1_000_007}`);
+        console.log(`recp: ${recp.toString()}, ${recp.abs().coerce_to_number()%1_000_007}`);
 
       }
       for (let k = j + 1; k < m; k++) {

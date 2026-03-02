@@ -22,7 +22,7 @@ export class SingleField implements IField<SingleField>, IMath<SingleField>, IOr
   is_one(): boolean { return this.value === 1; }
   zero(): SingleField { return new SingleField(0); }
   one(): SingleField { return new SingleField(1); }
-  abs(): number { return Math.abs(this.value); }
+  abs(): SingleField { return new SingleField(Math.abs(this.value)); }
   sqrt(): SingleField { return new SingleField(Math.sqrt(this.value)); }
   lt(o: SingleField): boolean { return this.value < o.value; }
   le(o: SingleField): boolean { return this.value <= o.value; }

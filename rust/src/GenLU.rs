@@ -6,6 +6,7 @@ use crate::generic::int_mod_p::IntModP;
 use crate::generic::int_mod_p::set_modulus;
 use crate::generic::complex_field::ComplexField;
 use crate::generic::i_copiable::ICopiable;
+use crate::generic::i_ordered::IOrdered;
 use std::fmt::Display;
 use rust::helpers::lcg::Lcg;
 pub mod generic;
@@ -63,7 +64,7 @@ fn print_vector<T: Display>(b: &Vec<T>) {
 
 
 
-pub fn factor<U: IField + ICopiable + IMath>(
+pub fn factor<U: IField + ICopiable + IMath + IOrdered>(
     a: &mut Vec<Vec<U>>,
     pivot: &mut Vec<usize>,
 ) -> i32 {
@@ -77,7 +78,7 @@ pub fn factor<U: IField + ICopiable + IMath>(
         let mut t = a[j][j].abs();
         for i in (j + 1)..m {
             let ab = a[i][j].abs();
-            if ab > t {
+            if ab.gt(&t) {
                 jp = i;
                 t = ab;
             }
@@ -115,7 +116,7 @@ pub fn factor<U: IField + ICopiable + IMath>(
     0
 }
 
-fn run<T: IField + IMath + ICopiable + Display + Clone>(
+fn run<T: IField + IMath + ICopiable + IOrdered + Display + Clone>(
     mut a: Vec<Vec<T>>,
     mut b: Vec<T>,
     mut pivot: Vec<usize>,
@@ -131,7 +132,7 @@ fn run<T: IField + IMath + ICopiable + Display + Clone>(
     println!("Solution: ");
     print_vector(&b);
     let product = multiplyMatrices(a_copy, b);
-    //print_vector(&product);
+    print_vector(&product);
 
     // RMS diff between b_copy and product
     /*let mut rms_diff = 0.0;
@@ -152,9 +153,9 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     
     let mut n = 4;
-    let mut field = 3;
+    let mut field = 1;
     let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
-    let mut complex_bool = 0;
+    let mut complex_bool = 1;
     if args.len() > 1 {
         n = args[1].parse().unwrap_or(4);
     }

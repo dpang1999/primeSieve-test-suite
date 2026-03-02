@@ -152,15 +152,17 @@ impl<T: IField + IOrdered + fmt::Display> fmt::Display for ComplexField<T> {
 }
 
 impl<T: IField + ICopiable + IMath> IMath for ComplexField<T> {
-    fn abs(&self) -> f64 {
+    fn abs(&self) -> ComplexField<T> {
         let re = self.re.copy();
         let im = self.im.copy();
         let mut temp = re.m(&re).a(&im.m(&im));
         temp.sqrt();
-        temp.abs()
+        temp.abs();
+        let zero = temp.zero();
+        ComplexField::new(temp, zero)
     }
 
-    fn sqrt(&mut self) {
+    fn sqrt(&mut self) -> ComplexField<T> {
         // Square root of a complex number is not straightforward and is not implemented here.
         panic!("Square root not implemented for ComplexField");
     }
@@ -217,7 +219,7 @@ impl IPrimitiveRoots<ComplexField<SingleField>> for ComplexField<SingleField> {
         let theta = self.im.coerce_to_f64().atan2(self.re.coerce_to_f64()); // Argument (angle)
 
         // Compute new modulus and argument
-        let new_r = r.powi(exponent as i32); // r^exponent
+        let new_r = r.coerce_to_f64().powi(exponent as i32); // r^exponent
         let new_theta = theta * exponent as f64; // theta * exponent
 
         // Convert back to rectangular form
@@ -267,7 +269,7 @@ impl IPrimitiveRoots<ComplexField<DoubleField>> for ComplexField<DoubleField> {
         let theta = self.im.coerce_to_f64().atan2(self.re.coerce_to_f64()); // Argument (angle)
 
         // Compute new modulus and argument
-        let new_r = r.powi(exponent as i32); // r^exponent
+        let new_r = r.coerce_to_f64().powi(exponent as i32); // r^exponent
         let new_theta = theta * exponent as f64; // theta * exponent
 
         // Convert back to rectangular form
@@ -312,7 +314,7 @@ impl IPrimitiveRoots<ComplexField<IntModP>> for ComplexField<IntModP> {
         let theta = self.im.coerce_to_f64().atan2(self.re.coerce_to_f64()); // Argument (angle)
 
         // Compute new modulus and argument
-        let new_r = r.powi(exponent as i32); // r^exponent
+        let new_r = r.coerce_to_f64().powi(exponent as i32); // r^exponent
         let new_theta = theta * exponent as f64; // theta * exponent
 
         // Convert back to rectangular form

@@ -336,15 +336,13 @@ public class IntModP implements IField<IntModP>,
         return result;
     }
 
-    public void sqrt() {
-        if (d == 0) return; // 0 is a square root of 0
+    public IntModP sqrt() {
+        if (d == 0) return new IntModP(0); // 0 is a square root of 0
         // Use Tonelli-Shanks algorithm or similar to find square root
         throw new UnsupportedOperationException("Square root not implemented");
     }
 
-    public void abs() {
-        if (d < 0) {
-            d = -d;
-        }
+    public IntModP abs() {
+        return new IntModP(d);
     }
 }

@@ -167,11 +167,11 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 			int jp = j;
 
 			U t = A[j][j].copy();
-			t.abs();
+			t = t.abs();
 
 			for (int i = j + 1; i < M; i++) {
 				U ab = A[i][j].copy();
-				ab.abs();
+				ab = ab.abs();
 				if (ab.coerce() > t.coerce()) {
 					jp = i;
 					t = ab;
@@ -271,7 +271,7 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 		if (args.length > 0)
 			N = Integer.parseInt(args[0]);
 
-		int mode = 1;
+		int mode = 0;
 		if (mode == 0) {
 
 			DoubleField A[][] = new DoubleField[N][N];

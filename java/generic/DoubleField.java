@@ -92,8 +92,8 @@ public class DoubleField implements IField<DoubleField>,
 		return d;
 	}
 
-	public void sqrt() {
-		d = Math.sqrt(d);
+	public DoubleField sqrt() {
+		return new DoubleField(Math.sqrt(d));
 	}
 
 	public DoubleField sin() {
@@ -135,9 +135,8 @@ public class DoubleField implements IField<DoubleField>,
 
 
 
-	public void abs() {
-		if (d < 0)
-			d = -d;
+	public DoubleField abs() {
+		return new DoubleField(Math.abs(d));
 	}
 
 	public boolean lt(DoubleField o) {

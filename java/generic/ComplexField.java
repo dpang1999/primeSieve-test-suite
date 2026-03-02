@@ -249,14 +249,15 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
     }
 
 
-    public void abs() {
+    public ComplexField<T> abs() {
         double reVal = re.coerce();
         double imVal = im.coerce();
-        re = re.coerce(Math.sqrt(reVal * reVal + imVal * imVal));
-        im = im.zero();
+        T newRe = re.coerce(Math.sqrt(reVal * reVal + imVal * imVal));
+        T newIm = im.zero();
+        return new ComplexField<>(newRe, newIm);
     }
 
-    public void sqrt() {
+    public ComplexField<T> sqrt() {
         T modulus = re.m(re).a(im.m(im)); // re^2 + im^2
         T realPart = modulus.a(re).d(re.coerce(2));
         realPart.sqrt();
@@ -266,8 +267,7 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
             imagPart = imagPart.m(re.coerce(-1)); // Negate if b < 0
         }
 
-        re = realPart;
-        im = imagPart;
+        return new ComplexField<T>(realPart, imagPart);
     }
 
     @Override

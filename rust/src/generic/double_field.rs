@@ -109,11 +109,11 @@ impl Clone for DoubleField {
 
 
 impl IMath for DoubleField {
-    fn abs(&self) -> f64 {
-        self.d.abs()
+    fn abs(&self) -> DoubleField {
+        DoubleField::new(self.d.abs())
     }
-    fn sqrt(&mut self) {
-        self.d = self.d.sqrt();
+    fn sqrt(&mut self) -> DoubleField{
+        DoubleField::new(self.d.sqrt())
     }
 }
 

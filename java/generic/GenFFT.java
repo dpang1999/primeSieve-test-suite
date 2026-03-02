@@ -76,7 +76,7 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		for (int i = 0; i < nd; i++) {
 			N d = data[i].copy();
 			N difference = d.s(copy.get(i));
-			difference.abs();
+			difference = difference.abs();
 			diff += difference.coerce()*difference.coerce();
 		}
 

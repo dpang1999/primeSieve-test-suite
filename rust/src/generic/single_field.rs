@@ -109,11 +109,11 @@ impl Clone for SingleField {
 
 
 impl IMath for SingleField {
-    fn abs(&self) -> f64 {
-        self.f.abs() as f64
+    fn abs(&self) -> SingleField {
+        SingleField::new(self.f.abs())
     }
-    fn sqrt(&mut self) {
-        self.f = self.f.sqrt();
+    fn sqrt(&mut self) -> SingleField{
+        SingleField::new(self.f.sqrt())
     }
 }
 

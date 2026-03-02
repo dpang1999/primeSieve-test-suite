@@ -92,8 +92,8 @@ public class SingleField implements IField<SingleField>,
 		return f;
 	}
 
-	public void sqrt() {
-		f = (float) Math.sqrt(f);
+	public SingleField sqrt() {
+		return new SingleField((float) Math.sqrt(f));
 	}
 
 	public SingleField sin() {
@@ -133,9 +133,8 @@ public class SingleField implements IField<SingleField>,
 	}
 
 
-	public void abs() {
-		if (f < 0)
-			f = -f;
+	public SingleField abs() {
+		return new SingleField(Math.abs(f));
 	}
 
 	public boolean lt(SingleField o) {

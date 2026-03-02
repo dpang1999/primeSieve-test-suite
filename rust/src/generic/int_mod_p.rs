@@ -173,11 +173,11 @@ impl IOrdered for IntModP {
 }
 
 impl IMath for IntModP {
-    fn abs(&self) -> f64 {
-        self.i as f64
+    fn abs(&self) -> IntModP {
+        IntModP::new(self.i)
     }
 
-    fn sqrt(&mut self) {
+    fn sqrt(&mut self) -> IntModP {
         panic!("Square root not implemented for IntModP");
     }
 }

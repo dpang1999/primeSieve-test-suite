@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "GenLU",
+            "request": "launch",
+            "mainClass": "generic.GenLU",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
             "name": "LCG",
             "request": "launch",
             "mainClass": "helpers.LCG",
