@@ -1,5 +1,4 @@
-use crate::generic::i_field::IField;
-pub trait IOrdered: IField {
+pub trait IOrdered {
     fn lt (&self, o: &Self) -> bool;
     fn le (&self, o: &Self) -> bool;
     fn gt (&self, o: &Self) -> bool;

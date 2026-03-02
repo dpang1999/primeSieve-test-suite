@@ -1,6 +1,5 @@
 package generic;
-public class SingleField implements IField<SingleField>,
-		ITrigonometric<SingleField>, IMath<SingleField>,
+public class SingleField implements IField<SingleField>, IMath<SingleField>,
 		IOrdered<SingleField>, ICopiable<SingleField> {
 	float f;
 
@@ -94,14 +93,6 @@ public class SingleField implements IField<SingleField>,
 
 	public SingleField sqrt() {
 		return new SingleField((float) Math.sqrt(f));
-	}
-
-	public SingleField sin() {
-		return new SingleField((float) Math.sin(f));
-	}
-
-	public SingleField cos() {
-		return new SingleField((float) Math.cos(f));
 	}
 
  	public String toString() {

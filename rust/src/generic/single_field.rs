@@ -3,7 +3,6 @@ use crate::generic::i_copiable::ICopiable;
 use crate::generic::i_field::IField;
 use crate::generic::i_math::IMath;
 use crate::generic::i_ordered::IOrdered;
-use crate::generic::i_trigonometric::ITrigonometric;
 use std::hash::Hash;
 use std::cmp::Eq;
 #[derive(Debug)]
@@ -139,15 +138,6 @@ impl IOrdered for SingleField {
     }
 }
 
-impl ITrigonometric for SingleField {
-    fn sin(&mut self) {
-        self.f = self.f.sin();
-    }
-
-    fn cos(&mut self) {
-        self.f = self.f.cos();
-    }
-}
 
 impl fmt::Display for SingleField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -2,7 +2,6 @@ pub mod double_field;
 pub mod i_field;
 pub mod i_math;
 pub mod i_ordered;
-pub mod i_trigonometric;
 pub mod single_field;
 pub mod int_mod_p;
 pub mod complex_field;

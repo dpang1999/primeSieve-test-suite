@@ -99,13 +99,13 @@ impl <T: IField> IField for ComplexField<T> {
     }
 }
 
-impl<T: IOrdered + ICopiable> ICopiable for ComplexField<T> {
+impl<T: IField + IOrdered + ICopiable> ICopiable for ComplexField<T> {
     fn copy(&self) -> Self {
         ComplexField::new(self.re.copy(), self.im.copy())
     }
 }
 
-impl <T: IOrdered + ICopiable> Clone for ComplexField<T> {
+impl <T: IField + IOrdered + ICopiable> Clone for ComplexField<T> {
     fn clone(&self) -> Self {
         self.copy()
     }

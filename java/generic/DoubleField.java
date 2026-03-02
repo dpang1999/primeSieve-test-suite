@@ -1,7 +1,6 @@
 package generic;
 
-public class DoubleField implements IField<DoubleField>,
-		ITrigonometric<DoubleField>, IMath<DoubleField>,
+public class DoubleField implements IField<DoubleField>, IMath<DoubleField>,
 		IOrdered<DoubleField>, ICopiable<DoubleField> {
 	double d;
 
@@ -95,15 +94,7 @@ public class DoubleField implements IField<DoubleField>,
 	public DoubleField sqrt() {
 		return new DoubleField(Math.sqrt(d));
 	}
-
-	public DoubleField sin() {
-		return new DoubleField(Math.sin(d));
-	}
-
-	public DoubleField cos() {
-		return new DoubleField(Math.cos(d));
-	}
-
+	
  	public String toString() {
 			return Double.toString(d);
 	} 

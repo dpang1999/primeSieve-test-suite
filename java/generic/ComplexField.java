@@ -119,22 +119,7 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
             throw new IllegalArgumentException("n must be positive");
         }
 
-        // Check if the base field supports trigonometric functions
-        if (re instanceof ITrigonometric) {
-            // Cast re to ITrigonometric<T>
-            //System.out.println("Using ITrigonometric for primitive root calculation");
-            //System.out.println(re.coerce());
-
-            // Compute the angle for the primitive root of unity
-            T angle = re.coerce(2.0 * Math.PI / n);
-            //System.out.println(angle);
-            
-            // Cast realPart and imagPart to ITrigonometric<T> before calling cos() and sin()
-            T realPart = ((ITrigonometric<T>) angle).cos(); 
-            T imagPart = ((ITrigonometric<T>) angle).sin(); 
-
-            return new ComplexField<T>(realPart, imagPart);
-        } else if (re instanceof IntModP) {
+        if (re instanceof IntModP) {
             System.out.println("Using IntModP for primitive root calculation");
             // For finite fields, compute the primitive root algebraically
             IntModP finiteRe = (IntModP) re;
@@ -143,7 +128,13 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
             T realPart = (T) finiteRoot.copy(); // Ensure we return a copy
             return (ComplexField<T>) new ComplexField<>(realPart, imagPart);
         }
-        throw new UnsupportedOperationException("Unsupported field type for primitive root calculation");
+        // Else we work with doublefield/singlefield
+        else {
+            double angle = 2.0 * Math.PI / n;
+            T realPart = re.coerce(Math.cos(angle));
+            T imagPart = re.coerce(Math.sin(angle));
+            return new ComplexField<T>(realPart, imagPart);
+        }
     }
   
 
@@ -285,13 +276,13 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
         return new ComplexField<>(re.coerce(value), im.zero());
     }
 
-    public static <T extends IField<T> & IOrdered<T> & ITrigonometric<T> & ICopiable<T> & IMath<T>> ComplexField<T> fromPolar(T r, T theta) {
+/*     public static <T extends IField<T> & IOrdered<T> & ICopiable<T> & IMath<T>> ComplexField<T> fromPolar(T r, T theta) {
         // Convert polar coordinates to rectangular form
         T real = r.m(theta.cos());
         T imag = r.m(theta.sin());
         return new ComplexField<T>(real, imag);
     }
-
+ */
     @Override
     public String toString() {
         return "(" + re.toString() + (im.isZero() ? "" : (im.coerce() >= 0 ? "+" : "") + im.toString() + "i") + ")";
