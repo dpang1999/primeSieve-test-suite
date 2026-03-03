@@ -22,9 +22,17 @@ func (c ComplexField[T]) String() string {
 func (c ComplexField[T]) a(o ComplexField[T]) ComplexField[T] {
 	return ComplexField[T]{Re: c.Re.a(o.Re), Im: c.Im.a(o.Im)}
 }
+func (c ComplexField[T]) ae(o ComplexField[T]) {
+	c.Re.ae(o.Re)
+	c.Im.ae(o.Im)
+}
 
 func (c ComplexField[T]) s(o ComplexField[T]) ComplexField[T] {
 	return ComplexField[T]{Re: c.Re.s(o.Re), Im: c.Im.s(o.Im)}
+}
+func (c ComplexField[T]) se(o ComplexField[T]) {
+	c.Re.se(o.Re)
+	c.Im.se(o.Im)
 }
 
 func (c ComplexField[T]) m(o ComplexField[T]) ComplexField[T] {
@@ -34,6 +42,14 @@ func (c ComplexField[T]) m(o ComplexField[T]) ComplexField[T] {
 	ad := c.Re.m(o.Im)
 	bc := c.Im.m(o.Re)
 	return ComplexField[T]{Re: ac.s(bd), Im: ad.a(bc)}
+}
+func (c ComplexField[T]) me(o ComplexField[T]) {
+	ac := c.Re.m(o.Re)
+	bd := c.Im.m(o.Im)
+	ad := c.Re.m(o.Im)
+	bc := c.Im.m(o.Re)
+	c.Re = ac.s(bd)
+	c.Im = ad.a(bc)
 }
 
 func (c ComplexField[T]) d(o ComplexField[T]) ComplexField[T] {
@@ -50,6 +66,18 @@ func (c ComplexField[T]) d(o ComplexField[T]) ComplexField[T] {
 		Re: ac.a(bd).d(denom),
 		Im: bc.s(ad).d(denom),
 	}
+}
+func (c ComplexField[T]) de(o ComplexField[T]) {
+	denom := o.Re.m(o.Re).a(o.Im.m(o.Im))
+	if denom.isZero() {
+		panic("division by zero")
+	}
+	ac := c.Re.m(o.Re)
+	bd := c.Im.m(o.Im)
+	bc := c.Im.m(o.Re)
+	ad := c.Re.m(o.Im)
+	c.Re = ac.a(bd).d(denom)
+	c.Im = bc.s(ad).d(denom)
 }
 
 func (c ComplexField[T]) coerceFromInt(i int) ComplexField[T] {

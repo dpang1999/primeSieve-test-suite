@@ -88,7 +88,9 @@ public class IntModP implements IField<IntModP>,
             d = bigD.multiply(bigOD).mod(bigP).longValue();
         } 
         else*/ 
-        d = (d * o.d) % modulus;
+        if (o != null) {
+            d = (d * o.d) % modulus;
+        }
     }
 
     public IntModP d(IntModP o) {
@@ -113,7 +115,7 @@ public class IntModP implements IField<IntModP>,
             throw new ArithmeticException("Division by zero in IntModP");
         }
         long inverse = modInverse(o.d, modulus); // Compute modular inverse of o.d
-        long temp = d;
+        //long temp = d;
         d = (d * inverse) % modulus; // Update the current value
        /*  if (d != 0 && (Long.MAX_VALUE / temp) + 1 < inverse) // Add 1 to compensate for edge case with integer division
         {

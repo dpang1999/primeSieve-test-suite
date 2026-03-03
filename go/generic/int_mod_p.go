@@ -54,7 +54,7 @@ func (i IntModP) a(o IntModP) IntModP {
 	return NewIntModP(i.Value + o.Value)
 }
 
-func (i *IntModP) ae(o IntModP) {
+func (i IntModP) ae(o IntModP) {
 	i.Value = (i.Value + o.Value) % modulus
 }
 
@@ -62,7 +62,7 @@ func (i IntModP) s(o IntModP) IntModP {
 	return NewIntModP(i.Value + modulus - o.Value)
 }
 
-func (i *IntModP) se(o IntModP) {
+func (i IntModP) se(o IntModP) {
 	i.Value = (i.Value + modulus - o.Value) % modulus
 }
 
@@ -70,7 +70,7 @@ func (i IntModP) m(o IntModP) IntModP {
 	return NewIntModP(i.Value * o.Value)
 }
 
-func (i *IntModP) me(o IntModP) {
+func (i IntModP) me(o IntModP) {
 	i.Value = (i.Value * o.Value) % modulus
 }
 
@@ -82,7 +82,7 @@ func (i IntModP) d(o IntModP) IntModP {
 	return NewIntModP(i.Value * inv)
 }
 
-func (i *IntModP) de(o IntModP) {
+func (i IntModP) de(o IntModP) {
 	if o.Value == 0 {
 		panic("Division by zero in IntModP")
 	}

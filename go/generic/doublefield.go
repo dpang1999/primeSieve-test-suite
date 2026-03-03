@@ -19,20 +19,32 @@ func (d DoubleField) String() string {
 func (d DoubleField) a(o DoubleField) DoubleField {
 	return DoubleField{Value: d.Value + o.Value}
 }
-
+func (d DoubleField) ae(o DoubleField) {
+	d.Value += o.Value
+}
 func (d DoubleField) s(o DoubleField) DoubleField {
 	return DoubleField{Value: d.Value - o.Value}
 }
-
+func (d DoubleField) se(o DoubleField) {
+	d.Value -= o.Value
+}
 func (d DoubleField) m(o DoubleField) DoubleField {
 	return DoubleField{Value: d.Value * o.Value}
 }
-
+func (d DoubleField) me(o DoubleField) {
+	d.Value *= o.Value
+}
 func (d DoubleField) d(o DoubleField) DoubleField {
 	if o.Value == 0 {
 		panic("division by zero")
 	}
 	return DoubleField{Value: d.Value / o.Value}
+}
+func (d DoubleField) de(o DoubleField) {
+	if o.Value == 0 {
+		panic("division by zero")
+	}
+	d.Value /= o.Value
 }
 
 func (d DoubleField) coerceFromInt(i int) DoubleField {
