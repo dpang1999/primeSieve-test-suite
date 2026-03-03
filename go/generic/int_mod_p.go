@@ -2,18 +2,12 @@ package generic
 
 import (
 	"fmt"
-	"sync"
 )
 
-var (
-	modulus     uint64
-	modulusOnce sync.Once
-)
+var modulus uint64 = 7
 
 func SetModulus(m uint64) {
-	modulusOnce.Do(func() {
-		modulus = m
-	})
+	modulus = m
 }
 func GetModulus() uint64 {
 	return modulus

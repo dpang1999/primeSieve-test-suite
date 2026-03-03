@@ -49,7 +49,7 @@ fn mod_inverse(a: u64, p: u64) -> u64 {
 impl IntModP {
     pub fn new(i: u64) -> Self {
         let p = get_modulus();
-        IntModP { i: i.rem_euclid(p) }
+        IntModP { i: i % p }
     }
 
 /*     pub fn coerce(&self, value: f64) -> IntModP {
@@ -68,7 +68,7 @@ impl IField for IntModP {
 
     fn ae(&mut self, o: &IntModP) {
         let p = get_modulus();
-        self.i = (self.i + o.i).rem_euclid(p);
+        self.i = (self.i + o.i) % p;
     }
 
     fn s(&self, o: &IntModP) -> IntModP {
@@ -78,7 +78,7 @@ impl IField for IntModP {
 
     fn se(&mut self, o: &IntModP) {
         let p = get_modulus();
-        self.i = (self.i + p - o.i).rem_euclid(p);
+        self.i = (self.i + p - o.i) % p;
     }
 
     fn m(&self, o: &IntModP) -> IntModP {
@@ -87,7 +87,7 @@ impl IField for IntModP {
 
     fn me(&mut self, o: &IntModP) {
         let p = get_modulus();
-        self.i = (self.i * o.i).rem_euclid(p);
+        self.i = (self.i * o.i) % p;
     }
 
     fn d(&self, o: &IntModP) -> IntModP {
@@ -107,7 +107,7 @@ impl IField for IntModP {
         }
         else {
             let inv = mod_inverse(o.i, p);
-            self.i = (self.i * inv).rem_euclid(p);
+            self.i = (self.i * inv) % p;
         }
     }
 

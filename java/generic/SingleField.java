@@ -14,10 +14,6 @@ public class SingleField implements IField<SingleField>, IMath<SingleField>,
 		return new SingleField(f);
 	}
 
-	public SingleField[] newArray(int size) {
-		return new SingleField[size];
-	}
-
 	public SingleField a(SingleField o) {
 		//fCount++;
 		if (o == null)
@@ -98,14 +94,6 @@ public class SingleField implements IField<SingleField>, IMath<SingleField>,
  	public String toString() {
 			return Float.toString(f);
 	} 
-
-	public SingleField newInstance() {
-		return new SingleField(0);
-	}
-
-	public int intValue() {
-		return (int) f;
-	}
 
 	public boolean isZero() {
 		return f == 0.0;

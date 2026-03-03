@@ -14,10 +14,6 @@ public class DoubleField implements IField<DoubleField>, IMath<DoubleField>,
 		return new DoubleField(d);
 	}
 
-	public DoubleField[] newArray(int size) {
-		return new DoubleField[size];
-	}
-
 	public DoubleField a(DoubleField o) {
 		//fCount++;
 		if (o == null)
@@ -98,14 +94,6 @@ public class DoubleField implements IField<DoubleField>, IMath<DoubleField>,
  	public String toString() {
 			return Double.toString(d);
 	} 
-
-	public DoubleField newInstance() {
-		return new DoubleField(0);
-	}
-
-	public int intValue() {
-		return (int) d;
-	}
 
 	public boolean isZero() {
 		return d == 0.0;

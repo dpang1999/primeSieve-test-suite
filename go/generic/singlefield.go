@@ -99,7 +99,7 @@ func (d SingleField) sqrt() SingleField {
 	return SingleField{Value: d.Value}
 }
 
-// Implement IEqual interface for SingleField
+// Implement IOrdered interface for SingleField
 
 func (d SingleField) eq(o SingleField) bool {
 	return d.Value == o.Value

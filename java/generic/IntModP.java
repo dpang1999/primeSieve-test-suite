@@ -5,7 +5,7 @@ import java.util.List;
 public class IntModP implements IField<IntModP>,
 		IOrdered<IntModP>, ICopiable<IntModP>, IPrimitiveRoots<IntModP>, IMath<IntModP> {
 	long d;
-    private static long modulus = -1;
+    private static long modulus = 7;
     
     public static void setModulus(long p) {
         modulus = p;
@@ -23,9 +23,7 @@ public class IntModP implements IField<IntModP>,
     public IntModP copy() {
         return new IntModP(d);
     }
-    public IntModP[] newArray(int size) {
-        return new IntModP[size];
-    }
+
     public IntModP a(IntModP o) {
         //fCount++;
         if (o == null)

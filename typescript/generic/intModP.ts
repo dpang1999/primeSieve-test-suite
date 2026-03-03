@@ -5,7 +5,7 @@ import { IOrdered } from './iOrdered';
 
 export class IntModP implements IField<IntModP>, IMath<IntModP>, IOrdered<IntModP>, ICopiable<IntModP> {
   value: number;
-  static modulus: number;
+  static modulus: number = 7;
   static setModulus(modulus: number) {
     if (modulus <= 1) throw new Error('Modulus must be greater than 1');
     IntModP.modulus = modulus;
