@@ -143,7 +143,7 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
             return one(); // Any number to the power of 0 is 1
         }
         if (exponent < 0) {
-            return this.inverse().pow(-exponent); // Handle negative exponents
+            throw new IllegalArgumentException("Negative exponents are not supported");
         }
 
         // Convert to polar form
@@ -173,12 +173,12 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
 		return roots;
 	}
 
-    public ComplexField<T> inverse() {
+/*     public ComplexField<T> inverse() {
         T denom = re.m(re).a(im.m(im)); // re^2 + im^2
         T real = re.d(denom);           // re / (re^2 + im^2)
         T imag = re.coerce(-1).m(im.d(denom));     // -im / (re^2 + im^2)
         return new ComplexField<>(real, imag);
-    }
+    } */
 
     public boolean eq(ComplexField<T> o) {
         if (o == null) {

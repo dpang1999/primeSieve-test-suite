@@ -132,6 +132,9 @@ func (c ComplexField[T]) pow(exponent int64) ComplexField[T] {
 	if exponent == 0 {
 		return c.one()
 	}
+	if exponent < 0 {
+		panic("Negative exponents are not supported")
+	}
 
 	r := c.abs().Re.coerceToFloat()                                 // Modulus
 	theta := math.Atan2(c.Im.coerceToFloat(), c.Re.coerceToFloat()) // Argument (angle)

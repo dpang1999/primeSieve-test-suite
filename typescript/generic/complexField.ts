@@ -153,7 +153,7 @@ export class ComplexField<T extends IField<T> & IMath<T> & IOrdered<T> & ICopiab
 
   pow(exp: number): ComplexField<T> {
     if (exp === 0) return this.one();
-    if (exp < 0) return this.inverse().pow(-exp);
+    if (exp < 0) throw new Error("Negative exponents are not supported");
 
     // Convert to polar form
     const r = this.coerce_to_number();
@@ -179,10 +179,10 @@ export class ComplexField<T extends IField<T> & IMath<T> & IOrdered<T> & ICopiab
     return roots;
   }
 
-  inverse(): ComplexField<T> {
+/*   inverse(): ComplexField<T> {
     const denom = this.re.m(this.re).a(this.im.m(this.im));
     const real = this.re.d(denom);
     const imag = this.im.m(this.re.coerce(-1)).d(denom);
     return new ComplexField(real, imag);
-  }
+  } */
 }
