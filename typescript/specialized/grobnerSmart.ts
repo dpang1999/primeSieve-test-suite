@@ -3,11 +3,15 @@
 
 import { LCG } from "../helpers/lcg";
 
+let modulus: number = 13;
+
 export enum TermOrder {
   Lex,
   GrLex,
   RevLex,
 }
+
+let termOrder = TermOrder.Lex;
 
 export class Term {
   coefficient: number;
@@ -42,8 +46,8 @@ export class Term {
     return Number((this.exponents >> 48n) & 0xFFFFn);
   }
 
-  compare(other: Term, order: TermOrder): number {
-    switch (order) {
+  compare(other: Term): number {
+    switch (termOrder) {
       case TermOrder.Lex: {
         const a = this.exponents & 0x0000FFFFFFFFFFFFn;
         const b = other.exponents & 0x0000FFFFFFFFFFFFn;
@@ -122,57 +126,74 @@ export class Term {
   }*/
 }
 
+function modInverse(a: number, m: number): number {
+  let m0 = m, x0 = 0, x1 = 1;
+  if (m === 1) return 0;
+  a = ((a % m) + m) % m;
+  while (a > 1) {
+    const q = Math.floor(a / m);
+    [a, m] = [m, a % m];
+    [x0, x1] = [x1 - q * x0, x0];
+  }
+  if (x1 < 0) x1 += m0;
+  return x1;
+}
+
 export class Polynomial {
   terms: Term[];
-  constructor(terms: Term[], order: TermOrder) {
-    this.terms = terms
-      .filter(t => Math.abs(t.coefficient) > 1e-2)
-      .map(t => new Term(Math.round(t.coefficient * 1e5) / 1e5, t.exponents));
-    this.terms.sort((a, b) => -a.compare(b, order));
+  constructor(terms: Term[]) {
+    this.terms = terms.filter(t => t.coefficient % modulus !== 0);
+    this.terms = this.terms.map(t => ({
+      coefficient: ((t.coefficient % modulus) + modulus) % modulus,
+      modulus: modulus,
+      exponents: t.exponents.slice(),
+    }));
+    this.terms.sort((a, b) => -a.compare(b));
   }
 
-  add(other: Polynomial, order: TermOrder): Polynomial {
+  add(other: Polynomial): Polynomial {
     const result = this.terms.map(t => new Term(t.coefficient, t.exponents));
     for (const t of other.terms) {
       let found = false;
       for (const rt of result) {
         if (rt.exponents === t.exponents) {
-          rt.coefficient += t.coefficient;
+          rt.coefficient = (rt.coefficient + t.coefficient) % modulus;
           found = true;
           break;
         }
       }
       if (!found) result.push(new Term(t.coefficient, t.exponents));
     }
-    return new Polynomial(result, order);
+    return new Polynomial(result);
   }
 
-  subtract(other: Polynomial, order: TermOrder): Polynomial {
+  subtract(other: Polynomial): Polynomial {
     const result = this.terms.map(t => new Term(t.coefficient, t.exponents));
     for (const t of other.terms) {
       let found = false;
       for (const rt of result) {
         if (rt.exponents === t.exponents) {
-          rt.coefficient -= t.coefficient;
+          rt.coefficient = (rt.coefficient - t.coefficient + modulus) % modulus;
           found = true;
           break;
         }
       }
-      if (!found) result.push(new Term(-t.coefficient, t.exponents));
+      if (!found) result.push(new Term((-t.coefficient + modulus) % modulus, t.exponents));
     }
-    return new Polynomial(result, order);
+    return new Polynomial(result);
   }
 
-  multiplyByTerm(term: Term, order: TermOrder): Polynomial {
+  multiplyByTerm(term: Term): Polynomial {
     const terms = this.terms.map(t => new Term(
-      t.coefficient * term.coefficient,
+      (t.coefficient * term.coefficient) % modulus,
       t.exponents + term.exponents
     ));
-    return new Polynomial(terms, order);
+    return new Polynomial(terms);
   }
 
-  reduce(divisors: Polynomial[], order: TermOrder): Polynomial {
-    let result = new Polynomial(this.terms, order);
+  reduce(divisors: Polynomial[]): Polynomial {
+    let result = new Polynomial(this.terms);
+    const remainder: Term[] = [];
     while (true) {
       let reduced = false;
       for (const divisor of divisors) {
@@ -180,57 +201,88 @@ export class Polynomial {
         const lead = result.terms[0];
         const divLead = divisor.terms[0];
         if (lead.canReduce(divLead)) {
-          const coeff = lead.coefficient / divLead.coefficient;
+          const coeff = (lead.coefficient * modInverse(divLead.coefficient, modulus)) % modulus;
           const exps = lead.exponents - divLead.exponents;
           const reductionTerm = new Term(coeff, exps);
-          const scaledDivisor = divisor.multiplyByTerm(reductionTerm, order);
-          result = result.subtract(scaledDivisor, order);
+          const scaledDivisor = divisor.multiplyByTerm(reductionTerm);
+          result = result.subtract(scaledDivisor);
           reduced = true;
           break;
         }
       }
-      if (!reduced) break;
+      if (!reduced){ 
+        if (result.terms.length === 0) break;
+        remainder.push(result.terms[0]);
+        result = new Polynomial(result.terms.slice(1));
+      }
     }
-    return new Polynomial(result.terms, order);
+    result.terms.push(...remainder);
+    return new Polynomial(result.terms);
   }
 
-  static sPolynomial(p1: Polynomial, p2: Polynomial, order: TermOrder): Polynomial {
+  makeMonic(): Polynomial {
+    if (this.terms.length === 0) return this;
+    const leadCoeff = this.terms[0].coefficient;
+    if (leadCoeff === 0) return this;
+    const inv = modInverse(leadCoeff, modulus);
+    const newTerms = this.terms.map(t => ({
+      coefficient: (t.coefficient * inv) % modulus,
+      exponents: t.exponents,
+    }));
+    return new Polynomial(newTerms);
+  }
+
+  static sPolynomial(p1: Polynomial, p2: Polynomial): Polynomial {
     const lead1 = p1.terms[0];
     const lead2 = p2.terms[0];
     const lcmExps = lead1.lcm(lead2);
     const scale1 = new Term(1, lcmExps - lead1.exponents);
     const scale2 = new Term(1, lcmExps - lead2.exponents);
-    const scaled1 = p1.multiplyByTerm(scale1, order);
-    const scaled2 = p2.multiplyByTerm(scale2, order);
-    return scaled1.subtract(scaled2, order);
+    const scaled1 = p1.multiplyByTerm(scale1);
+    const scaled2 = p2.multiplyByTerm(scale2);
+    return scaled1.subtract(scaled2);
   }
 }
 
-export function naiveGrobnerBasis(polys: Polynomial[], order: TermOrder): Polynomial[] {
-  let basis = polys.map(p => new Polynomial(p.terms, order));
+export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
+  let basis = polys.map(p => new Polynomial(p.terms));
   const basisSet = new Set<string>();
-  let added = true;
-  while (added) {
-    added = false;
-    const n = basis.length;
-    for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
-        const sPoly = Polynomial.sPolynomial(basis[i], basis[j], order);
-        const reduced = sPoly.reduce(basis, order);
-        const key = JSON.stringify(reduced.terms.map(t => [t.coefficient, t.exponents.toString()]));
-        if (reduced.terms.length > 0 && !basisSet.has(key)) {
-          basisSet.add(key);
-          basis.push(reduced);
-          added = true;
+   // Initialize basis set
+    for (const poly of basis) {
+      basisSet.add(JSON.stringify(poly.terms));
+    }
+  
+    // Initialize pairs: all (i, j) where i < j
+    const pairs: Array<[number, number]> = [];
+    for (let i = 0; i < basis.length; i++) {
+      for (let j = i + 1; j < basis.length; j++) {
+        pairs.push([i, j]);
+      }
+    }
+  
+    // Process pairs until none remain
+    while (pairs.length > 0) {
+      const [i, j] = pairs.shift()!;
+      const sPoly = Polynomial.sPolynomial(basis[i], basis[j]);
+      const reduced = sPoly.reduce(basis);
+      const key = JSON.stringify(reduced.terms);
+  
+      if (reduced.terms.length > 0 && !basisSet.has(key)) {
+        basisSet.add(key);
+        const newIdx = basis.length;
+        basis.push(reduced);
+        
+        // Add new pairs with the new polynomial
+        for (let k = 0; k < newIdx; k++) {
+          pairs.push([k, newIdx]);
         }
       }
     }
-  }
   // Reduce basis by self
   const reducedBasis: Polynomial[] = [];
   for (const poly of basis) {
     const basisExcl = basis.filter(p => p !== poly);
-    const reduced = poly.reduce(basisExcl, order);
+    const reduced = poly.reduce(basisExcl);
     const key = JSON.stringify(reduced.terms.map(t => [t.coefficient, t.exponents.toString()]));
     if (reduced.terms.length > 0 && !reducedBasis.some(rb => JSON.stringify(rb.terms.map(t => [t.coefficient, t.exponents.toString()])) === key)) {
       reducedBasis.push(reduced);

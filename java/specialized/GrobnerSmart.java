@@ -277,37 +277,34 @@ public class GrobnerSmart {
     }
 
     public static List<Polynomial> naiveGrobnerBasis(List<Polynomial> polynomials) {
-        // deep copies of input polynomials
         List<Polynomial> basis = new ArrayList<>();
+        Set<Polynomial> basisSet = new HashSet<>();
         for (Polynomial poly : polynomials) {
             //basis.add(poly.deepCopy(order));
             basis.add(poly);
         }
-        Set<Polynomial> basisSet = new HashSet<>(basis);
-        while (true) {
-            //System.out.println("Grobner Basis Iteration, basis size: " + basis.size());
-            boolean added = false;
-            int basisLen = basis.size();
-            for (int i = 0; i < basisLen; i++) {
-                //System.out.println("Processing basis polynomial " + i);
-                for (int j = i + 1; j < basisLen; j++) {
-                    Polynomial sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j));
-                    Polynomial reduced = sPoly.reduce(basis);
-                    // print reduced
-                    //System.out.println("Reduced S-Polynomial:" + reduced.toString());
-                    // print if in basis
-                    //System.out.println("Is reduced polynomial in basis? " + basisSet.contains(reduced));
-                    if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
-                        //basis.add(reduced.deepCopy(order));
-                        //basisSet.add(reduced.deepCopy(order));
-                        basis.add(reduced);
-                        basisSet.add(reduced);
-                        added = true;
-                    }
+        List<int[]> pairs = new ArrayList<>();
+        for (int i = 0; i < basis.size(); i++) {
+            for (int j = i + 1; j < basis.size(); j++) {
+                pairs.add(new int[]{i, j});
+            }
+        }
+        while (!pairs.isEmpty()) {
+            int[] pair = pairs.remove(0);
+            int i = pair[0]; int j = pair[1];
+            Polynomial sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j));
+            Polynomial reduced = sPoly.reduce(basis);
+            // If non-trivial and new, add to basis and enqueue new pairs
+            if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
+                basisSet.add(reduced);
+                int newPolyIdx = basis.size();
+                basis.add(reduced);
+                
+                // Add pairs between new polynomial and all existing ones
+                for (int k = 0; k < newPolyIdx; k++) {
+                    pairs.add(new int[]{k, newPolyIdx});
                 }
             }
-           // System.out.println(added);
-            if (!added) break;
         }
         //System.out.println("Checkpoint");
         List<Polynomial> reducedBasis = new ArrayList<>();
@@ -352,14 +349,14 @@ public class GrobnerSmart {
             int numPolynomials = args.length > 0 ? Integer.parseInt(args[0]) : 3;
             LCG rand = new LCG(12345, 1345, 16645, 1013904);
             List<Polynomial> inputBasis = new ArrayList<>();
-            TermOrder order = TermOrder.Lex;
+            GrobnerSmart.termOrder = TermOrder.Lex;
             if (args.length > 1) {
                 int orderArg = Integer.parseInt(args[1]);
                 switch (orderArg) {
-                    case 0: order = TermOrder.Lex; break;
-                    case 1: order = TermOrder.GrLex; break;
-                    case 2: order = TermOrder.RevLex; break;
-                    default: order = TermOrder.Lex;
+                    case 0: GrobnerSmart.termOrder = TermOrder.Lex; break;
+                    case 1: GrobnerSmart.termOrder = TermOrder.GrLex; break;
+                    case 2: GrobnerSmart.termOrder = TermOrder.RevLex; break;
+                    default: GrobnerSmart.termOrder = TermOrder.Lex;
                 }
             }
             for (int i = 0; i < numPolynomials; i++) {
@@ -384,41 +381,168 @@ public class GrobnerSmart {
         }
         
         else {
-            TermOrder order = TermOrder.Lex;
             modulus = 7;
-            // Cyclic 4 system: x0+x1+x2+x3, x0x1+x1x2+x2x3+x3x0, x0x1x2+x1x2x3+x2x3x0+x3x0x1, x0x1x2x3-1
-            // f1 = x0 + x1 + x2 + x3
-            Term t1 = Term.fromExponents(1L, new int[]{1, 0, 0, 0, 0, 0});
-            Term t2 = Term.fromExponents(1L, new int[]{0, 1, 0, 0, 0, 0});
-            Term t3 = Term.fromExponents(1L, new int[]{0, 0, 1, 0, 0, 0});
-            Term t4 = Term.fromExponents(1L, new int[]{0, 0, 0, 1, 0, 0});
-            Polynomial p1 = new Polynomial(Arrays.asList(t1, t2, t3, t4));
+            GrobnerSmart.termOrder = TermOrder.Lex;
+            int n = args.length > 0 ? Integer.parseInt(args[0]) : 5;
+            if (n == 4) {
+                System.out.println("Java Specialized finite coeff bitpacked exp cyclic 4");  
+                // Cyclic 4 system: x0+x1+x2+x3, x0x1+x1x2+x2x3+x3x0, x0x1x2+x1x2x3+x2x3x0+x3x0x1, x0x1x2x3-1
+                // f1 = x0 + x1 + x2 + x3
+                List<Term> terms1 = new ArrayList<>();
+                terms1.add(Term.fromExponents(1L, new int[]{1, 0, 0, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 1, 0, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 1, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 0, 1, 0, 0}));
+                Polynomial p1 = new Polynomial(terms1);
 
-            // f2 = x0x1 + x1x2 + x2x3 + x3x0
-            Term t5 = Term.fromExponents(1L, new int[]{1, 1, 0, 0, 0, 0});
-            Term t6 = Term.fromExponents(1L, new int[]{0, 1, 1, 0, 0, 0});
-            Term t7 = Term.fromExponents(1L, new int[]{0, 0, 1, 1, 0, 0});
-            Term t8 = Term.fromExponents(1L, new int[]{1, 0, 0, 1, 0, 0});
-            Polynomial p2 = new Polynomial(Arrays.asList(t5, t6, t7, t8));
+                // f2 = x0x1 + x1x2 + x2x3 + x3x0
+                List<Term> terms2 = new ArrayList<>();
+                terms2.add(Term.fromExponents(1L, new int[]{1, 1, 0, 0, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 1, 1, 0, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 0, 1, 1, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{1, 0, 0, 1, 0, 0}));
+                Polynomial p2 = new Polynomial(terms2);
 
-            // f3 = x0x1x2 + x1x2x3 + x2x3x0 + x3x0x1
-            Term t9 = Term.fromExponents(1L, new int[]{1, 1, 1, 0, 0, 0});
-            Term t10 = Term.fromExponents(1L, new int[]{0, 1, 1, 1, 0, 0});
-            Term t11 = Term.fromExponents(1L, new int[]{1, 0, 1, 1, 0, 0});
-            Term t12 = Term.fromExponents(1L, new int[]{1, 1, 0, 1, 0, 0});
-            Polynomial p3 = new Polynomial(Arrays.asList(t9, t10, t11, t12));
+                // f3 = x0x1x2 + x1x2x3 + x2x3x0 + x3x0x1
+                List<Term> terms3 = new ArrayList<>();
+                terms3.add(Term.fromExponents(1L, new int[]{1, 1, 1, 0, 0, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{0, 1, 1, 1, 0, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{1, 0, 1, 1, 0, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{1, 1, 0, 1, 0, 0}));
+                Polynomial p3 = new Polynomial(terms3);
 
-            // f4 = x0x1x2x3 - 1
-            Term t13 = Term.fromExponents(1L, new int[]{1, 1, 1, 1, 0, 0});
-            Term t14 = Term.fromExponents(modulus-1L, new int[]{0, 0, 0, 0, 0, 0});
-            Polynomial p4 = new Polynomial(Arrays.asList(t13, t14));
-
-            List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4);
-            List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
-            System.out.println("Cyclic 4 GrobnerSmart Basis Polynomials:");
-            for (Polynomial poly : basis) {
-                System.out.println(poly);
+                // f4 = x0x1x2x3 - 1
+                List<Term> terms4 = new ArrayList<>();
+                terms4.add(Term.fromExponents(1L, new int[]{1, 1, 1, 1, 0, 0}));
+                terms4.add(Term.fromExponents(modulus-1L, new int[]{0, 0, 0, 0, 0, 0}));
+                Polynomial p4 = new Polynomial(terms4);
+                for (int i = 0; i < 10; i++) {
+                    List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4);
+                    List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
+                    System.out.println("Iteration " + i + " complete");
+                    if (i == 9) {
+                        System.out.println("Cyclic 4 Grobner Basis:");
+                        for (Polynomial poly : basis) {
+                            System.out.println(poly.terms);
+                        }
+                    }
+                }
             }
+            else if (n == 5 ) {
+                System.out.println("Java Specialized finite coeff bitpacked exp cyclic 5");
+                List<Term> terms1 = new ArrayList<>();
+                terms1.add(Term.fromExponents(1L, new int[]{1, 0, 0, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 1, 0, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 1, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 0, 1, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 0, 0, 1, 0}));
+                Polynomial p1 = new Polynomial(terms1);
+
+                List<Term> terms2 = new ArrayList<>();
+                terms2.add(Term.fromExponents(1L, new int[]{1, 1, 0, 0, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 1, 1, 0, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 0, 1, 1, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 0, 0, 1, 1, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{1, 0, 0, 0, 1, 0}));
+                Polynomial p2 = new Polynomial(terms2);
+
+                List<Term> terms3 = new ArrayList<>();
+                terms3.add(Term.fromExponents(1L, new int[]{1, 1, 1, 0, 0, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{0, 1, 1, 1, 0, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{0, 0, 1, 1, 1, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{1, 0, 0, 1, 1, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{1, 1, 0, 0, 1, 0}));
+                Polynomial p3 = new Polynomial(terms3); 
+
+                List<Term> terms4 = new ArrayList<>();
+                terms4.add(Term.fromExponents(1L, new int[]{1, 1, 1, 1, 0, 0}));
+                terms4.add(Term.fromExponents(1L, new int[]{0, 1, 1, 1, 1, 0}));
+                terms4.add(Term.fromExponents(1L, new int[]{1, 0, 1, 1, 1, 0}));
+                terms4.add(Term.fromExponents(1L, new int[]{1, 1, 0, 1, 1, 0}));
+                terms4.add(Term.fromExponents(1L, new int[]{1, 1, 1, 0, 1, 0}));
+                Polynomial p4 = new Polynomial(terms4);
+
+                List<Term> terms5 = new ArrayList<>();
+                terms5.add(Term.fromExponents(1L, new int[]{1, 1, 1, 1, 1, 0}));
+                terms5.add(Term.fromExponents(modulus-1L, new int[]{0, 0, 0, 0, 0, 0}));
+                Polynomial p5 = new Polynomial(terms5);
+                for (int i = 0; i < 10; i++) {
+                    List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4, p5);
+                    List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
+                    System.out.println("Iteration " + i + " complete");
+                    if (i == 9) {
+                        System.out.println("Cyclic 5 Grobner Basis:");
+                        for (Polynomial poly : basis) {
+                            System.out.println(poly.terms);
+                        }
+                    }
+                }
+            }
+            else if (n == 6) {
+                System.out.println("Java Specialized finite coeff bitpacked exp cyclic 6");
+                List<Term> terms1 = new ArrayList<>();
+                terms1.add(Term.fromExponents(1L, new int[]{1, 0, 0, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 1, 0, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 1, 0, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 0, 1, 0, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 0, 0, 1, 0}));
+                terms1.add(Term.fromExponents(1L, new int[]{0, 0, 0, 0, 0, 1}));
+                Polynomial p1 = new Polynomial(terms1);
+
+                List<Term> terms2 = new ArrayList<>();
+                terms2.add(Term.fromExponents(1L, new int[]{1, 1, 0, 0, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 1, 1, 0, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 0, 1, 1, 0, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 0, 0, 1, 1, 0}));
+                terms2.add(Term.fromExponents(1L, new int[]{0, 0, 0, 0, 1, 1}));
+                terms2.add(Term.fromExponents(1L, new int[]{1, 0, 0, 0, 0, 1}));
+                Polynomial p2 = new Polynomial(terms2);
+
+                List<Term> terms3 = new ArrayList<>();
+                terms3.add(Term.fromExponents(1L, new int[]{1, 1, 1, 0, 0, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{0, 1, 1, 1, 0, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{0, 0, 1, 1, 1, 0}));
+                terms3.add(Term.fromExponents(1L, new int[]{0, 0, 0, 1, 1, 1}));
+                terms3.add(Term.fromExponents(1L, new int[]{1, 0, 0, 0, 1, 1}));
+                terms3.add(Term.fromExponents(1L, new int[]{1, 1, 0, 0, 0, 1}));
+                Polynomial p3 = new Polynomial(terms3);
+
+                List<Term> terms4 = new ArrayList<>();
+                terms4.add(Term.fromExponents(1L, new int[]{1, 1, 1, 1, 0, 0}));
+                terms4.add(Term.fromExponents(1L, new int[]{0, 1, 1, 1, 1, 0}));
+                terms4.add(Term.fromExponents(1L, new int[]{0, 0, 1, 1, 1, 1}));
+                terms4.add(Term.fromExponents(1L, new int[]{1, 0, 0, 1, 1, 1}));
+                terms4.add(Term.fromExponents(1L, new int[]{1, 1, 0, 0, 1, 1}));
+                terms4.add(Term.fromExponents(1L, new int[]{1, 1, 1, 0, 0, 1}));
+                Polynomial p4 = new Polynomial(terms4);
+
+                List<Term> terms5 = new ArrayList<>();
+                terms5.add(Term.fromExponents(1L, new int[]{1, 1, 1, 1, 1, 0}));
+                terms5.add(Term.fromExponents(1L, new int[]{0, 1, 1, 1, 1, 1}));
+                terms5.add(Term.fromExponents(1L, new int[]{1, 0, 1, 1, 1, 1}));
+                terms5.add(Term.fromExponents(1L, new int[]{1, 1, 0, 1, 1, 1}));
+                terms5.add(Term.fromExponents(1L, new int[]{1, 1, 1, 0, 1, 1}));
+                terms5.add(Term.fromExponents(1L, new int[]{1, 1, 1, 1, 0, 1}));
+                Polynomial p5 = new Polynomial(terms5);
+
+                List<Term> terms6 = new ArrayList<>();
+                terms6.add(Term.fromExponents(1L, new int[]{1, 1, 1, 1, 1, 1}));
+                terms6.add(Term.fromExponents(modulus-1L, new int[]{0, 0, 0, 0, 0, 0}));
+                Polynomial p6 = new Polynomial(terms6);
+
+                for (int i = 0; i < 10; i++) {
+                    List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4, p5, p6);
+                    List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
+                    System.out.println("Iteration " + i + " complete");
+                    if (i == 9) {
+                        System.out.println("Cyclic 6 Grobner Basis:");
+                        for (Polynomial poly : basis) {
+                            System.out.println(poly.terms);
+                        }
+                    }
+                }
+            }              
+            
         }
     }
 

@@ -1,7 +1,6 @@
 package generic
 
 import (
-	"algos/helpers"
 	"fmt"
 	"math"
 	"sort"
@@ -14,6 +13,8 @@ const (
 	GrLex
 	RevLex
 )
+
+var termOrder TermOrder = Lex
 
 type Term[N interface {
 	IField[N]
@@ -38,8 +39,8 @@ type Polynomial[N interface {
 	Terms []Term[N, E]
 }
 
-func (t Term[N, E]) Compare(other Term[N, E], order TermOrder) int {
-	switch order {
+func (t Term[N, E]) Compare(other Term[N, E]) int {
+	switch termOrder {
 	case Lex:
 		return t.Exponents.lexCompare(other.Exponents)
 	case GrLex:
@@ -69,7 +70,7 @@ func NewPolynomial[N interface {
 	IOrdered[N]
 }, E interface {
 	IExponents[E]
-}](terms []Term[N, E], order TermOrder) Polynomial[N, E] {
+}](terms []Term[N, E]) Polynomial[N, E] {
 	filtered := make([]Term[N, E], 0, len(terms))
 	for _, t := range terms {
 		if math.Abs(t.Coefficient.coerceToFloat()) > 1e-2 {
@@ -79,12 +80,12 @@ func NewPolynomial[N interface {
 		}
 	}
 	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].Compare(filtered[j], order) > 0
+		return filtered[i].Compare(filtered[j]) > 0
 	})
 	return Polynomial[N, E]{Terms: filtered}
 }
 
-func (p Polynomial[N, E]) Add(other Polynomial[N, E], order TermOrder) Polynomial[N, E] {
+func (p Polynomial[N, E]) Add(other Polynomial[N, E]) Polynomial[N, E] {
 	result := append([]Term[N, E]{}, p.Terms...)
 	for _, t := range other.Terms {
 		found := false
@@ -99,10 +100,10 @@ func (p Polynomial[N, E]) Add(other Polynomial[N, E], order TermOrder) Polynomia
 			result = append(result, t)
 		}
 	}
-	return NewPolynomial(result, order)
+	return NewPolynomial(result)
 }
 
-func (p Polynomial[N, E]) Subtract(other Polynomial[N, E], order TermOrder) Polynomial[N, E] {
+func (p Polynomial[N, E]) Subtract(other Polynomial[N, E]) Polynomial[N, E] {
 	result := append([]Term[N, E]{}, p.Terms...)
 	for _, t := range other.Terms {
 		found := false
@@ -119,10 +120,31 @@ func (p Polynomial[N, E]) Subtract(other Polynomial[N, E], order TermOrder) Poly
 			result = append(result, t2)
 		}
 	}
-	return NewPolynomial(result, order)
+	return NewPolynomial(result)
 }
 
-func (p Polynomial[N, E]) MultiplyByTerm(term Term[N, E], order TermOrder) Polynomial[N, E] {
+func (p Polynomial[N, E]) MakeMonic() Polynomial[N, E] {
+	if len(p.Terms) == 0 {
+		return p
+	}
+
+	leadCoeff := p.Terms[0].Coefficient
+	if leadCoeff.coerceToFloat() == 0 {
+		return p
+	}
+
+	terms := make([]Term[N, E], len(p.Terms))
+	for i, t := range p.Terms {
+		terms[i] = Term[N, E]{
+			Coefficient: t.Coefficient.d(leadCoeff),
+			Exponents:   t.Exponents,
+		}
+	}
+
+	return NewPolynomial(terms)
+}
+
+func (p Polynomial[N, E]) MultiplyByTerm(term Term[N, E]) Polynomial[N, E] {
 	terms := make([]Term[N, E], len(p.Terms))
 	for i, t := range p.Terms {
 		terms[i] = Term[N, E]{
@@ -130,11 +152,12 @@ func (p Polynomial[N, E]) MultiplyByTerm(term Term[N, E], order TermOrder) Polyn
 			Exponents:   t.Exponents.add(term.Exponents),
 		}
 	}
-	return NewPolynomial(terms, order)
+	return NewPolynomial(terms)
 }
 
-func (p Polynomial[N, E]) Reduce(divisors []Polynomial[N, E], order TermOrder) Polynomial[N, E] {
+func (p Polynomial[N, E]) Reduce(divisors []Polynomial[N, E]) Polynomial[N, E] {
 	result := p
+	remainder := []Term[N, E]{}
 	for {
 		reduced := false
 		if len(result.Terms) == 0 {
@@ -150,17 +173,19 @@ func (p Polynomial[N, E]) Reduce(divisors []Polynomial[N, E], order TermOrder) P
 				coeff := lead.Coefficient.d(divLead.Coefficient)
 				exps := lead.Exponents.sub(divLead.Exponents)
 				reductionTerm := Term[N, E]{Coefficient: coeff, Exponents: exps}
-				scaledDivisor := divisor.MultiplyByTerm(reductionTerm, order)
-				result = result.Subtract(scaledDivisor, order)
+				scaledDivisor := divisor.MultiplyByTerm(reductionTerm)
+				result = result.Subtract(scaledDivisor)
 				reduced = true
 				break
 			}
 		}
 		if !reduced {
-			break
+			remainder = append(remainder, result.Terms[0])
+			result.Terms = result.Terms[1:]
 		}
 	}
-	return NewPolynomial(result.Terms, order)
+	result.Terms = append(result.Terms, remainder...)
+	return NewPolynomial(result.Terms)
 }
 
 func SPolynomial[N interface {
@@ -170,15 +195,15 @@ func SPolynomial[N interface {
 	IOrdered[N]
 }, E interface {
 	IExponents[E]
-}](p1 Polynomial[N, E], p2 Polynomial[N, E], order TermOrder) Polynomial[N, E] {
+}](p1 Polynomial[N, E], p2 Polynomial[N, E]) Polynomial[N, E] {
 	lead1 := p1.Terms[0]
 	lead2 := p2.Terms[0]
 	lcmExps := lead1.Exponents.lcm(lead2.Exponents)
 	scale1 := lcmExps.sub(lead1.Exponents)
 	scale2 := lcmExps.sub(lead2.Exponents)
-	scaled1 := p1.MultiplyByTerm(Term[N, E]{Coefficient: lead1.Coefficient.one(), Exponents: scale1}, order)
-	scaled2 := p2.MultiplyByTerm(Term[N, E]{Coefficient: lead2.Coefficient.one(), Exponents: scale2}, order)
-	result := scaled1.Subtract(scaled2, order)
+	scaled1 := p1.MultiplyByTerm(Term[N, E]{Coefficient: lead1.Coefficient.one(), Exponents: scale1})
+	scaled2 := p2.MultiplyByTerm(Term[N, E]{Coefficient: lead2.Coefficient.one(), Exponents: scale2})
+	result := scaled1.Subtract(scaled2)
 	return result
 }
 
@@ -189,28 +214,41 @@ func NaiveGrobnerBasis[N interface {
 	IOrdered[N]
 }, E interface {
 	IExponents[E]
-}](polys []Polynomial[N, E], order TermOrder) []Polynomial[N, E] {
+}](polys []Polynomial[N, E]) []Polynomial[N, E] {
 	basis := append([]Polynomial[N, E]{}, polys...)
 	basisSet := make(map[string]struct{})
-	added := true
-	for added {
-		added = false
-		n := len(basis)
-		for i := 0; i < n; i++ {
-			for j := i + 1; j < n; j++ {
-				sPoly := SPolynomial(basis[i], basis[j], order)
-				reduced := sPoly.Reduce(basis, order)
-				key := fmt.Sprintf("%v", reduced.Terms)
-				if len(reduced.Terms) > 0 {
-					if _, ok := basisSet[key]; !ok {
-						basisSet[key] = struct{}{}
-						basis = append(basis, reduced)
-						added = true
-					}
+	for _, poly := range basis {
+		key := fmt.Sprintf("%v", poly.Terms)
+		basisSet[key] = struct{}{}
+	}
+
+	type pair struct {
+		i, j int
+	}
+	var pairs []pair
+	for i := 0; i < len(basis); i++ {
+		for j := i + 1; j < len(basis); j++ {
+			pairs = append(pairs, pair{i, j})
+		}
+	}
+	for len(pairs) > 0 {
+		p := pairs[0]
+		pairs = pairs[1:]
+		spoly := SPolynomial(basis[p.i], basis[p.j])
+		reduced := spoly.Reduce(basis)
+		if len(reduced.Terms) > 0 {
+			key := fmt.Sprintf("%v", reduced.Terms)
+			if _, exists := basisSet[key]; !exists {
+				basisSet[key] = struct{}{}
+				newIdx := len(basis)
+				basis = append(basis, reduced)
+				for i := 0; i < newIdx; i++ {
+					pairs = append(pairs, pair{i, newIdx})
 				}
 			}
 		}
 	}
+
 	reducedBasis := []Polynomial[N, E]{}
 	for _, poly := range basis {
 		basisExcl := make([]Polynomial[N, E], 0, len(basis)-1)
@@ -219,7 +257,7 @@ func NaiveGrobnerBasis[N interface {
 				basisExcl = append(basisExcl, p)
 			}
 		}
-		reduced := poly.Reduce(basisExcl, order)
+		reduced := poly.Reduce(basisExcl).MakeMonic()
 		key := fmt.Sprintf("%v", reduced.Terms)
 		if len(reduced.Terms) > 0 {
 			found := false
@@ -323,140 +361,299 @@ func TestGenGrobner[N interface {
 }
 */
 // GenerateRandomBasis runs Grobner basis computation for all combinations of coefficient and exponent types, similar to the Java main method.
-func TestGenGrobner(numPoly, numTerms, coeffType, expType, orderInt, modulus int) {
-	fmt.Printf("Generating random basis: numPoly=%d, numTerms=%d, coeffType=%d, expType=%d, order=%d, modulus=%d\n",
-		numPoly, numTerms, coeffType, expType, orderInt, modulus)
-	if numPoly <= 0 {
-		numPoly = 3
-	}
-	if numTerms <= 0 {
-		numTerms = 3
-	}
-	if coeffType < 0 || coeffType > 2 {
-		coeffType = 0
-		// 0 = doublefield, 1 = intmodp, 2 = singlefield
-	}
-	if expType < 0 || expType > 1 {
-		expType = 0
-		// 0 = vecexponents, 1 = bitpackedexponents
-	}
-	if orderInt < 0 || orderInt > 2 {
-		orderInt = 0
-		// 0 = lex, 1 = grlex, 2 = revlex
-	}
-	if modulus <= 0 {
-		SetModulus(13)
+func TestGenGrobner(polyNum, expType, orderInt, mod int) {
+	mode := 0 // 0 = test mode with cyclic polynomials, 1 = other testing
+	// expType: 0 = vec exponents, 1 = bit-packed exponents
+	if mode != 0 {
 	} else {
-		SetModulus(uint64(modulus))
-	}
+		n := polyNum
+		if n <= 0 {
+			n = 4
+		}
+		//modulus = mod
+		modulus = uint64(7)
+		SetModulus(modulus)
+		//termOrder = termOrder
+		termOrder = Lex
 
-	order := TermOrder(orderInt)
-	rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
-
-	switch {
-	case coeffType == 0 && expType == 0:
-		// DoubleField + VecExponents
-		var polys []Polynomial[DoubleField, VecExponents]
-		for i := 0; i < numPoly; i++ {
-			var terms []Term[DoubleField, VecExponents]
-			for j := 0; j < numTerms; j++ {
-				coeff := DoubleField{Value: rand.NextDouble()}
-				exps := NewVecExponents([]uint32{uint32(rand.NextInt() % 4), uint32(rand.NextInt() % 4), uint32(rand.NextInt() % 4)})
-				terms = append(terms, Term[DoubleField, VecExponents]{Coefficient: coeff, Exponents: exps})
+		if n == 4 {
+			if expType == 0 {
+				fmt.Println("Go generic finite coeff vec exponent cyclic", n)
+				p1 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 1})},
+				})
+				p2 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 1})},
+				})
+				p3 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 1})},
+				})
+				p4 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 1})},
+					{Coefficient: IntModP{modulus - 1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 0})},
+				})
+				start := []Polynomial[IntModP, VecExponents]{p1, p2, p3, p4}
+				for i := 0; i < 10; i++ {
+					basis := NaiveGrobnerBasis(start)
+					fmt.Printf("Iteration %d: complete\n", i)
+					if i == 9 {
+						fmt.Println("Final Grobner Basis:")
+						for _, poly := range basis {
+							fmt.Printf("%v\n\n", poly)
+						}
+					}
+				}
+			} else {
+				fmt.Println("Go generic finite coeff bitpacked exponent cyclic", n)
+				p1 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 1, 0, 0})},
+				})
+				p2 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 1, 0, 0})},
+				})
+				p3 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 1, 0, 0})},
+				})
+				p4 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{modulus - 1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 0, 0, 0})},
+				})
+				start := []Polynomial[IntModP, BitPackedExponents]{p1, p2, p3, p4}
+				for i := 0; i < 10; i++ {
+					basis := NaiveGrobnerBasis(start)
+					fmt.Printf("Iteration %d: complete\n", i)
+					if i == 9 {
+						fmt.Println("Final Grobner Basis:")
+						for _, poly := range basis {
+							fmt.Printf("%v\n\n", poly)
+						}
+					}
+				}
 			}
-			polys = append(polys, NewPolynomial(terms, order))
-		}
-		basis := NaiveGrobnerBasis(polys, order)
-		fmt.Println("DoubleField + VecExponents:")
-		for i, poly := range basis {
-			fmt.Printf("G%d: %v\n", i, poly)
-		}
-	case coeffType == 0 && expType == 1:
-		// DoubleField + BitPackedExponents
-		var polys []Polynomial[DoubleField, BitPackedExponents]
-		for i := 0; i < numPoly; i++ {
-			var terms []Term[DoubleField, BitPackedExponents]
-			for j := 0; j < numTerms; j++ {
-				coeff := DoubleField{Value: rand.NextDouble()}
-				exps := NewBitPackedExponents([6]uint8{uint8(rand.NextInt() % 4), uint8(rand.NextInt() % 4), uint8(rand.NextInt() % 4), 0, 0, 0})
-				terms = append(terms, Term[DoubleField, BitPackedExponents]{Coefficient: coeff, Exponents: exps})
+		} else if n == 5 {
+			if expType == 0 {
+				p1 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 0, 1})},
+				})
+				p2 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 0, 1})},
+				})
+				p3 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 0, 1})},
+				})
+				p4 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 0, 1})},
+				})
+				p5 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 1, 1})},
+					{Coefficient: IntModP{modulus - 1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 0, 0})},
+				})
+				start := []Polynomial[IntModP, VecExponents]{p1, p2, p3, p4, p5}
+				for i := 0; i < 10; i++ {
+					basis := NaiveGrobnerBasis(start)
+					fmt.Printf("Iteration %d: complete\n", i)
+					if i == 9 {
+						fmt.Println("Final Grobner Basis:")
+						for _, poly := range basis {
+							fmt.Printf("%v\n\n", poly)
+						}
+					}
+				}
+			} else {
+				fmt.Println("Go generic finite coeff bitpacked exponent cyclic", n)
+				p1 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 0, 1, 0})},
+				})
+				p2 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 0, 1, 0})},
+				})
+				p3 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 0, 1, 0})},
+				})
+				p4 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 0, 1, 0})},
+				})
+				p5 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 1, 1, 0})},
+					{Coefficient: IntModP{modulus - 1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 0, 0, 0})},
+				})
+				start := []Polynomial[IntModP, BitPackedExponents]{p1, p2, p3, p4, p5}
+				for i := 0; i < 10; i++ {
+					basis := NaiveGrobnerBasis(start)
+					fmt.Printf("Iteration %d: complete\n", i)
+					if i == 9 {
+						fmt.Println("Final Grobner Basis:")
+						for _, poly := range basis {
+							fmt.Printf("%v\n\n", poly)
+						}
+					}
+				}
 			}
-			polys = append(polys, NewPolynomial(terms, order))
-		}
-		basis := NaiveGrobnerBasis(polys, order)
-		fmt.Println("DoubleField + BitPackedExponents:")
-		for i, poly := range basis {
-			fmt.Printf("G%d: %v\n", i, poly)
-		}
-	case coeffType == 1 && expType == 0:
-		// IntModP + VecExponents
-		var polys []Polynomial[IntModP, VecExponents]
-		for i := 0; i < numPoly; i++ {
-			var terms []Term[IntModP, VecExponents]
-			for j := 0; j < numTerms; j++ {
-				coeff := NewIntModP(uint64(rand.NextInt() % int(modulus)))
-				exps := NewVecExponents([]uint32{uint32(rand.NextInt() % 4), uint32(rand.NextInt() % 4), uint32(rand.NextInt() % 4)})
-				terms = append(terms, Term[IntModP, VecExponents]{Coefficient: coeff, Exponents: exps})
+		} else if n == 6 {
+			if expType == 0 {
+				p1 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 0, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 0, 0, 1})},
+				})
+				p2 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 0, 0, 1})},
+				})
+				p3 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 0, 0, 1})},
+				})
+				p4 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 0, 1, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 0, 0, 1})},
+				})
+				p5 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 1, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 1, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 1, 0, 1})},
+				})
+				p6 := NewPolynomial([]Term[IntModP, VecExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 1, 1, 1, 1, 1})},
+					{Coefficient: IntModP{modulus - 1}, Exponents: NewVecExponents([]uint32{0, 0, 0, 0, 0, 0})},
+				})
+				start := []Polynomial[IntModP, VecExponents]{p1, p2, p3, p4, p5, p6}
+				for i := 0; i < 10; i++ {
+					basis := NaiveGrobnerBasis(start)
+					fmt.Printf("Iteration %d: complete\n", i)
+					if i == 9 {
+						fmt.Println("Final Grobner Basis:")
+						for _, poly := range basis {
+							fmt.Printf("%v\n\n", poly)
+						}
+					}
+				}
+			} else {
+				fmt.Println("Go generic finite coeff bitpacked exponent cyclic", n)
+				p1 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 0, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 0, 0, 1})},
+				})
+				p2 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 0, 0, 1})},
+				})
+				p3 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 0, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 0, 0, 1})},
+				})
+				p4 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 1, 0, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 1, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 0, 0, 1})},
+				})
+				p5 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 1, 1, 0})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{0, 1, 1, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 0, 1, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 0, 1, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 0, 1, 1})},
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 1, 0, 1})},
+				})
+				p6 := NewPolynomial([]Term[IntModP, BitPackedExponents]{
+					{Coefficient: IntModP{1}, Exponents: NewBitPackedExponents([6]uint8{1, 1, 1, 1, 1, 1})},
+					{Coefficient: IntModP{modulus - 1}, Exponents: NewBitPackedExponents([6]uint8{0, 0, 0, 0, 0, 0})},
+				})
+				start := []Polynomial[IntModP, BitPackedExponents]{p1, p2, p3, p4, p5, p6}
+				for i := 0; i < 10; i++ {
+					basis := NaiveGrobnerBasis(start)
+					fmt.Printf("Iteration %d: complete\n", i)
+					if i == 9 {
+						fmt.Println("Final Grobner Basis:")
+						for _, poly := range basis {
+							fmt.Printf("%v\n\n", poly)
+						}
+					}
+				}
 			}
-			polys = append(polys, NewPolynomial(terms, order))
 		}
-		basis := NaiveGrobnerBasis(polys, order)
-		fmt.Println("IntModP + VecExponents:")
-		for i, poly := range basis {
-			fmt.Printf("G%d: %v\n", i, poly)
-		}
-	case coeffType == 1 && expType == 1:
-		// IntModP + BitPackedExponents
-		var polys []Polynomial[IntModP, BitPackedExponents]
-		for i := 0; i < numPoly; i++ {
-			var terms []Term[IntModP, BitPackedExponents]
-			for j := 0; j < numTerms; j++ {
-				coeff := NewIntModP(uint64(rand.NextInt() % int(modulus)))
-				exps := NewBitPackedExponents([6]uint8{uint8(rand.NextInt() % 4), uint8(rand.NextInt() % 4), uint8(rand.NextInt() % 4), 0, 0, 0})
-				terms = append(terms, Term[IntModP, BitPackedExponents]{Coefficient: coeff, Exponents: exps})
-			}
-			polys = append(polys, NewPolynomial(terms, order))
-		}
-		basis := NaiveGrobnerBasis(polys, order)
-		fmt.Println("IntModP + BitPackedExponents:")
-		for i, poly := range basis {
-			fmt.Printf("G%d: %v\n", i, poly)
-		}
-	case coeffType == 2 && expType == 0:
-		// SingleField + VecExponents
-		var polys []Polynomial[SingleField, VecExponents]
-		for i := 0; i < numPoly; i++ {
-			var terms []Term[SingleField, VecExponents]
-			for j := 0; j < numTerms; j++ {
-				coeff := SingleField{Value: float32(rand.NextDouble())}
-				exps := NewVecExponents([]uint32{uint32(rand.NextInt() % 4), uint32(rand.NextInt() % 4), uint32(rand.NextInt() % 4)})
-				terms = append(terms, Term[SingleField, VecExponents]{Coefficient: coeff, Exponents: exps})
-			}
-			polys = append(polys, NewPolynomial(terms, order))
-		}
-		basis := NaiveGrobnerBasis(polys, order)
-		fmt.Println("SingleField + VecExponents:")
-		for i, poly := range basis {
-			fmt.Printf("G%d: %v\n", i, poly)
-		}
-	case coeffType == 2 && expType == 1:
-		// SingleField + BitPackedExponents
-		var polys []Polynomial[SingleField, BitPackedExponents]
-		for i := 0; i < numPoly; i++ {
-			var terms []Term[SingleField, BitPackedExponents]
-			for j := 0; j < numTerms; j++ {
-				coeff := SingleField{Value: float32(rand.NextDouble())}
-				exps := NewBitPackedExponents([6]uint8{uint8(rand.NextInt() % 4), uint8(rand.NextInt() % 4), uint8(rand.NextInt() % 4), 0, 0, 0})
-				terms = append(terms, Term[SingleField, BitPackedExponents]{Coefficient: coeff, Exponents: exps})
-			}
-			polys = append(polys, NewPolynomial(terms, order))
-		}
-		basis := NaiveGrobnerBasis(polys, order)
-		fmt.Println("SingleField + BitPackedExponents:")
-		for i, poly := range basis {
-			fmt.Printf("G%d: %v\n", i, poly)
-		}
-	default:
-		fmt.Println("Invalid coefficient or exponent type selection.")
 	}
 }

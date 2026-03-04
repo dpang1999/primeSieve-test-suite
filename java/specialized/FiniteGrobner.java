@@ -249,32 +249,33 @@ public class FiniteGrobner {
 
     public static List<Polynomial> naiveGrobnerBasis(List<Polynomial> polynomials) {
         List<Polynomial> basis = new ArrayList<>();
+        Set<Polynomial> basisSet = new HashSet<>();
         for (Polynomial poly : polynomials) {
             //basis.add(poly.deepCopy(order));
             basis.add(poly);
         }
-        Set<Polynomial> basisSet = new HashSet<>(basis);
-        while (true) {
-            boolean added = false;
-            int basisLen = basis.size();
-            for (int i = 0; i < basisLen; i++) {
-                for (int j = i + 1; j < basisLen; j++) {
-                    Polynomial sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j));
-                    // print basis terms and s polynomial
-                    //System.out.print("Basis 1: " + basis.get(i).terms);
-                    //System.out.print(" | Basis 2: " + basis.get(j).terms);
-                    //System.out.println(" | S-Polynomial: " + sPoly.terms);
-                    Polynomial reduced = sPoly.reduce(basis);
-                    if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
-                        //basis.add(reduced.deepCopy(order));
-                        //basisSet.add(reduced.deepCopy(order));
-                        basis.add(reduced);
-                        basisSet.add(reduced);
-                        added = true;
-                    }
+        List<int[]> pairs = new ArrayList<>();
+        for (int i = 0; i < basis.size(); i++) {
+            for (int j = i + 1; j < basis.size(); j++) {
+                pairs.add(new int[]{i, j});
+            }
+        }
+        while (!pairs.isEmpty()) {
+            int[] pair = pairs.remove(0);
+            int i = pair[0]; int j = pair[1];
+            Polynomial sPoly = Polynomial.sPolynomial(basis.get(i), basis.get(j));
+            Polynomial reduced = sPoly.reduce(basis);
+            // If non-trivial and new, add to basis and enqueue new pairs
+            if (!reduced.terms.isEmpty() && !basisSet.contains(reduced)) {
+                basisSet.add(reduced);
+                int newPolyIdx = basis.size();
+                basis.add(reduced);
+                
+                // Add pairs between new polynomial and all existing ones
+                for (int k = 0; k < newPolyIdx; k++) {
+                    pairs.add(new int[]{k, newPolyIdx});
                 }
             }
-            if (!added) break;
         }
         List<Polynomial> reducedBasis = new ArrayList<>();
          for (Polynomial poly : basis) {
@@ -347,43 +348,179 @@ public class FiniteGrobner {
             int modulus = 7;
             FiniteGrobner.modulus = modulus;
             
-            
-            // x + y + z + w
-            List<Term> terms1 = new ArrayList<>();
-            terms1.add(new Term(1, Arrays.asList(1, 0, 0, 0)));
-            terms1.add(new Term(1, Arrays.asList(0, 1, 0, 0)));
-            terms1.add(new Term(1, Arrays.asList(0, 0, 1, 0)));
-            terms1.add(new Term(1, Arrays.asList(0, 0, 0, 1)));
-            Polynomial p1 = new Polynomial(terms1);
+            int n = args.length > 0 ? Integer.parseInt(args[0]) : 5;
+            if (n == 4) {
+                System.out.println("Java Specialized finite coeff vector exp cyclic 4");
+                // x + y + z + w
+                List<Term> terms1 = new ArrayList<>();
+                terms1.add(new Term(1, Arrays.asList(1, 0, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 1, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 1, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 0, 1)));
+                Polynomial p1 = new Polynomial(terms1);
 
-            // x*y + y*z + z*w + w*x
-            List<Term> terms2 = new ArrayList<>();
-            terms2.add(new Term(1, Arrays.asList(1, 1, 0, 0)));
-            terms2.add(new Term(1, Arrays.asList(0, 1, 1, 0)));
-            terms2.add(new Term(1, Arrays.asList(0, 0, 1, 1)));
-            terms2.add(new Term(1, Arrays.asList(1, 0, 0, 1)));
-            Polynomial p2 = new Polynomial(terms2);
+                // x*y + y*z + z*w + w*x
+                List<Term> terms2 = new ArrayList<>();
+                terms2.add(new Term(1, Arrays.asList(1, 1, 0, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 1, 1, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 0, 1, 1)));
+                terms2.add(new Term(1, Arrays.asList(1, 0, 0, 1)));
+                Polynomial p2 = new Polynomial(terms2);
 
-            // x*y*z + y*z*w + z*w*x + w*x*y
-            List<Term> terms3 = new ArrayList<>();
-            terms3.add(new Term(1, Arrays.asList(1, 1, 1, 0)));
-            terms3.add(new Term(1, Arrays.asList(0, 1, 1, 1)));
-            terms3.add(new Term(1, Arrays.asList(1, 0, 1, 1)));
-            terms3.add(new Term(1, Arrays.asList(1, 1, 0, 1)));
-            Polynomial p3 = new Polynomial(terms3);
+                // x*y*z + y*z*w + z*w*x + w*x*y
+                List<Term> terms3 = new ArrayList<>();
+                terms3.add(new Term(1, Arrays.asList(1, 1, 1, 0)));
+                terms3.add(new Term(1, Arrays.asList(0, 1, 1, 1)));
+                terms3.add(new Term(1, Arrays.asList(1, 0, 1, 1)));
+                terms3.add(new Term(1, Arrays.asList(1, 1, 0, 1)));
+                Polynomial p3 = new Polynomial(terms3);
 
-            // x*y*z*w - 1
-            List<Term> terms4 = new ArrayList<>();
-            terms4.add(new Term(1, Arrays.asList(1, 1, 1, 1)));
-            terms4.add(new Term(modulus-1, Arrays.asList(0, 0, 0, 0)));
-            Polynomial p4 = new Polynomial(terms4);
+                // x*y*z*w - 1
+                List<Term> terms4 = new ArrayList<>();
+                terms4.add(new Term(1, Arrays.asList(1, 1, 1, 1)));
+                terms4.add(new Term(modulus-1, Arrays.asList(0, 0, 0, 0)));
+                Polynomial p4 = new Polynomial(terms4);
 
-            List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4);
-            List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
-            System.out.println("Cyclic 4 Grobner Basis:");
-            for (Polynomial poly : basis) {
-                System.out.println(poly.terms);
+
+                for (int i = 0; i < 10; i++) {
+                    List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4);
+                    List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
+                    System.out.println("Iteration " + i + " complete");
+                    if (i == 9) {
+                        System.out.println("Cyclic 4 Grobner Basis:");
+                        for (Polynomial poly : basis) {
+                            System.out.println(poly.terms);
+                        }
+                    }
+                }
             }
+            else if (n == 5) {
+                System.out.println("Java Specialized finite coeff vector exp cyclic 5");
+                // x + y + z + w + v
+                List<Term> terms1 = new ArrayList<>();
+                terms1.add(new Term(1, Arrays.asList(1, 0, 0, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 1, 0, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 1, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 0, 1, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 0, 0, 1)));
+                Polynomial p1 = new Polynomial(terms1);
+
+                // xy + yz + zw + wv + vx
+                List<Term> terms2 = new ArrayList<>();
+                terms2.add(new Term(1, Arrays.asList(1, 1, 0, 0, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 1, 1, 0, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 0, 1, 1, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 0, 0, 1, 1)));
+                terms2.add(new Term(1, Arrays.asList(1, 0, 0, 0, 1)));
+                Polynomial p2 = new Polynomial(terms2);
+
+                // xyz + yzw + zwv + wvx + vxy
+                List<Term> terms3 = new ArrayList<>();
+                terms3.add(new Term(1, Arrays.asList(1, 1, 1, 0, 0)));
+                terms3.add(new Term(1, Arrays.asList(0, 1, 1, 1, 0)));
+                terms3.add(new Term(1, Arrays.asList(0, 0, 1, 1, 1)));
+                terms3.add(new Term(1, Arrays.asList(1, 0, 0, 1, 1)));
+                terms3.add(new Term(1, Arrays.asList(1, 1, 0, 0, 1)));
+                Polynomial p3 = new Polynomial(terms3);
+
+                // xyzw + yzwv + zwvx + wvxy + vxyz
+                List<Term> terms4 = new ArrayList<>();
+                terms4.add(new Term(1, Arrays.asList(1, 1, 1, 1, 0)));
+                terms4.add(new Term(1, Arrays.asList(0, 1, 1, 1, 1)));
+                terms4.add(new Term(1, Arrays.asList(1, 0, 1, 1, 1)));
+                terms4.add(new Term(1, Arrays.asList(1, 1, 0, 1, 1)));
+                terms4.add(new Term(1, Arrays.asList(1, 1, 1, 0, 1)));
+                Polynomial p4 = new Polynomial(terms4);
+
+                // xyzwv - 1
+                List<Term> terms5 = new ArrayList<>();
+                terms5.add(new Term(1, Arrays.asList(1, 1, 1, 1, 1)));
+                terms5.add(new Term(modulus-1, Arrays.asList(0, 0, 0, 0, 0)));
+                Polynomial p5 = new Polynomial(terms5);
+
+                for (int i = 0; i < 10; i++) {
+                    List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4, p5);
+                    List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
+                    System.out.println("Iteration " + i + " complete");
+                    if (i == 9) {
+                        System.out.println("Cyclic 5 Grobner Basis:");
+                        for (Polynomial poly : basis) {
+                            System.out.println(poly.terms);
+                        }
+                    }
+                }
+            }
+            else if (n == 6) {
+                System.out.println("Java Specialized finite coeff vector exp cyclic 6");
+                // x + y + z + w + v + u
+                List<Term> terms1 = new ArrayList<>();
+                terms1.add(new Term(1, Arrays.asList(1, 0, 0, 0, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 1, 0, 0, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 1, 0, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 0, 1, 0, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 0, 0, 1, 0)));
+                terms1.add(new Term(1, Arrays.asList(0, 0, 0, 0, 0, 1)));
+                Polynomial p1 = new Polynomial(terms1);
+
+                // xy + yz + zw + wv + vu + ux
+                List<Term> terms2 = new ArrayList<>();
+                terms2.add(new Term(1, Arrays.asList(1, 1, 0, 0, 0, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 1, 1, 0, 0, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 0, 1, 1, 0, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 0, 0, 1, 1, 0)));
+                terms2.add(new Term(1, Arrays.asList(0, 0, 0, 0, 1, 1)));
+                terms2.add(new Term(1, Arrays.asList(1, 0, 0, 0, 0, 1)));
+                Polynomial p2 = new Polynomial(terms2);
+
+                // xyz + yzw + zwv + wvu + vux + uxy
+                List<Term> terms3 = new ArrayList<>();
+                terms3.add(new Term(1, Arrays.asList(1, 1, 1, 0, 0, 0)));
+                terms3.add(new Term(1, Arrays.asList(0, 1, 1, 1, 0, 0)));
+                terms3.add(new Term(1, Arrays.asList(0, 0, 1, 1, 1, 0)));
+                terms3.add(new Term(1, Arrays.asList(0, 0, 0, 1, 1, 1)));
+                terms3.add(new Term(1, Arrays.asList(1, 0, 0, 0, 1, 1)));
+                terms3.add(new Term(1, Arrays.asList(1, 1, 0, 0, 0, 1)));
+                Polynomial p3 = new Polynomial(terms3);
+
+                // xyzw + yzwv + zwvu + wvux + vuxy + uxyz
+                List<Term> terms4 = new ArrayList<>();
+                terms4.add(new Term(1, Arrays.asList(1, 1, 1, 1, 0, 0)));
+                terms4.add(new Term(1, Arrays.asList(0, 1, 1, 1, 1, 0)));
+                terms4.add(new Term(1, Arrays.asList(0, 0, 1, 1, 1, 1)));
+                terms4.add(new Term(1, Arrays.asList(1, 0, 0, 1, 1, 1)));
+                terms4.add(new Term(1, Arrays.asList(1, 1, 0, 0, 1, 1)));
+                terms4.add(new Term(1, Arrays.asList(1, 1, 1, 0, 0, 1)));
+                Polynomial p4 = new Polynomial(terms4);
+
+                // xyzwv + yzwvu + zwvux + wvuxy + vuxyz + uxyxzw
+                List<Term> terms5 = new ArrayList<>();
+                terms5.add(new Term(1, Arrays.asList(1, 1, 1, 1, 1, 0)));
+                terms5.add(new Term(1, Arrays.asList(0, 1, 1, 1, 1, 1)));
+                terms5.add(new Term(1, Arrays.asList(1, 0, 1, 1, 1, 1)));
+                terms5.add(new Term(1, Arrays.asList(1, 1, 0, 1, 1, 1)));
+                terms5.add(new Term(1, Arrays.asList(1, 1, 1, 0, 1, 1)));
+                terms5.add(new Term(1, Arrays.asList(1, 1, 1, 1, 0, 1)));
+                Polynomial p5 = new Polynomial(terms5);
+
+                // xyzwvu - 1
+                List<Term> terms6 = new ArrayList<>();
+                terms6.add(new Term(1, Arrays.asList(1, 1, 1, 1, 1, 1)));
+                terms6.add(new Term(modulus-1, Arrays.asList(0, 0, 0, 0, 0, 0)));
+                Polynomial p6 = new Polynomial(terms6);
+
+                for (int i = 0; i < 10; i++) {
+                    List<Polynomial> inputBasis = Arrays.asList(p1, p2, p3, p4, p5, p6);
+                    List<Polynomial> basis = naiveGrobnerBasis(inputBasis);
+                    System.out.println("Iteration " + i + " complete");
+                    if (i == 9) {
+                        System.out.println("Cyclic 6 Grobner Basis:");
+                        for (Polynomial poly : basis) {
+                            System.out.println(poly.terms);
+                        }
+                    }
+                }
+            }
+            
         }
     }
 }

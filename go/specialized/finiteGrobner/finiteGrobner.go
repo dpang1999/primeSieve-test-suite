@@ -14,6 +14,7 @@ const (
 	RevLex
 )
 
+var termOrder TermOrder = Lex
 var modulus uint32 = 13
 
 type Term struct {
@@ -25,8 +26,8 @@ type Polynomial struct {
 	Terms []Term
 }
 
-func (t Term) Compare(other Term, order TermOrder) int {
-	switch order {
+func (t Term) Compare(other Term) int {
+	switch termOrder {
 	case Lex:
 		for i := range t.Exponents {
 			if t.Exponents[i] != other.Exponents[i] {
@@ -71,7 +72,7 @@ func (t Term) Compare(other Term, order TermOrder) int {
 	}
 }
 
-func NewPolynomial(terms []Term, order TermOrder) Polynomial {
+func NewPolynomial(terms []Term) Polynomial {
 	filtered := make([]Term, 0, len(terms))
 	for _, t := range terms {
 		if t.Coefficient != 0 {
@@ -79,12 +80,12 @@ func NewPolynomial(terms []Term, order TermOrder) Polynomial {
 		}
 	}
 	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].Compare(filtered[j], order) > 0
+		return filtered[i].Compare(filtered[j]) > 0
 	})
 	return Polynomial{Terms: filtered}
 }
 
-func (p Polynomial) Add(other Polynomial, order TermOrder) Polynomial {
+func (p Polynomial) Add(other Polynomial) Polynomial {
 	result := append([]Term{}, p.Terms...)
 	for _, t := range other.Terms {
 		found := false
@@ -99,10 +100,10 @@ func (p Polynomial) Add(other Polynomial, order TermOrder) Polynomial {
 			result = append(result, t)
 		}
 	}
-	return NewPolynomial(result, order)
+	return NewPolynomial(result)
 }
 
-func (p Polynomial) Subtract(other Polynomial, order TermOrder) Polynomial {
+func (p Polynomial) Subtract(other Polynomial) Polynomial {
 	result := append([]Term{}, p.Terms...)
 	for _, t := range other.Terms {
 		found := false
@@ -119,10 +120,33 @@ func (p Polynomial) Subtract(other Polynomial, order TermOrder) Polynomial {
 			result = append(result, t2)
 		}
 	}
-	return NewPolynomial(result, order)
+	return NewPolynomial(result)
 }
 
-func (p Polynomial) MultiplyByTerm(term Term, order TermOrder) Polynomial {
+func (p Polynomial) MakeMonic() Polynomial {
+	if len(p.Terms) == 0 {
+		return p
+	}
+
+	leadCoeff := p.Terms[0].Coefficient
+	if leadCoeff == 0 {
+		return p
+	}
+
+	inv := modInverse(leadCoeff, modulus)
+	terms := make([]Term, len(p.Terms))
+	for i, t := range p.Terms {
+		exps := append([]int(nil), t.Exponents...)
+		terms[i] = Term{
+			Coefficient: (t.Coefficient * inv) % modulus,
+			Exponents:   exps,
+		}
+	}
+
+	return NewPolynomial(terms)
+}
+
+func (p Polynomial) MultiplyByTerm(term Term) Polynomial {
 	terms := make([]Term, len(p.Terms))
 	for i, t := range p.Terms {
 		newExps := make([]int, len(t.Exponents))
@@ -134,7 +158,7 @@ func (p Polynomial) MultiplyByTerm(term Term, order TermOrder) Polynomial {
 			Exponents:   newExps,
 		}
 	}
-	return NewPolynomial(terms, order)
+	return NewPolynomial(terms)
 }
 
 func modInverse(a, m uint32) uint32 {
@@ -158,8 +182,9 @@ func modInverse(a, m uint32) uint32 {
 	return uint32(x1 % int64(m0))
 }
 
-func (p Polynomial) Reduce(divisors []Polynomial, order TermOrder) Polynomial {
+func (p Polynomial) Reduce(divisors []Polynomial) Polynomial {
 	result := p
+	remainder := []Term{}
 	for {
 		reduced := false
 		if len(result.Terms) == 0 {
@@ -178,20 +203,22 @@ func (p Polynomial) Reduce(divisors []Polynomial, order TermOrder) Polynomial {
 					exps[i] = lead.Exponents[i] - divLead.Exponents[i]
 				}
 				reductionTerm := Term{Coefficient: coeff, Exponents: exps}
-				scaledDivisor := divisor.MultiplyByTerm(reductionTerm, order)
-				result = result.Subtract(scaledDivisor, order)
+				scaledDivisor := divisor.MultiplyByTerm(reductionTerm)
+				result = result.Subtract(scaledDivisor)
 				reduced = true
 				break
 			}
 		}
 		if !reduced {
-			break
+			remainder = append(remainder, result.Terms[0])
+			result.Terms = result.Terms[1:]
 		}
 	}
-	return NewPolynomial(result.Terms, order)
+	result.Terms = append(result.Terms, remainder...)
+	return NewPolynomial(result.Terms)
 }
 
-func SPolynomial(p1 Polynomial, p2 Polynomial, order TermOrder) Polynomial {
+func SPolynomial(p1 Polynomial, p2 Polynomial) Polynomial {
 	lead1 := p1.Terms[0]
 	lead2 := p2.Terms[0]
 	lcmExps := make([]int, len(lead1.Exponents))
@@ -204,37 +231,56 @@ func SPolynomial(p1 Polynomial, p2 Polynomial, order TermOrder) Polynomial {
 		scale1[i] = lcmExps[i] - lead1.Exponents[i]
 		scale2[i] = lcmExps[i] - lead2.Exponents[i]
 	}
-	scaled1 := p1.MultiplyByTerm(Term{Coefficient: 1, Exponents: scale1}, order)
-	scaled2 := p2.MultiplyByTerm(Term{Coefficient: 1, Exponents: scale2}, order)
-	result := scaled1.Subtract(scaled2, order)
+	scaled1 := p1.MultiplyByTerm(Term{Coefficient: 1, Exponents: scale1})
+	scaled2 := p2.MultiplyByTerm(Term{Coefficient: 1, Exponents: scale2})
+	result := scaled1.Subtract(scaled2)
 	return result
 }
 
-func NaiveGrobnerBasis(polys []Polynomial, order TermOrder) []Polynomial {
+func NaiveGrobnerBasis(polys []Polynomial) []Polynomial {
 	//fmt.Printf("Starting Grobner basis computation for polynomials: %v\n", polys)
 	basis := append([]Polynomial{}, polys...)
 	basisSet := make(map[string]struct{})
-	added := true
-	for added {
-		added = false
-		n := len(basis)
-		for i := 0; i < n; i++ {
-			for j := i + 1; j < n; j++ {
-				sPoly := SPolynomial(basis[i], basis[j], order)
-				reduced := sPoly.Reduce(basis, order)
-				key := fmt.Sprintf("%v", reduced.Terms)
-				if len(reduced.Terms) > 0 {
-					if _, ok := basisSet[key]; !ok {
-						basisSet[key] = struct{}{}
-						basis = append(basis, reduced)
-						added = true
-					}
+
+	// Initialize basis set
+	for _, poly := range basis {
+		key := fmt.Sprintf("%v", poly.Terms)
+		basisSet[key] = struct{}{}
+	}
+
+	// Create initial pairs
+	type pair struct {
+		i, j int
+	}
+	var pairs []pair
+	for i := 0; i < len(basis); i++ {
+		for j := i + 1; j < len(basis); j++ {
+			pairs = append(pairs, pair{i, j})
+		}
+	}
+
+	// Process pairs until none remain
+	for len(pairs) > 0 {
+		// Remove first pair
+		p := pairs[0]
+		pairs = pairs[1:]
+
+		sPoly := SPolynomial(basis[p.i], basis[p.j])
+		reduced := sPoly.Reduce(basis)
+		key := fmt.Sprintf("%v", reduced.Terms)
+
+		if len(reduced.Terms) > 0 {
+			if _, ok := basisSet[key]; !ok {
+				basisSet[key] = struct{}{}
+				newIdx := len(basis)
+				basis = append(basis, reduced)
+
+				// Add new pairs with the new polynomial
+				for k := 0; k < newIdx; k++ {
+					pairs = append(pairs, pair{k, newIdx})
 				}
 			}
 		}
-		// print basis
-		//fmt.Printf("Current basis: %v\n", basis)
-
 	}
 	//fmt.Printf("Basis before self-reduction: %v\n", basis)
 	// Reduce basis by self
@@ -247,7 +293,7 @@ func NaiveGrobnerBasis(polys []Polynomial, order TermOrder) []Polynomial {
 			}
 		}
 		// compare length of basisExcl to basis
-		reduced := poly.Reduce(basisExcl, order)
+		reduced := poly.Reduce(basisExcl).MakeMonic()
 		key := fmt.Sprintf("%v", reduced.Terms)
 		if len(reduced.Terms) > 0 {
 			found := false
@@ -299,9 +345,9 @@ func polynomialsEqual(a, b Polynomial) bool {
 	return true
 }
 
-func TestFiniteGrobner(polyNum int, orderInt int, modulus uint32) {
+func TestFiniteGrobner(polyNum int, orderInt int, mod uint32) {
 	// let mode == 0 be for testing
-	mode := 1
+	mode := 0
 	if mode != 0 {
 		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		if polyNum <= 0 {
@@ -310,12 +356,13 @@ func TestFiniteGrobner(polyNum int, orderInt int, modulus uint32) {
 		if orderInt < 0 || orderInt > 2 {
 			orderInt = 0
 		}
-		if modulus == 0 {
-			modulus = 13
+		if mod == 0 {
+			mod = 13
 		}
+		modulus = mod
 		numTerms := 3
 		numExponents := 3
-		order := TermOrder(orderInt)
+		termOrder = Lex
 		var polys []Polynomial
 		for p := 0; p < polyNum; p++ {
 			var terms []Term
@@ -327,9 +374,9 @@ func TestFiniteGrobner(polyNum int, orderInt int, modulus uint32) {
 				}
 				terms = append(terms, Term{Coefficient: coeff, Exponents: exps})
 			}
-			polys = append(polys, NewPolynomial(terms, order))
+			polys = append(polys, NewPolynomial(terms))
 		}
-		basis := NaiveGrobnerBasis(polys, order)
+		basis := NaiveGrobnerBasis(polys)
 		fmt.Println("Grobner Basis:")
 		for i, poly := range basis {
 			fmt.Printf("G%d: ", i)
@@ -339,36 +386,170 @@ func TestFiniteGrobner(polyNum int, orderInt int, modulus uint32) {
 			fmt.Println()
 		}
 	} else {
-		fmt.Println("--- Grobner Basis Test ---")
-		modulus = uint32(13)
-		// x^3 + y^3 + z^3
-		p1 := NewPolynomial([]Term{
-			{Coefficient: 1, Exponents: []int{3, 0, 0}},
-			{Coefficient: 1, Exponents: []int{0, 3, 0}},
-			{Coefficient: 1, Exponents: []int{0, 0, 3}},
-		}, Lex)
-		// xy + yz + xz
-		p2 := NewPolynomial([]Term{
-			{Coefficient: 1, Exponents: []int{1, 0, 1}},
-			{Coefficient: 1, Exponents: []int{0, 1, 1}},
-			{Coefficient: 1, Exponents: []int{1, 1, 0}},
-		}, Lex)
-		//x+y+z
-		p3 := NewPolynomial([]Term{
-			{Coefficient: 1, Exponents: []int{1, 0, 0}},
-			{Coefficient: 1, Exponents: []int{0, 1, 0}},
-			{Coefficient: 1, Exponents: []int{0, 0, 1}},
-		}, Lex)
-		fmt.Printf("Input polynomials:\nP1: %v\nP2: %v\nP3: %v\n", p1.Terms, p2.Terms, p3.Terms)
-		basis := NaiveGrobnerBasis([]Polynomial{p1, p2, p3}, Lex)
-		fmt.Println("Grobner Basis:")
-		for i, poly := range basis {
-			fmt.Printf("G%d: ", i)
-			for _, term := range poly.Terms {
-				fmt.Printf("%d*%v ", term.Coefficient, term.Exponents)
-			}
-			fmt.Println()
+		n := polyNum
+		if n <= 0 {
+			n = 4
 		}
-		fmt.Println("--- End Grobner Basis Test ---")
+		modulus = 7
+		termOrder = Lex
+
+		if n == 4 {
+			// Cyclic 4
+			fmt.Println("Go specialized finite coeff vec exponent cyclic 4")
+			// a + b + c + d
+			q1 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 1}},
+			})
+			// ab + bc + cd + ad
+			q2 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 1}},
+			})
+			// abc + bcd + cda + dab
+			q3 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 1}},
+			})
+			// abcd - 1
+			q4 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 1}},
+				{Coefficient: modulus - 1, Exponents: []int{0, 0, 0, 0}},
+			})
+			start := []Polynomial{q1, q2, q3, q4}
+			for i := 0; i < 10; i++ {
+				basis := NaiveGrobnerBasis(start)
+				fmt.Printf("Iteration %d: complete\n", i)
+				if i == 9 {
+					fmt.Println("Final Grobner Basis:")
+					for _, poly := range basis {
+						fmt.Printf("%v\n\n", poly)
+					}
+				}
+			}
+		} else if n == 5 {
+			// Cyclic 5
+			fmt.Println("Go specialized finite coeff vec exponent cyclic 5")
+			// f1 = x0 + x1 + x2 + x3 + x4
+			p1 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 0, 1}},
+			})
+			// f2 = x0x1 + x1x2 + x2x3 + x3x4 + x4x0
+			p2 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 0, 1}},
+			})
+			// f3 = x0x1x2 + x1x2x3 + x2x3x4 + x3x4x0 + x4x0x1
+			p3 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 0, 1}},
+			})
+			// f4 = x0x1x2x3 + x1x2x3x4 + x2x3x4x0 + x3x4x0x1 + x4x0x1x2
+			p4 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 0, 1}},
+			})
+			// f5 = x0*x1*x2*x3*x4 - 1
+			p5 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 1, 1}},
+				{Coefficient: modulus - 1, Exponents: []int{0, 0, 0, 0, 0}},
+			})
+			start := []Polynomial{p1, p2, p3, p4, p5}
+			for i := 0; i < 10; i++ {
+				basis := NaiveGrobnerBasis(start)
+				fmt.Printf("Iteration %d: complete\n", i)
+				if i == 9 {
+					fmt.Println("Final Grobner Basis:")
+					for _, poly := range basis {
+						fmt.Printf("%v\n\n", poly)
+					}
+				}
+			}
+		} else if n == 6 {
+			// Cyclic 6
+			fmt.Println("Go specialized finite coeff vec exponent cyclic 6")
+			// f1 = x0 + x1 + x2 + x3 + x4 + x5
+			p1 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 0, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 0, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 0, 0, 1}},
+			})
+			// f2 = x0x1 + x1x2 + x2x3 + x3x4 + x4x5 + x5x0
+			p2 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 0, 0, 1}},
+			})
+			// f3 = x0x1x2 + x1x2x3 + x2x3x4 + x3x4x5 + x4x5x0 + x5x0x1
+			p3 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 0, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 0, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 0, 0, 1}},
+			})
+			// f4 = x0x1x2x3 + x1x2x3x4 + x2x3x4x5 + x3x4x5x0 + x4x5x0x1 + x5x0x1x2
+			p4 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 1, 0, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 0, 1, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 0, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 0, 0, 1}},
+			})
+			// f5 = x0x1x2x3x4 + x1x2x3x4x5 + x2x3x4x5x0 + x3x4x5x0x1 + x4x5x0x1x2 + x5x0x1x2x3
+			p5 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 1, 1, 0}},
+				{Coefficient: 1, Exponents: []int{0, 1, 1, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 0, 1, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 0, 1, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 0, 1, 1}},
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 1, 0, 1}},
+			})
+			// f6 = x0x1x2x3x4x5 - 1
+			p6 := NewPolynomial([]Term{
+				{Coefficient: 1, Exponents: []int{1, 1, 1, 1, 1, 1}},
+				{Coefficient: modulus - 1, Exponents: []int{0, 0, 0, 0, 0, 0}},
+			})
+			start := []Polynomial{p1, p2, p3, p4, p5, p6}
+			for i := 0; i < 10; i++ {
+				basis := NaiveGrobnerBasis(start)
+				fmt.Printf("Iteration %d: complete\n", i)
+				if i == 9 {
+					fmt.Println("Final Grobner Basis:")
+					for _, poly := range basis {
+						fmt.Printf("%v\n\n", poly)
+					}
+				}
+			}
+		} else {
+			fmt.Println("Invalid test number")
+		}
 	}
 }

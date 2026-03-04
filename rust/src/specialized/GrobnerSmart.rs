@@ -366,7 +366,6 @@ impl Polynomial {
     }
 
     pub fn s_polynomial(p1: &Polynomial, p2: &Polynomial) -> Polynomial {
-        let modulus = unsafe {MODULUS};
         // Extract the leading terms of p1 and p2
         let leading_term_p1 = &p1.terms[0];
         let leading_term_p2 = &p2.terms[0];
@@ -401,7 +400,6 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         basis_set.insert(poly.clone());
     }
 
-    let mut processed_pairs = HashSet::<(usize, usize)>::new();
     let mut pairs = Vec::<(usize, usize)>::new();
     for i in 0..basis.len() {
         for j in i + 1..basis.len() {
@@ -412,7 +410,6 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     while pairs.is_empty() == false {
         let (i, j) = pairs.remove(0);
         //println!("Processing pair ({}, {})", i, j);
-        processed_pairs.insert((i,j));
         let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
         /*let mut debug = false;
         if(i == 0 && j == 7 || i == 3 && j == 4 || j ==4 && i==3) 
@@ -426,9 +423,8 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
             //println!("Adding new polynomial to basis."); 
             basis_set.insert(reduced.clone());
-      
+            let new_idx = basis.len();
             basis.push(reduced);
-            let new_idx = basis.len() - 1;
             pairs.extend((0..new_idx).map(|k| (k, new_idx)));
         }
     }

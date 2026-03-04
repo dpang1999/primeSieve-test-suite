@@ -294,7 +294,6 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         basis_set.insert(poly.clone());
     }
 
-    let mut processed_pairs = HashSet::<(usize, usize)>::new();
     let mut pairs = Vec::<(usize, usize)>::new();
     for i in 0..basis.len() {
         for j in i + 1..basis.len() {
@@ -305,7 +304,6 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
     while pairs.is_empty() == false {
         let (i, j) = pairs.remove(0);
         //println!("Processing pair ({}, {})", i, j);
-        processed_pairs.insert((i,j));
         let s_poly = Polynomial::s_polynomial(&basis[i], &basis[j]);
         /*let mut debug = false;
         if(i == 0 && j == 7 || i == 3 && j == 4 || j ==4 && i==3) 
@@ -319,9 +317,8 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         if !reduced.terms.is_empty() && !basis_set.contains(&reduced) {
             //println!("Adding new polynomial to basis."); 
             basis_set.insert(reduced.clone());
-      
+            let new_idx = basis.len();
             basis.push(reduced);
-            let new_idx = basis.len() - 1;
             pairs.extend((0..new_idx).map(|k| (k, new_idx)));
         }
     }
@@ -434,6 +431,7 @@ fn main() {
         unsafe { TERM_ORDER = TermOrder::Lex; }
         if ( n == 4) {
              // cyclic 4
+             println!("Rust specialized finite coeff vec exponent cyclic 4");
             // a + b + c + d
             let q1 = Polynomial::new(vec![
                 Term { coefficient: 1, exponents: vec![1, 0, 0, 0] },
@@ -474,6 +472,8 @@ fn main() {
      
         }
         else if (n == 5){ 
+            // Cyclic 5
+             println!("Rust specialized finite coeff vec exponent cyclic 5");
             // f1 = x0 + x1 + x2 + x3 + x4
             let p1 = Polynomial::new(vec![
                 Term { coefficient: 1, exponents: vec![1, 0, 0, 0, 0] },
@@ -531,6 +531,7 @@ fn main() {
         }
         else if (n == 6){
             // Cyclic 6
+            println!("Rust specialized finite coeff vec exponent cyclic 6");
             // f1 = x0 + x1 + x2 + x3 + x4 + x5
             let p1 = Polynomial::new(vec![
                 Term { coefficient: 1, exponents: vec![1, 0, 0, 0, 0, 0] },

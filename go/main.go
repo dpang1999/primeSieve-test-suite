@@ -40,10 +40,11 @@ func main() {
 		finitefft.TestFFT(n)
 		return
 	} else {
-		println("specialized.TestFFT")
+		/* println("specialized.TestFFT")
 		n := 16
 		finitefft.TestFFT(n)
-		generic.TestGenFFT(n, 1)
+		generic.TestGenFFT(n, 1) */
+		generic.TestGenGrobner(5, 1, 0, 0)
 	}
 	//generic.TestGenSOR()
 	//generic.TestGenFFT(268435456, 1)
