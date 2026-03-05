@@ -13,16 +13,12 @@ export enum TermOrder {
 
 let termOrder = TermOrder.Lex;
 
-export class Term {
+export type Term = {
   coefficient: number;
   exponents: bigint; // 64 bits: [63..48]=degree, [47..40]=e0, ... [7..0]=e5
+}
 
-  constructor(coefficient: number, exponents: bigint) {
-    this.coefficient = coefficient;
-    this.exponents = exponents;
-  }
-
-  static fromExponents(coefficient: number, exponents: number[]): Term {
+function fromExponents(coefficient: number, exponents: number[]): Term {
     let packed = 0n;
     let degree = 0;
     for (let i = 0; i < 6; i++) {
@@ -31,99 +27,98 @@ export class Term {
       degree += Number(exp);
     }
     packed |= BigInt(degree) << 48n;
-    return new Term(coefficient, packed);
-  }
+    return { coefficient, exponents: packed };
+}
 
-  unpack(): number[] {
-    const exps: number[] = [];
-    for (let i = 0; i < 6; i++) {
-      exps.push(Number((this.exponents >> BigInt(40 - 8 * i)) & 0xFFn));
-    }
-    return exps;
+function unpack(term: Term): number[] {
+  const exps: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    exps.push(Number((term.exponents >> BigInt(40 - 8 * i)) & 0xFFn));
   }
+  return exps;
+}
 
-  degree(): number {
-    return Number((this.exponents >> 48n) & 0xFFFFn);
-  }
+function degree(term: Term): number {
+  return Number((term.exponents >> 48n) & 0xFFFFn);
+}
 
-  compare(other: Term): number {
-    switch (termOrder) {
-      case TermOrder.Lex: {
-        const a = this.exponents & 0x0000FFFFFFFFFFFFn;
-        const b = other.exponents & 0x0000FFFFFFFFFFFFn;
-        return a > b ? 1 : a < b ? -1 : 0;
-      }
-      case TermOrder.GrLex: {
-        const da = this.degree();
-        const db = other.degree();
-        if (da !== db) return da - db;
-        const a = this.exponents & 0x0000FFFFFFFFFFFFn;
-        const b = other.exponents & 0x0000FFFFFFFFFFFFn;
-        return a > b ? 1 : a < b ? -1 : 0;
-      }
-      case TermOrder.RevLex: {
-        const da = this.degree();
-        const db = other.degree();
-        if (da !== db) return da - db;
-        const a = this.exponents & 0x0000FFFFFFFFFFFFn;
-        const b = other.exponents & 0x0000FFFFFFFFFFFFn;
-        return b > a ? 1 : b < a ? -1 : 0;
-      }
-      default:
-        return 0;
+function compare(term: Term, other: Term): number {
+  switch (termOrder) {
+    case TermOrder.Lex: {
+      const a = term.exponents & 0x0000FFFFFFFFFFFFn;
+      const b = other.exponents & 0x0000FFFFFFFFFFFFn;
+      return a > b ? 1 : a < b ? -1 : 0;
     }
+    case TermOrder.GrLex: {
+      const da = degree(term);
+      const db = degree(other);
+      if (da !== db) return da - db;
+      const a = term.exponents & 0x0000FFFFFFFFFFFFn;
+      const b = other.exponents & 0x0000FFFFFFFFFFFFn;
+      return a > b ? 1 : a < b ? -1 : 0;
+    }
+    case TermOrder.RevLex: {
+      const da = degree(term);
+      const db = degree(other);
+      if (da !== db) return da - db;
+      const a = term.exponents & 0x0000FFFFFFFFFFFFn;
+      const b = other.exponents & 0x0000FFFFFFFFFFFFn;
+      return b > a ? 1 : b < a ? -1 : 0;
+    }
+    default:
+      return 0;
   }
+}
 
-  canReduce(divisor: Term): boolean {
-    for (let i = 0; i < 6; i++) {
-      const selfExp = Number((this.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
-      const divExp = Number((divisor.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
-      if (divExp > selfExp) return false;
-    }
-    return true;
+function canReduce(term: Term, divisor: Term): boolean {
+  for (let i = 0; i < 6; i++) {
+    const selfExp = Number((term.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
+    const divExp = Number((divisor.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
+    if (divExp > selfExp) return false;
   }
+  return true;
+}
 
-  lcm(other: Term): bigint {
-    let lcmPacked = 0n;
-    let degree = 0;
-    for (let i = 0; i < 6; i++) {
-      const a = Number((this.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
-      const b = Number((other.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
-      const lcmExp = Math.max(a, b);
-      lcmPacked |= BigInt(lcmExp) << BigInt(40 - 8 * i);
-      degree += lcmExp;
-    }
-    lcmPacked |= BigInt(degree) << 48n;
-    return lcmPacked;
+function lcm(term: Term, other: Term): bigint {
+  let lcmPacked = 0n;
+  let degree = 0;
+  for (let i = 0; i < 6; i++) {
+    const a = Number((term.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
+    const b = Number((other.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
+    const lcmExp = Math.max(a, b);
+    lcmPacked |= BigInt(lcmExp) << BigInt(40 - 8 * i);
+    degree += lcmExp;
   }
-/*
-  addPacked(other: Term): bigint {
-    let packed = 0n;
-    let degree = 0;
-    for (let i = 0; i < 6; i++) {
-      const a = Number((this.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
-      const b = Number((other.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
-      const sum = a + b;
-      packed |= BigInt(sum) << BigInt(40 - 8 * i);
-      degree += sum;
-    }
-    packed |= BigInt(degree) << 48n;
-    return packed;
-  }
+  lcmPacked |= BigInt(degree) << 48n;
+  return lcmPacked;
+}
 
-  subPacked(other: Term): bigint {
-    let packed = 0n;
-    let degree = 0;
-    for (let i = 0; i < 6; i++) {
-      const a = Number((this.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
-      const b = Number((other.exponents >> BigInt(40 - 8 * i)) & 0xFFn);
-      const diff = a - b;
-      packed |= BigInt(diff) << BigInt(40 - 8 * i);
-      degree += diff;
-    }
-    packed |= BigInt(degree) << 48n;
-    return packed;
-  }*/
+function addPackedExponents(a: bigint, b: bigint): bigint {
+  let result = 0n;
+  let degree = 0;
+  for (let i = 0; i < 6; i++) {
+    const expA = Number((a >> BigInt(40 - 8 * i)) & 0xFFn);
+    const expB = Number((b >> BigInt(40 - 8 * i)) & 0xFFn);
+    const sum = expA + expB;
+    result |= BigInt(sum) << BigInt(40 - 8 * i);
+    degree += sum;
+  }
+  result |= BigInt(degree) << 48n;
+  return result;
+}
+
+function subtractPackedExponents(a: bigint, b: bigint): bigint {
+  let result = 0n;
+  let degree = 0;
+  for (let i = 0; i < 6; i++) {
+    const expA = Number((a >> BigInt(40 - 8 * i)) & 0xFFn);
+    const expB = Number((b >> BigInt(40 - 8 * i)) & 0xFFn);
+    const diff = expA - expB;
+    result |= BigInt(diff) << BigInt(40 - 8 * i);
+    degree += diff;
+  }
+  result |= BigInt(degree) << 48n;
+  return result;
 }
 
 function modInverse(a: number, m: number): number {
@@ -145,14 +140,13 @@ export class Polynomial {
     this.terms = terms.filter(t => t.coefficient % modulus !== 0);
     this.terms = this.terms.map(t => ({
       coefficient: ((t.coefficient % modulus) + modulus) % modulus,
-      modulus: modulus,
-      exponents: t.exponents.slice(),
+      exponents: t.exponents,
     }));
-    this.terms.sort((a, b) => -a.compare(b));
+    this.terms.sort((a, b) => -compare(a,b));
   }
 
   add(other: Polynomial): Polynomial {
-    const result = this.terms.map(t => new Term(t.coefficient, t.exponents));
+    const result: Term[] = this.terms.map(t => ({ coefficient: t.coefficient, exponents: t.exponents }));
     for (const t of other.terms) {
       let found = false;
       for (const rt of result) {
@@ -162,13 +156,13 @@ export class Polynomial {
           break;
         }
       }
-      if (!found) result.push(new Term(t.coefficient, t.exponents));
+      if (!found) result.push({ coefficient: t.coefficient, exponents: t.exponents });
     }
     return new Polynomial(result);
   }
 
   subtract(other: Polynomial): Polynomial {
-    const result = this.terms.map(t => new Term(t.coefficient, t.exponents));
+    const result: Term[] = this.terms.map(t => ({ coefficient: t.coefficient, exponents: t.exponents }));
     for (const t of other.terms) {
       let found = false;
       for (const rt of result) {
@@ -178,16 +172,16 @@ export class Polynomial {
           break;
         }
       }
-      if (!found) result.push(new Term((-t.coefficient + modulus) % modulus, t.exponents));
+      if (!found) result.push({ coefficient: ((-t.coefficient + modulus) % modulus), exponents: t.exponents });
     }
     return new Polynomial(result);
   }
 
   multiplyByTerm(term: Term): Polynomial {
-    const terms = this.terms.map(t => new Term(
-      (t.coefficient * term.coefficient) % modulus,
-      t.exponents + term.exponents
-    ));
+    const terms: Term[] = this.terms.map(t => ({
+      coefficient: (t.coefficient * term.coefficient) % modulus,
+      exponents: addPackedExponents(t.exponents, term.exponents)
+    }));
     return new Polynomial(terms);
   }
 
@@ -200,10 +194,10 @@ export class Polynomial {
         if (result.terms.length === 0 || divisor.terms.length === 0) continue;
         const lead = result.terms[0];
         const divLead = divisor.terms[0];
-        if (lead.canReduce(divLead)) {
+        if (canReduce(lead, divLead)) {
           const coeff = (lead.coefficient * modInverse(divLead.coefficient, modulus)) % modulus;
-          const exps = lead.exponents - divLead.exponents;
-          const reductionTerm = new Term(coeff, exps);
+          const exps = subtractPackedExponents(lead.exponents, divLead.exponents);
+          const reductionTerm: Term = { coefficient: coeff, exponents: exps };
           const scaledDivisor = divisor.multiplyByTerm(reductionTerm);
           result = result.subtract(scaledDivisor);
           reduced = true;
@@ -235,13 +229,49 @@ export class Polynomial {
   static sPolynomial(p1: Polynomial, p2: Polynomial): Polynomial {
     const lead1 = p1.terms[0];
     const lead2 = p2.terms[0];
-    const lcmExps = lead1.lcm(lead2);
-    const scale1 = new Term(1, lcmExps - lead1.exponents);
-    const scale2 = new Term(1, lcmExps - lead2.exponents);
+    const lcmExps = lcm(lead1, lead2);
+    const scale1: Term = { coefficient: 1, exponents: subtractPackedExponents(lcmExps, lead1.exponents) };
+    const scale2: Term = { coefficient: 1, exponents: subtractPackedExponents(lcmExps, lead2.exponents) };
     const scaled1 = p1.multiplyByTerm(scale1);
     const scaled2 = p2.multiplyByTerm(scale2);
     return scaled1.subtract(scaled2);
   }
+}
+
+function generateCyclicPolynomials(n: number): Polynomial[] {
+  // Generate cyclic-n polynomial system
+  // For i = 0 to n-1: sum of all products of (i+1) consecutive variables = 0
+  // Last equation: product of all n variables - 1 = 0
+  
+  const polys: Polynomial[] = [];
+  
+  for (let i = 0; i < n; i++) {
+    const terms: Term[] = [];
+    
+    if (i === n - 1) {
+      // Last equation: x0*x1*...*x(n-1) - 1
+      const exps = Array(6).fill(0);
+      for (let j = 0; j < n; j++) {
+        exps[j] = 1;
+      }
+      terms.push(fromExponents(1, exps));
+      terms.push(fromExponents((modulus - 1) % modulus, [0, 0, 0, 0, 0, 0])); // -1 mod m
+    } else {
+      // Equation i: sum of all products of (i+1) consecutive variables
+      const productSize = i + 1;
+      for (let start = 0; start < n; start++) {
+        const exps = Array(6).fill(0);
+        for (let j = 0; j < productSize; j++) {
+          exps[(start + j) % n] = 1;
+        }
+        terms.push(fromExponents(1, exps));
+      }
+    }
+    
+    polys.push(new Polynomial(terms));
+  }
+  
+  return polys;
 }
 
 export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
@@ -249,7 +279,8 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
   const basisSet = new Set<string>();
    // Initialize basis set
     for (const poly of basis) {
-      basisSet.add(JSON.stringify(poly.terms));
+      const key = JSON.stringify(poly.terms.map(t => [t.coefficient, t.exponents.toString()]));
+      basisSet.add(key);
     }
   
     // Initialize pairs: all (i, j) where i < j
@@ -265,7 +296,7 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
       const [i, j] = pairs.shift()!;
       const sPoly = Polynomial.sPolynomial(basis[i], basis[j]);
       const reduced = sPoly.reduce(basis);
-      const key = JSON.stringify(reduced.terms);
+      const key = JSON.stringify(reduced.terms.map(t => [t.coefficient, t.exponents.toString()]));
   
       if (reduced.terms.length > 0 && !basisSet.has(key)) {
         basisSet.add(key);
@@ -285,71 +316,33 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
     const reduced = poly.reduce(basisExcl);
     const key = JSON.stringify(reduced.terms.map(t => [t.coefficient, t.exponents.toString()]));
     if (reduced.terms.length > 0 && !reducedBasis.some(rb => JSON.stringify(rb.terms.map(t => [t.coefficient, t.exponents.toString()])) === key)) {
-      reducedBasis.push(reduced);
+      reducedBasis.push(reduced.makeMonic());
     }
   }
   return reducedBasis;
 }
 
 function main() {
-  // let mode = 0 be for testing
-  const mode = 0;
-  if (mode !== 0) {
-    // arg1 = number of polynomials
-    // arg2 = term order (0=Lex, 1=GrLex, 2=RevLex)
-    const args = process.argv.slice(2);
-    const numPolys = parseInt(args[0] || '3', 10);
-    const orderArg = parseInt(args[1] || '0', 10);
-    let order: TermOrder;
-    switch (orderArg) {
-        case 0:
-        order = TermOrder.Lex;
-        break;
-        case 1:
-        order = TermOrder.GrLex;
-        break;
-        case 2:
-        order = TermOrder.RevLex;
-        break;
-        default:
-        order = TermOrder.Lex;
-    }
-    const rand = new LCG(12345, 1345, 16645, 1013904);
-    const polys: Polynomial[] = [];
-    for (let i = 0; i < numPolys; i++) {
-      const terms: Term[] = [];
-      for (let j = 0; j < 3; j++) {
-        const coeff =   rand.nextDouble() * 2 - 1;
-        const exps = Array.from({ length: 6 }, () => (rand.nextInt() % 4));
-        terms.push(Term.fromExponents(coeff, exps));
-      }
-      polys.push(new Polynomial(terms, order));
-    }
-    const basis = naiveGrobnerBasis(polys, order);
-    console.log(basis.length);
-    //console.log('Computed Grobner Basis:', basis);
-    return;
-  } else {
-    const order = TermOrder.Lex;
-    // Example: x^2*y + y^2*z + z^2*x, x*y*z - 1, x+y+z
-    const p1 = new Polynomial([
-      Term.fromExponents(1, [2, 1, 0, 0, 0, 0]),
-      Term.fromExponents(1, [0, 2, 1, 0, 0, 0]),
-      Term.fromExponents(1, [1, 0, 2, 0, 0, 0]),
-    ], order);
-    const p2 = new Polynomial([
-      Term.fromExponents(1, [1, 1, 1, 0, 0, 0]),
-      Term.fromExponents(-1, [0, 0, 0, 0, 0, 0]),
-    ], order);
-    const p3 = new Polynomial([
-      Term.fromExponents(1, [1, 0, 0, 0, 0, 0]),
-      Term.fromExponents(1, [0, 1, 0, 0, 0, 0]),
-      Term.fromExponents(1, [0, 0, 1, 0, 0, 0]),
-    ], order);
-    const basis = naiveGrobnerBasis([p1, p2, p3], order);
-    console.log('Final Grobner Basis:');
-    for (const poly of basis) {
-      console.log(poly.terms.map(t => ({ coeff: t.coefficient, exps: t.unpack() })));
+  modulus = 7;
+
+  // Test cyclic-4, cyclic-5, cyclic-6
+  const testCases = [4, 5, 6];
+  
+  for (const n of testCases) {
+    console.log(`\n=== Cyclic-${n} ===`);
+    const polys = generateCyclicPolynomials(n);
+    console.log(`Input: ${n} polynomials`);
+    
+    const basis = naiveGrobnerBasis(polys);
+    console.log(`Output basis size: ${basis.length}`);
+    
+    // Print final basis
+    for (let i = 0; i < basis.length; i++) {
+      const expsStr = basis[i].terms.map(t => {
+        const exps = unpack(t);
+        return `${t.coefficient}*${exps.slice(0, n).join('|')}`;
+      }).join(' + ');
+      console.log(`  [${i}]: ${expsStr}`);
     }
   }
 }

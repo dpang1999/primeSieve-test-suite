@@ -269,81 +269,169 @@ function main() {
   }
   else {
     const n = args[0] ? parseInt(args[0], 10) : 4;
-    if ([4, 5, 6, 7].includes(n)) {
-      modulus = 7;
-      const polys: Polynomial[] = [];
-      // f1: x0 + x1 + ... + x_{n-1}
-      const f1_terms: Term[] = [];
-      for (let i = 0; i < n; i++) {
-        const exponents = Array(n).fill(0);
-        exponents[i] = 1;
-        f1_terms.push({ coefficient: 1, exponents });
-      }
-      polys.push(new Polynomial(f1_terms));
-      // f2: x0x1 + x1x2 + ... + x_{n-1}x0
-      const f2_terms: Term[] = [];
-      for (let i = 0; i < n; i++) {
-        const exponents = Array(n).fill(0);
-        exponents[i] = 1;
-        exponents[(i + 1) % n] = 1;
-        f2_terms.push({ coefficient: 1, exponents });
-      }
-      polys.push(new Polynomial(f2_terms));
-      // f3: x0x1x2 + x1x2x3 + ... + x_{n-1}x0x1
-      const f3_terms: Term[] = [];
-      for (let i = 0; i < n; i++) {
-        const exponents = Array(n).fill(0);
-        exponents[i] = 1;
-        exponents[(i + 1) % n] = 1;
-        exponents[(i + 2) % n] = 1;
-        f3_terms.push({ coefficient: 1, exponents });
-      }
-      polys.push(new Polynomial(f3_terms));
-      // Continue for f4, f5, ..., f_{n-1}
-      for (let k = 4; k < n; k++) {
-        const fk_terms: Term[] = [];
-        for (let i = 0; i < n; i++) {
-          const exponents = Array(n).fill(0);
-          for (let j = 0; j < k; j++) {
-            exponents[(i + j) % n] = 1;
+    modulus = 7;
+    
+    if (n === 4) {
+      console.log("TypeScript finite coeff vec exponent cyclic 4");
+      const p1 = new Polynomial([
+        { coefficient: 1, exponents: [1, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 1] },
+      ]);
+      const p2 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 0, 1] },
+      ]);
+      const p3 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 0, 1] },
+      ]);
+      const p4 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 1] },
+        { coefficient: modulus - 1, exponents: [0, 0, 0, 0] },
+      ]);
+      const polys = [p1, p2, p3, p4];
+      for (var i = 0; i < 10; i++) {
+        const basis = naiveGrobnerBasis(polys);
+        if (i === 9) {
+          console.log(`Final Grobner Basis for Cyclic-${n}:`);
+          console.log(`Number of basis elements: ${basis.length}`);
+          for (const poly of basis) {
+            for (const term of poly.terms) {
+              process.stdout.write(`${term.coefficient}*`);
+              for (let i = 0; i < term.exponents.length; i++) {
+                process.stdout.write(`x${i}^${term.exponents[i]}`);
+                if (i < term.exponents.length - 1) process.stdout.write(" ");
+              }
+              process.stdout.write(" + ");
+            }
+            console.log();
           }
-          fk_terms.push({ coefficient: 1, exponents });
         }
-        polys.push(new Polynomial(fk_terms));
       }
-      // fn: x0x1...x_{n-1} - 1
-      const fn_terms: Term[] = [];
-      fn_terms.push({ coefficient: 1, exponents: Array(n).fill(1) });
-      fn_terms.push({ coefficient: modulus - 1, exponents: Array(n).fill(0) }); // -1 mod modulus
-      polys.push(new Polynomial(fn_terms));
-
-      // print polys
-      console.log(`Input Polynomials for Cyclic-${n}:`);
-      for (const poly of polys) {
-        for (const term of poly.terms) {
-          process.stdout.write(`${term.coefficient}*`);
-          for (let i = 0; i < term.exponents.length; i++) {
-            process.stdout.write(`x${i}^${term.exponents[i]}`);
-            if (i < term.exponents.length - 1) process.stdout.write(" ");
+     
+    } else if (n === 5) {
+      console.log("TypeScript finite coeff vec exponent cyclic 5");
+      const p1 = new Polynomial([
+        { coefficient: 1, exponents: [1, 0, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 0, 1] },
+      ]);
+      const p2 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 0, 0, 1] },
+      ]);
+      const p3 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 0, 0, 1] },
+      ]);
+      const p4 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 1, 0, 1] },
+      ]);
+      const p5 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 1, 1] },
+        { coefficient: modulus - 1, exponents: [0, 0, 0, 0, 0] },
+      ]);
+      const polys = [p1, p2, p3, p4, p5];
+      for (var i = 0; i < 10; i++) {
+        const basis = naiveGrobnerBasis(polys);
+        if (i === 9) {
+          console.log(`Final Grobner Basis for Cyclic-${n}:`);
+          console.log(`Number of basis elements: ${basis.length}`);
+          for (const poly of basis) {
+            for (const term of poly.terms) {
+              process.stdout.write(`${term.coefficient}*`);
+              for (let i = 0; i < term.exponents.length; i++) {
+                process.stdout.write(`x${i}^${term.exponents[i]}`);
+                if (i < term.exponents.length - 1) process.stdout.write(" ");
+              }
+              process.stdout.write(" + ");
+            }
+            console.log();
           }
-          process.stdout.write(" + ");
         }
-        console.log();
       }
-
-      const basis = naiveGrobnerBasis(polys);
-      console.log(`Final Grobner Basis for Cyclic-${n}:`);
-      console.log(`Number of basis elements: ${basis.length}`);
-      for (const poly of basis) {
-        for (const term of poly.terms) {
-          process.stdout.write(`${term.coefficient}*`);
-          for (let i = 0; i < term.exponents.length; i++) {
-            process.stdout.write(`x${i}^${term.exponents[i]}`);
-            if (i < term.exponents.length - 1) process.stdout.write(" ");
+    } else if (n === 6) {
+      console.log("TypeScript finite coeff vec exponent cyclic 6");
+      const p1 = new Polynomial([
+        { coefficient: 1, exponents: [1, 0, 0, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 0, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 0, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 0, 0, 1] },
+      ]);
+      const p2 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 0, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 0, 0, 0, 1] },
+      ]);
+      const p3 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 0, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 0, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 0, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 0, 0, 0, 1] },
+      ]);
+      const p4 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 1, 0, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 0, 1, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 0, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 0, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 1, 0, 0, 1] },
+      ]);
+      const p5 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 1, 1, 0] },
+        { coefficient: 1, exponents: [0, 1, 1, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 0, 1, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 0, 1, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 1, 0, 1, 1] },
+        { coefficient: 1, exponents: [1, 1, 1, 1, 0, 1] },
+      ]);
+      const p6 = new Polynomial([
+        { coefficient: 1, exponents: [1, 1, 1, 1, 1, 1] },
+        { coefficient: modulus - 1, exponents: [0, 0, 0, 0, 0, 0] },
+      ]);
+      const polys = [p1, p2, p3, p4, p5, p6];
+      for (var i = 0; i < 10; i++) {
+        const basis = naiveGrobnerBasis(polys);
+        if (i === 9) {
+          console.log(`Final Grobner Basis for Cyclic-${n}:`);
+          console.log(`Number of basis elements: ${basis.length}`);
+          for (const poly of basis) {
+            for (const term of poly.terms) {
+              process.stdout.write(`${term.coefficient}*`);
+              for (let i = 0; i < term.exponents.length; i++) {
+                process.stdout.write(`x${i}^${term.exponents[i]}`);
+                if (i < term.exponents.length - 1) process.stdout.write(" ");
+              }
+              process.stdout.write(" + ");
+            }
+            console.log();
           }
-          process.stdout.write(" + ");
         }
-        console.log();
       }
     }
   }
