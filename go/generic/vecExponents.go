@@ -1,6 +1,9 @@
 package generic
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // VecExponents is a simple slice-based exponent vector
 // Implements IExponents interface
@@ -70,15 +73,7 @@ func (v VecExponents) canReduce(divisor VecExponents) bool {
 }
 
 func (v VecExponents) equals(o VecExponents) bool {
-	if len(v.Exponents) != len(o.Exponents) {
-		return false
-	}
-	for i := range v.Exponents {
-		if v.Exponents[i] != o.Exponents[i] {
-			return false
-		}
-	}
-	return true
+	return slices.Equal(v.Exponents, o.Exponents)
 }
 
 func (v VecExponents) String() string {

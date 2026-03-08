@@ -3,6 +3,7 @@ package finiteGrobner
 import (
 	"algos/helpers"
 	"fmt"
+	"slices"
 	"sort"
 )
 
@@ -90,7 +91,7 @@ func (p Polynomial) Add(other Polynomial) Polynomial {
 	for _, t := range other.Terms {
 		found := false
 		for i := range result {
-			if equalExponents(result[i].Exponents, t.Exponents) {
+			if slices.Equal(result[i].Exponents, t.Exponents) {
 				result[i].Coefficient = (result[i].Coefficient + t.Coefficient) % modulus
 				found = true
 				break
@@ -108,7 +109,7 @@ func (p Polynomial) Subtract(other Polynomial) Polynomial {
 	for _, t := range other.Terms {
 		found := false
 		for i := range result {
-			if equalExponents(result[i].Exponents, t.Exponents) {
+			if slices.Equal(result[i].Exponents, t.Exponents) {
 				result[i].Coefficient = (modulus + result[i].Coefficient - t.Coefficient) % modulus
 				found = true
 				break
@@ -313,7 +314,13 @@ func NaiveGrobnerBasis(polys []Polynomial) []Polynomial {
 
 // Check if two exponent slices are equal
 func equalExponents(a, b []int) bool {
-	if len(a) != len(b) {
+	if slices.Equal(a, b) {
+		return true
+	} else {
+		return false
+	}
+
+	/* if len(a) != len(b) {
 		return false
 	}
 	for i := range a {
@@ -322,6 +329,7 @@ func equalExponents(a, b []int) bool {
 		}
 	}
 	return true
+	*/
 }
 
 func canReduce(a, b []int) bool {

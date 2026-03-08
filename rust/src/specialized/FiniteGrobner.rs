@@ -308,7 +308,7 @@ pub fn naive_grobner_basis(polynomials: Vec<Polynomial>) -> Vec<Polynomial> {
         /*let mut debug = false;
         if(i == 0 && j == 7 || i == 3 && j == 4 || j ==4 && i==3) 
         { debug = true; println!("Debugging S-Polynomial for basis[{}] and basis[{}]", i, j); 
-        // print basis
+        // print basis``
         for poly in &basis {
                 println!("{:?}", poly);
             }

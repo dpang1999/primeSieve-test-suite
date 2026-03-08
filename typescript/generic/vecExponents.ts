@@ -27,7 +27,11 @@ export class VecExponents {
     return this.exponents.every((v, i) => v >= o.exponents[i]);
   }
   equals(o: VecExponents): boolean {
-    return this.exponents.length === o.exponents.length && this.exponents.every((v, i) => v === o.exponents[i]);
+    if (this.exponents.length !== o.exponents.length) return false;
+    for (let i = 0; i < this.exponents.length; i++) {
+      if (this.exponents[i] !== o.exponents[i]) return false;
+    }
+    return true;
   }
   toString(): string {
     return `[${this.exponents.join(", ")}]`;

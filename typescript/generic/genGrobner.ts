@@ -41,6 +41,16 @@ function compare<C extends IField<C>, E extends IExponent<E>>(term: Term<C, E>, 
   }
 }
 
+function polyKey(terms: Term<any, any>[]): string {
+  let out = "";
+  for (let i = 0; i < terms.length; i++) {
+    if (i > 0) out += ";";
+    out += terms[i].coefficient + "|";
+    out += terms[i].exponents + ", ";
+  }
+  return out;
+}
+
 function can_reduce<C extends IField<C>, E extends IExponent<E>>(term: Term<C, E>, other: Term<C, E>): boolean {
   return term.exponents.canReduce(other.exponents);
 }
@@ -101,6 +111,7 @@ class Polynomial<C extends IField<C> & ICopiable<C>, E extends IExponent<E>> {
 
   reduce(divisors: Polynomial<C, E>[]): Polynomial<C, E> {
     let result = new Polynomial(this.terms);
+    const remainder: Term<C, E>[] = [];
     while (true) {
       let reduced = false;
       for (const divisor of divisors) {
@@ -117,8 +128,13 @@ class Polynomial<C extends IField<C> & ICopiable<C>, E extends IExponent<E>> {
           break;
         }
       }
-      if (!reduced) break;
+      if (!reduced) {
+        if (result.terms.length === 0) break;
+        remainder.push(result.terms[0]);
+        result.terms = result.terms.slice(1);
+      }
     }
+    result.terms.push(...remainder);
     return new Polynomial(result.terms);
   }
 
@@ -139,8 +155,8 @@ class Polynomial<C extends IField<C> & ICopiable<C>, E extends IExponent<E>> {
     const lcmExps = lcm(lead1, lead2);
     const scale1 = lcmExps.sub(lead1.exponents);
     const scale2 = lcmExps.sub(lead2.exponents);
-    const scaled1 = p1.multiplyByTerm({ coefficient: lead1.coefficient.one(), exponents: scale1 });
-    const scaled2 = p2.multiplyByTerm({ coefficient: lead2.coefficient.one(), exponents: scale2 });
+    const scaled1 = p1.multiplyByTerm({ coefficient: lead2.coefficient.copy(), exponents: scale1 });
+    const scaled2 = p2.multiplyByTerm({ coefficient: lead1.coefficient.copy(), exponents: scale2 });
     return scaled1.subtract(scaled2);
   }
 
@@ -150,14 +166,11 @@ toString() {
 }
 
 export function naiveGrobnerBasis<C extends IField<C> & ICopiable<C>,  E extends IExponent<E>>(polys: Polynomial<C, E>[]): Polynomial<C, E>[] {
-  const polyKey = (poly: Polynomial<C, E>): string => 
-    poly.terms.map(t => `${t.coefficient.toString()}:${t.exponents.toString()}`).join('|');
-
   let basis = polys.map(p => new Polynomial(p.terms));
   const basisSet = new Set<string>();
 
   for (const poly of basis) {
-    basisSet.add(polyKey(poly));
+    basisSet.add(polyKey(poly.terms));
   }
   
   const pairs: Array<[number, number]> = [];
@@ -171,7 +184,7 @@ export function naiveGrobnerBasis<C extends IField<C> & ICopiable<C>,  E extends
     const [i, j] = pairs.shift()!;
     const sPoly = Polynomial.sPolynomial(basis[i], basis[j]);
     const reduced = sPoly.reduce(basis);
-    const key = polyKey(reduced);
+    const key = polyKey(reduced.terms);
     if (reduced.terms.length > 0 && !basisSet.has(key)) {
       basisSet.add(key);
       const newIdx = basis.length;
@@ -188,8 +201,8 @@ export function naiveGrobnerBasis<C extends IField<C> & ICopiable<C>,  E extends
   for (const poly of basis) {
     const basisExcl = basis.filter(p => p !== poly);
     const reduced = poly.reduce(basisExcl);
-    const key = polyKey(reduced);
-    if (reduced.terms.length > 0 && !reducedBasis.some(rb => polyKey(rb) === key)) {
+    const key = polyKey(reduced.terms);
+    if (reduced.terms.length > 0 && !reducedBasis.some(rb => polyKey(rb.terms) === key)) {
       reducedBasis.push(reduced.makeMonic());
     }
   }

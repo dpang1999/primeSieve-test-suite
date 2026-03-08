@@ -4,6 +4,7 @@ import (
 	"algos/generic"
 	"algos/helpers"
 	finitefft "algos/specialized/finiteFFT"
+	"algos/specialized/finiteGrobner"
 	"os"
 	"strconv"
 )
@@ -44,7 +45,7 @@ func main() {
 		n := 16
 		finitefft.TestFFT(n)
 		generic.TestGenFFT(n, 1) */
-		generic.TestGenGrobner(5, 1, 0, 0)
+		finiteGrobner.TestFiniteGrobner(6, 1, 0)
 	}
 	//generic.TestGenSOR()
 	//generic.TestGenFFT(268435456, 1)

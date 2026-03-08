@@ -93,34 +93,6 @@ function lcm(term: Term, other: Term): bigint {
   return lcmPacked;
 }
 
-function addPackedExponents(a: bigint, b: bigint): bigint {
-  let result = 0n;
-  let degree = 0;
-  for (let i = 0; i < 6; i++) {
-    const expA = Number((a >> BigInt(40 - 8 * i)) & 0xFFn);
-    const expB = Number((b >> BigInt(40 - 8 * i)) & 0xFFn);
-    const sum = expA + expB;
-    result |= BigInt(sum) << BigInt(40 - 8 * i);
-    degree += sum;
-  }
-  result |= BigInt(degree) << 48n;
-  return result;
-}
-
-function subtractPackedExponents(a: bigint, b: bigint): bigint {
-  let result = 0n;
-  let degree = 0;
-  for (let i = 0; i < 6; i++) {
-    const expA = Number((a >> BigInt(40 - 8 * i)) & 0xFFn);
-    const expB = Number((b >> BigInt(40 - 8 * i)) & 0xFFn);
-    const diff = expA - expB;
-    result |= BigInt(diff) << BigInt(40 - 8 * i);
-    degree += diff;
-  }
-  result |= BigInt(degree) << 48n;
-  return result;
-}
-
 function modInverse(a: number, m: number): number {
   let m0 = m, x0 = 0, x1 = 1;
   if (m === 1) return 0;
@@ -132,6 +104,16 @@ function modInverse(a: number, m: number): number {
   }
   if (x1 < 0) x1 += m0;
   return x1;
+}
+
+function polyKey(terms: Term[]): string {
+  let out = "";
+  for (let i = 0; i < terms.length; i++) {
+    if (i > 0) out += ";";
+    out += terms[i].coefficient + "|";
+    out += terms[i].exponents + ", ";
+  }
+  return out;
 }
 
 export class Polynomial {
@@ -180,7 +162,7 @@ export class Polynomial {
   multiplyByTerm(term: Term): Polynomial {
     const terms: Term[] = this.terms.map(t => ({
       coefficient: (t.coefficient * term.coefficient) % modulus,
-      exponents: addPackedExponents(t.exponents, term.exponents)
+      exponents: t.exponents + term.exponents,
     }));
     return new Polynomial(terms);
   }
@@ -196,7 +178,7 @@ export class Polynomial {
         const divLead = divisor.terms[0];
         if (canReduce(lead, divLead)) {
           const coeff = (lead.coefficient * modInverse(divLead.coefficient, modulus)) % modulus;
-          const exps = subtractPackedExponents(lead.exponents, divLead.exponents);
+          const exps = lead.exponents - divLead.exponents;
           const reductionTerm: Term = { coefficient: coeff, exponents: exps };
           const scaledDivisor = divisor.multiplyByTerm(reductionTerm);
           result = result.subtract(scaledDivisor);
@@ -230,8 +212,8 @@ export class Polynomial {
     const lead1 = p1.terms[0];
     const lead2 = p2.terms[0];
     const lcmExps = lcm(lead1, lead2);
-    const scale1: Term = { coefficient: 1, exponents: subtractPackedExponents(lcmExps, lead1.exponents) };
-    const scale2: Term = { coefficient: 1, exponents: subtractPackedExponents(lcmExps, lead2.exponents) };
+    const scale1: Term = { coefficient: lead2.coefficient, exponents: lcmExps - lead1.exponents };
+    const scale2: Term = { coefficient: lead1.coefficient, exponents: lcmExps - lead2.exponents };
     const scaled1 = p1.multiplyByTerm(scale1);
     const scaled2 = p2.multiplyByTerm(scale2);
     return scaled1.subtract(scaled2);
@@ -279,8 +261,7 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
   const basisSet = new Set<string>();
    // Initialize basis set
     for (const poly of basis) {
-      const key = JSON.stringify(poly.terms.map(t => [t.coefficient, t.exponents.toString()]));
-      basisSet.add(key);
+      basisSet.add(polyKey(poly.terms));
     }
   
     // Initialize pairs: all (i, j) where i < j
@@ -296,7 +277,7 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
       const [i, j] = pairs.shift()!;
       const sPoly = Polynomial.sPolynomial(basis[i], basis[j]);
       const reduced = sPoly.reduce(basis);
-      const key = JSON.stringify(reduced.terms.map(t => [t.coefficient, t.exponents.toString()]));
+      const key = polyKey(reduced.terms);
   
       if (reduced.terms.length > 0 && !basisSet.has(key)) {
         basisSet.add(key);
@@ -311,13 +292,15 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
     }
   // Reduce basis by self
   const reducedBasis: Polynomial[] = [];
+  const reducedSet = new Set<string>();
   for (const poly of basis) {
     const basisExcl = basis.filter(p => p !== poly);
     const reduced = poly.reduce(basisExcl);
-    const key = JSON.stringify(reduced.terms.map(t => [t.coefficient, t.exponents.toString()]));
-    if (reduced.terms.length > 0 && !reducedBasis.some(rb => JSON.stringify(rb.terms.map(t => [t.coefficient, t.exponents.toString()])) === key)) {
+    const key = polyKey(reduced.terms);
+    if (reduced.terms.length > 0 && !reducedSet.has(key)) {
+      reducedSet.add(key);
       reducedBasis.push(reduced.makeMonic());
-    }
+    } 
   }
   return reducedBasis;
 }

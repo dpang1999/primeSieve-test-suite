@@ -60,6 +60,19 @@ function modInverse(a: number, m: number): number {
   return x1;
 }
 
+function polyKey(terms: Term[]): string {
+  let out = "";
+  for (let i = 0; i < terms.length; i++) {
+    if (i > 0) out += ";";
+    out += terms[i].coefficient + "|";
+    for (let j = 0; j < terms[i].exponents.length; j++) {
+      if (j > 0) out += ",";
+      out += terms[i].exponents[j];
+    }
+  }
+  return out;
+}
+
 export class Polynomial {
   terms: Term[];
   constructor(terms: Term[]) {
@@ -67,24 +80,33 @@ export class Polynomial {
     this.terms = terms.filter(t => t.coefficient % modulus !== 0);
     this.terms = this.terms.map(t => ({
       coefficient: ((t.coefficient % modulus) + modulus) % modulus,
-      modulus: modulus,
       exponents: t.exponents.slice(),
     }));
     this.terms.sort((a, b) => -compareExponents(a.exponents, b.exponents));
+  }
+
+  expEqual(a: number[], b: number[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
   }
 
   add(other: Polynomial): Polynomial {
     const result = this.terms.map(t => ({ ...t }));
     for (const t of other.terms) {
       let found = false;
-      for (const rt of result) {
-        if (rt.exponents.length === t.exponents.length && rt.exponents.every((v, i) => v === t.exponents[i])) {
-          rt.coefficient = (rt.coefficient + t.coefficient) % modulus;
+      for (const r of result) {
+        if (this.expEqual(r.exponents, t.exponents)) {
+          r.coefficient = (r.coefficient + t.coefficient) % modulus;
           found = true;
           break;
         }
       }
-      if (!found) result.push({ ...t });
+      if (!found) {
+        result.push({ coefficient: t.coefficient, exponents: t.exponents.slice() });
+      }
     }
     return new Polynomial(result);
   }
@@ -93,14 +115,16 @@ export class Polynomial {
     const result = this.terms.map(t => ({ ...t }));
     for (const t of other.terms) {
       let found = false;
-      for (const rt of result) {
-        if (rt.exponents.length === t.exponents.length && rt.exponents.every((v, i) => v === t.exponents[i])) {
-          rt.coefficient = (rt.coefficient - t.coefficient + modulus) % modulus;
+      for (const r of result) {
+        if (this.expEqual(r.exponents, t.exponents)) {
+          r.coefficient = (modulus + r.coefficient - t.coefficient) % modulus;
           found = true;
           break;
         }
       }
-      if (!found) result.push({ coefficient: (-t.coefficient + modulus) % modulus, exponents: t.exponents.slice() });
+      if (!found) {
+        result.push({ coefficient: (modulus - t.coefficient) % modulus, exponents: t.exponents.slice() });
+      }
     }
     return new Polynomial(result);
   }
@@ -165,8 +189,10 @@ export class Polynomial {
     const lcmExps = lead1.exponents.map((v, i) => Math.max(v, lead2.exponents[i]));
     const scale1 = lcmExps.map((v, i) => v - lead1.exponents[i]);
     const scale2 = lcmExps.map((v, i) => v - lead2.exponents[i]);
-    const scaled1 = p1.multiplyByTerm({ coefficient: 1, exponents: scale1 });
-    const scaled2 = p2.multiplyByTerm({ coefficient: 1, exponents: scale2 });
+    const coeff1 = lead1.coefficient;
+    const coeff2 = lead2.coefficient;
+    const scaled1 = p1.multiplyByTerm({ coefficient: coeff2, exponents: scale1 });
+    const scaled2 = p2.multiplyByTerm({ coefficient: coeff1, exponents: scale2 });
     return scaled1.subtract(scaled2);
   }
 }
@@ -177,7 +203,7 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
   
   // Initialize basis set
   for (const poly of basis) {
-    basisSet.add(JSON.stringify(poly.terms));
+    basisSet.add(polyKey(poly.terms));
   }
 
   // Initialize pairs: all (i, j) where i < j
@@ -189,11 +215,12 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
   }
 
   // Process pairs until none remain
-  while (pairs.length > 0) {
-    const [i, j] = pairs.shift()!;
+  let pairHead = 0;
+  while (pairHead < pairs.length) {
+    const [i, j] = pairs[pairHead++];
     const sPoly = Polynomial.sPolynomial(basis[i], basis[j]);
     const reduced = sPoly.reduce(basis);
-    const key = JSON.stringify(reduced.terms);
+    const key = polyKey(reduced.terms);
 
     if (reduced.terms.length > 0 && !basisSet.has(key)) {
       basisSet.add(key);
@@ -209,11 +236,13 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
 
   // Reduce basis by self
   const reducedBasis: Polynomial[] = [];
+  const reducedSet = new Set<string>();
   for (const poly of basis) {
     const basisExcl = basis.filter(p => p !== poly);
     const reduced = poly.reduce(basisExcl);
-    const key = JSON.stringify(reduced.terms);
-    if (reduced.terms.length > 0 && !reducedBasis.some(rb => JSON.stringify(rb.terms) === key)) {
+    const key = polyKey(reduced.terms);
+    if (reduced.terms.length > 0 && !reducedSet.has(key)) {
+      reducedSet.add(key);
       reducedBasis.push(reduced.makeMonic());
     }
   }
@@ -417,6 +446,7 @@ function main() {
       const polys = [p1, p2, p3, p4, p5, p6];
       for (var i = 0; i < 10; i++) {
         const basis = naiveGrobnerBasis(polys);
+        console.log(`Iteration ${i}, complete`);
         if (i === 9) {
           console.log(`Final Grobner Basis for Cyclic-${n}:`);
           console.log(`Number of basis elements: ${basis.length}`);
