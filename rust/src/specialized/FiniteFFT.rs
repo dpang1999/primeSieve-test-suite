@@ -1,5 +1,3 @@
-use seeded_random::{Random,Seed};
-
 use rust::helpers::lcg::Lcg;
 use rust::helpers::prime_sieve::prime_sieve;
 use rust::helpers::find_prime::{self, find_prime_congruent_one_mod_n};

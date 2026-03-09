@@ -8,4 +8,5 @@ type IExponents[T any] interface {
 	lexCompare(o T) int
 	canReduce(o T) bool
 	equals(o T) bool
+	toBytes() []byte
 }

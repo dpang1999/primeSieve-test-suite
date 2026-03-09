@@ -124,3 +124,14 @@ func (d SingleField) ge(o SingleField) bool {
 func (d SingleField) copy() SingleField {
 	return SingleField{Value: d.Value}
 }
+
+func (d SingleField) toBytes() []byte {
+	// Convert the float32 value to bytes
+	bits := math.Float32bits(d.Value)
+	return []byte{
+		byte(bits >> 24),
+		byte(bits >> 16),
+		byte(bits >> 8),
+		byte(bits),
+	}
+}

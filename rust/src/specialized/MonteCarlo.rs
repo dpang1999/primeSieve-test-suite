@@ -1,16 +1,6 @@
-use seeded_random::{Random,Seed};
 use rust::helpers::lcg::Lcg;
-const SEED: u64 = 113;
-
-
-fn num_flops(num_samples: usize) -> f64 {
-    // 3 flops in x^2+y^2 and 1 flop in random routine
-    (num_samples as f64) * 4.0
-}
 
 fn integrate(num_samples: usize) -> f64 {
-    //let seed1 = Seed::unsafe_new(SEED);
-    //let rng = Random::from_seed(seed1);
     let mut rng = Lcg::new(12345, 1345, 16645, 1013904);
     let mut under_curve = 0;
     for _ in 0..num_samples {
@@ -33,6 +23,5 @@ fn main() {
     let pi = integrate(num_samples);
     println!("Pi is approximately: {}", pi);
     println!("Num samples: {}", num_samples);
-    //println!("Num flops: {}", num_flops(num_samples));
     println!("RMS Error: {}", (std::f64::consts::PI - pi).abs());
 }

@@ -95,6 +95,15 @@ func (b BitPackedExponents) equals(o BitPackedExponents) bool {
 	return b.Packed == o.Packed
 }
 
+func (b BitPackedExponents) toBytes() []byte {
+	var bytes [8]byte
+	for i := 0; i < 8; i++ {
+		shift := 56 - 8*i
+		bytes[i] = byte((b.Packed >> shift) & 0xFF)
+	}
+	return bytes[:]
+}
+
 func (b BitPackedExponents) String() string {
 	degree := (b.Packed >> 48) & 0xFFFF
 	s := fmt.Sprintf("Degree: %04X, Exponents (hex): ", degree)

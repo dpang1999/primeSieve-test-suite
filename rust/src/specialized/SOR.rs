@@ -1,10 +1,3 @@
-pub fn num_flops(m: usize, n: usize, num_iterations: usize) -> f64 {
-    let md = m as f64;
-    let nd = n as f64;
-    let num_iter_d = num_iterations as f64;
-    (md - 1.0) * (nd - 1.0) * num_iter_d * 6.0
-}
-
 pub fn execute(omega: f64, g: &mut Vec<Vec<f64>>, num_iterations: usize) {
     let m = g.len();
     let n = g[0].len();

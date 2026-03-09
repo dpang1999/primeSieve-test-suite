@@ -3,6 +3,7 @@ package grobnerSmart
 import (
 	"algos/helpers"
 	"fmt"
+	"hash/fnv"
 	"sort"
 )
 
@@ -175,6 +176,28 @@ func modInverse(a, m uint32) uint32 {
 	return uint32(x1 % int64(m0))
 }
 
+func polynomialHash(terms []Term) uint64 {
+	h := fnv.New64a()
+	for _, term := range terms {
+		// Write coefficient (4 bytes)
+		var coeffBytes [4]byte
+		coeff := term.Coefficient
+		coeffBytes[0] = byte(coeff >> 24)
+		coeffBytes[1] = byte(coeff >> 16)
+		coeffBytes[2] = byte(coeff >> 8)
+		coeffBytes[3] = byte(coeff)
+		h.Write(coeffBytes[:])
+		// Write bitpacked exponent (8 bytes)
+		var expBytes [8]byte
+		exp := term.Exponents
+		for i := 0; i < 8; i++ {
+			expBytes[7-i] = byte(exp >> (8 * i))
+		}
+		h.Write(expBytes[:])
+	}
+	return h.Sum64()
+}
+
 func (p Polynomial) Reduce(divisors []Polynomial) Polynomial {
 	result := p
 	remainder := []Term{}
@@ -222,10 +245,10 @@ func SPolynomial(p1 Polynomial, p2 Polynomial) Polynomial {
 
 func NaiveGrobnerBasis(polys []Polynomial) []Polynomial {
 	basis := append([]Polynomial{}, polys...)
-	basisSet := make(map[string]struct{})
+	basisSet := make(map[uint64]struct{})
 
 	for _, poly := range basis {
-		key := fmt.Sprintf("%v", poly.Terms)
+		key := polynomialHash(poly.Terms)
 		basisSet[key] = struct{}{}
 	}
 
@@ -244,7 +267,7 @@ func NaiveGrobnerBasis(polys []Polynomial) []Polynomial {
 		pairs = pairs[1:]
 		sPoly := SPolynomial(basis[p.i], basis[p.j])
 		reduced := sPoly.Reduce(basis)
-		key := fmt.Sprintf("%v", reduced.Terms)
+		key := polynomialHash(reduced.Terms)
 		if len(reduced.Terms) > 0 {
 			if _, ok := basisSet[key]; !ok {
 				basisSet[key] = struct{}{}
@@ -266,11 +289,11 @@ func NaiveGrobnerBasis(polys []Polynomial) []Polynomial {
 			}
 		}
 		reduced := poly.Reduce(basisExcl).MakeMonic()
-		key := fmt.Sprintf("%v", reduced.Terms)
+		key := polynomialHash(reduced.Terms)
 		if len(reduced.Terms) > 0 {
 			found := false
 			for _, rb := range reducedBasis {
-				if fmt.Sprintf("%v", rb.Terms) == key {
+				if polynomialHash(rb.Terms) == key {
 					found = true
 					break
 				}

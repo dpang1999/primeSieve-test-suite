@@ -383,7 +383,7 @@ public class GrobnerSmart {
         else {
             modulus = 7;
             GrobnerSmart.termOrder = TermOrder.Lex;
-            int n = args.length > 0 ? Integer.parseInt(args[0]) : 5;
+            int n = args.length > 0 ? Integer.parseInt(args[0]) : 6;
             if (n == 4) {
                 System.out.println("Java Specialized finite coeff bitpacked exp cyclic 4");  
                 // Cyclic 4 system: x0+x1+x2+x3, x0x1+x1x2+x2x3+x3x0, x0x1x2+x1x2x3+x2x3x0+x3x0x1, x0x1x2x3-1

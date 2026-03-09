@@ -1,6 +1,3 @@
-
-use seeded_random::{Random,Seed};
-
 use rust::helpers::lcg::Lcg;
 use rust::helpers::prime_sieve::prime_sieve;
 use rust::helpers::find_prime::find_prime_congruent_one_mod_n;
@@ -47,12 +44,11 @@ impl FFT
     }
 
     pub fn make_random(&self, n: usize) -> Vec<f64> {
-        let seed = Seed::unsafe_new(12345);
-        let rng = Random::from_seed(seed);
+        let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let nd = 2*n;
         let mut data = Vec::with_capacity(nd);
         for _ in 0..nd {
-            data.push(rng.gen());
+            data.push(rand.next_double());
         }
         data
     }

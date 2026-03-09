@@ -2,6 +2,7 @@ package generic
 
 import (
 	"fmt"
+	"hash/fnv"
 	"math"
 	"sort"
 )
@@ -155,6 +156,24 @@ func (p Polynomial[N, E]) MultiplyByTerm(term Term[N, E]) Polynomial[N, E] {
 	return NewPolynomial(terms)
 }
 
+func polynomialHash[N interface {
+	IField[N]
+	IMath[N]
+	ICopiable[N]
+	IOrdered[N]
+	toBytes() []byte
+}, E interface {
+	IExponents[E]
+	toBytes() []byte
+}](terms []Term[N, E]) uint64 {
+	h := fnv.New64a()
+	for _, term := range terms {
+		h.Write(term.Coefficient.toBytes())
+		h.Write(term.Exponents.toBytes())
+	}
+	return h.Sum64()
+}
+
 func (p Polynomial[N, E]) Reduce(divisors []Polynomial[N, E]) Polynomial[N, E] {
 	result := p
 	remainder := []Term[N, E]{}
@@ -216,9 +235,9 @@ func NaiveGrobnerBasis[N interface {
 	IExponents[E]
 }](polys []Polynomial[N, E]) []Polynomial[N, E] {
 	basis := append([]Polynomial[N, E]{}, polys...)
-	basisSet := make(map[string]struct{})
+	basisSet := make(map[uint64]struct{})
 	for _, poly := range basis {
-		key := fmt.Sprintf("%v", poly.Terms)
+		key := polynomialHash(poly.Terms)
 		basisSet[key] = struct{}{}
 	}
 
@@ -237,7 +256,7 @@ func NaiveGrobnerBasis[N interface {
 		spoly := SPolynomial(basis[p.i], basis[p.j])
 		reduced := spoly.Reduce(basis)
 		if len(reduced.Terms) > 0 {
-			key := fmt.Sprintf("%v", reduced.Terms)
+			key := polynomialHash(reduced.Terms)
 			if _, exists := basisSet[key]; !exists {
 				basisSet[key] = struct{}{}
 				newIdx := len(basis)
@@ -258,11 +277,11 @@ func NaiveGrobnerBasis[N interface {
 			}
 		}
 		reduced := poly.Reduce(basisExcl).MakeMonic()
-		key := fmt.Sprintf("%v", reduced.Terms)
+		key := polynomialHash(reduced.Terms)
 		if len(reduced.Terms) > 0 {
 			found := false
 			for _, rb := range reducedBasis {
-				if fmt.Sprintf("%v", rb.Terms) == key {
+				if polynomialHash(rb.Terms) == key {
 					found = true
 					break
 				}
@@ -450,6 +469,7 @@ func TestGenGrobner(polyNum, expType, orderInt, mod int) {
 			}
 		} else if n == 5 {
 			if expType == 0 {
+				fmt.Println("Go generic finite coeff vec exponent cyclic", n)
 				p1 := NewPolynomial([]Term[IntModP, VecExponents]{
 					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 0, 0})},
 					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 0, 0, 0})},
@@ -541,6 +561,7 @@ func TestGenGrobner(polyNum, expType, orderInt, mod int) {
 			}
 		} else if n == 6 {
 			if expType == 0 {
+				fmt.Println("Go generic finite coeff vec exponent cyclic", n)
 				p1 := NewPolynomial([]Term[IntModP, VecExponents]{
 					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{1, 0, 0, 0, 0, 0})},
 					{Coefficient: IntModP{1}, Exponents: NewVecExponents([]uint32{0, 1, 0, 0, 0, 0})},

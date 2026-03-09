@@ -3,6 +3,7 @@ package finiteGrobner
 import (
 	"algos/helpers"
 	"fmt"
+	"hash/fnv"
 	"slices"
 	"sort"
 )
@@ -183,6 +184,32 @@ func modInverse(a, m uint32) uint32 {
 	return uint32(x1 % int64(m0))
 }
 
+// Fast hash for polynomial uniqueness
+func polynomialHash(terms []Term) uint64 {
+	h := fnv.New64a()
+	for _, term := range terms {
+		// Write coefficient
+		var coeffBytes [4]byte
+		coeff := term.Coefficient
+		coeffBytes[0] = byte(coeff >> 24)
+		coeffBytes[1] = byte(coeff >> 16)
+		coeffBytes[2] = byte(coeff >> 8)
+		coeffBytes[3] = byte(coeff)
+		h.Write(coeffBytes[:])
+		// Write exponents
+		for _, exp := range term.Exponents {
+			var expBytes [4]byte
+			e := uint32(exp)
+			expBytes[0] = byte(e >> 24)
+			expBytes[1] = byte(e >> 16)
+			expBytes[2] = byte(e >> 8)
+			expBytes[3] = byte(e)
+			h.Write(expBytes[:])
+		}
+	}
+	return h.Sum64()
+}
+
 func (p Polynomial) Reduce(divisors []Polynomial) Polynomial {
 	result := p
 	remainder := []Term{}
@@ -232,20 +259,20 @@ func SPolynomial(p1 Polynomial, p2 Polynomial) Polynomial {
 		scale1[i] = lcmExps[i] - lead1.Exponents[i]
 		scale2[i] = lcmExps[i] - lead2.Exponents[i]
 	}
-	scaled1 := p1.MultiplyByTerm(Term{Coefficient: 1, Exponents: scale1})
-	scaled2 := p2.MultiplyByTerm(Term{Coefficient: 1, Exponents: scale2})
+	scaled1 := p1.MultiplyByTerm(Term{Coefficient: lead2.Coefficient, Exponents: scale1})
+	scaled2 := p2.MultiplyByTerm(Term{Coefficient: lead1.Coefficient, Exponents: scale2})
 	result := scaled1.Subtract(scaled2)
 	return result
 }
 
 func NaiveGrobnerBasis(polys []Polynomial) []Polynomial {
-	//fmt.Printf("Starting Grobner basis computation for polynomials: %v\n", polys)
+	// ...existing code...
 	basis := append([]Polynomial{}, polys...)
-	basisSet := make(map[string]struct{})
+	basisSet := make(map[uint64]struct{})
 
 	// Initialize basis set
 	for _, poly := range basis {
-		key := fmt.Sprintf("%v", poly.Terms)
+		key := polynomialHash(poly.Terms)
 		basisSet[key] = struct{}{}
 	}
 
@@ -268,7 +295,7 @@ func NaiveGrobnerBasis(polys []Polynomial) []Polynomial {
 
 		sPoly := SPolynomial(basis[p.i], basis[p.j])
 		reduced := sPoly.Reduce(basis)
-		key := fmt.Sprintf("%v", reduced.Terms)
+		key := polynomialHash(reduced.Terms)
 
 		if len(reduced.Terms) > 0 {
 			if _, ok := basisSet[key]; !ok {
@@ -295,11 +322,11 @@ func NaiveGrobnerBasis(polys []Polynomial) []Polynomial {
 		}
 		// compare length of basisExcl to basis
 		reduced := poly.Reduce(basisExcl).MakeMonic()
-		key := fmt.Sprintf("%v", reduced.Terms)
+		key := polynomialHash(reduced.Terms)
 		if len(reduced.Terms) > 0 {
 			found := false
 			for _, rb := range reducedBasis {
-				if fmt.Sprintf("%v", rb.Terms) == key {
+				if polynomialHash(rb.Terms) == key {
 					found = true
 					break
 				}

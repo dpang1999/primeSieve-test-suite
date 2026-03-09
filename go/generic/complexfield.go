@@ -200,3 +200,10 @@ func (c ComplexField[T]) copy() ComplexField[T] {
 		Im: c.Im,
 	}
 }
+
+func (c ComplexField[T]) toBytes() []byte {
+	// Convert the real and imaginary parts to bytes and concatenate them
+	reBytes := c.Re.toBytes()
+	imBytes := c.Im.toBytes()
+	return append(reBytes, imBytes...)
+}

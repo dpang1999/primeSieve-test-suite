@@ -76,6 +76,14 @@ func (v VecExponents) equals(o VecExponents) bool {
 	return slices.Equal(v.Exponents, o.Exponents)
 }
 
+func (v VecExponents) toBytes() []byte {
+	var bytes []byte
+	for _, exp := range v.Exponents {
+		bytes = append(bytes, byte(exp>>24), byte(exp>>16), byte(exp>>8), byte(exp))
+	}
+	return bytes
+}
+
 func (v VecExponents) String() string {
 	degree := v.deg()
 	s := fmt.Sprintf("Degree: %04X, Exponents: ", degree)

@@ -2,9 +2,6 @@ package main
 
 import (
 	"algos/generic"
-	"algos/helpers"
-	finitefft "algos/specialized/finiteFFT"
-	"algos/specialized/finiteGrobner"
 	"os"
 	"strconv"
 )
@@ -14,6 +11,20 @@ import (
 // go run main.go
 func main() {
 	var args = os.Args
+	n, err := strconv.Atoi(args[1])
+	if err != nil {
+		println("Invalid argument. Usage: go run main.go [n]")
+		return
+	}
+	vecType, err := strconv.Atoi(args[2])
+	if err != nil {
+		println("Invalid argument. Usage: go run main.go [n] [vecType]")
+		return
+	}
+	//finiteGrobner.TestFiniteGrobner(n, 1, 0)
+	//grobnerSmart.TestGrobnerSmart(n, 0)
+	generic.TestGenGrobner(n, vecType, 0, 0)
+	/* var args = os.Args
 	if len(args) > 2 {
 		n, err := strconv.Atoi(args[1])
 		fieldType, err2 := strconv.Atoi(args[2]) // 1 = complex field, else = finite field
@@ -40,13 +51,13 @@ func main() {
 		}
 		finitefft.TestFFT(n)
 		return
-	} else {
-		/* println("specialized.TestFFT")
-		n := 16
-		finitefft.TestFFT(n)
-		generic.TestGenFFT(n, 1) */
-		finiteGrobner.TestFiniteGrobner(6, 1, 0)
-	}
+	} else { */
+	/* println("specialized.TestFFT")
+	n := 16
+	finitefft.TestFFT(n)
+	generic.TestGenFFT(n, 1) */
+	//finiteGrobner.TestFiniteGrobner(6, 1, 0)
+	//}
 	//generic.TestGenSOR()
 	//generic.TestGenFFT(268435456, 1)
 	//grobner.TestGrobner(3, 0)

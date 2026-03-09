@@ -233,3 +233,16 @@ func (i IntModP) copy() IntModP {
 		Value: i.Value,
 	}
 }
+
+func (i IntModP) toBytes() []byte {
+	var b [8]byte
+	b[0] = byte(i.Value >> 56)
+	b[1] = byte(i.Value >> 48)
+	b[2] = byte(i.Value >> 40)
+	b[3] = byte(i.Value >> 32)
+	b[4] = byte(i.Value >> 24)
+	b[5] = byte(i.Value >> 16)
+	b[6] = byte(i.Value >> 8)
+	b[7] = byte(i.Value)
+	return b[:]
+}

@@ -18,4 +18,6 @@ type IField[T any] interface {
 	isOne() bool
 	zero() T
 	one() T
+
+	toBytes() []byte
 }
