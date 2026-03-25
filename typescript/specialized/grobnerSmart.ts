@@ -307,29 +307,31 @@ export function naiveGrobnerBasis(polys: Polynomial[]): Polynomial[] {
 
 function main() {
   modulus = 7;
-
+  const args = process.argv.slice(2);
+  const n = args[0] ? parseInt(args[0], 10) : 4;
   // Test cyclic-4, cyclic-5, cyclic-6
-  const testCases = [4, 5, 6];
   
-  for (const n of testCases) {
-    console.log(`\n=== Cyclic-${n} ===`);
-    const polys = generateCyclicPolynomials(n);
-    console.log(`Input: ${n} polynomials`);
-    
+  
+  const polys = generateCyclicPolynomials(n);
+  console.log(`Typescript specialized finite coeff bitpacked exponent cyclic ${n}`);
+  
+  for (let i = 0; i < 10; i++) {
     const basis = naiveGrobnerBasis(polys);
-    console.log(`Output basis size: ${basis.length}`);
-    
-    // Print final basis
-    for (let i = 0; i < basis.length; i++) {
-      const expsStr = basis[i].terms.map(t => {
-        const exps = unpack(t);
-        return `${t.coefficient}*${exps.slice(0, n).join('|')}`;
-      }).join(' + ');
-      console.log(`  [${i}]: ${expsStr}`);
+    console.log("Iteration", i, " complete");
+      if (i === 9) {
+      console.log(`Output basis size: ${basis.length}`);
+      
+      // Print final basis
+      for (let i = 0; i < basis.length; i++) {
+        const expsStr = basis[i].terms.map(t => {
+          const exps = unpack(t);
+          return `${t.coefficient}*${exps.slice(0, n).join('|')}`;
+        }).join(' + ');
+        console.log(`  [${i}]: ${expsStr}`);
+      }
     }
   }
+
 }
 
-if (require.main === module) {
-  main();
-}
+main();

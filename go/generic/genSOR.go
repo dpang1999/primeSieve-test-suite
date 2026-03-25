@@ -78,11 +78,11 @@ func primeSieve(limit int) []int {
 }
 
 // main function to run the SOR algorithm
-func TestGenSOR() {
-	m := 10
-	n := 10
-	mode := 3 // 1: SingleField, 2: DoubleField, 3: IntModP
-	numIterations := 100
+func TestGenSOR(fieldType int, size int) {
+	m := size
+	n := size
+	mode := fieldType // 1: SingleField, 2: DoubleField, 3: IntModP
+	numIterations := 10000
 
 	fmt.Println("Running SOR Algorithm")
 
@@ -135,13 +135,16 @@ func TestGenSOR() {
 			g[m-1][j] = omega.zero()            // Bottom edge (cold)
 		}
 
-		fmt.Println("Initial grid:")
+		/* fmt.Println("Initial grid:")
 		printMatrix(g)
-
+		*/
+		println("Go generic doublefield SOR")
+		println("Grid size:", n, "x", n)
+		println("Number of iterations:", numIterations)
 		execute(omega, g, numIterations)
 
-		fmt.Println("\nSteady-state temperature distribution:")
-		printMatrix(g)
+		/* fmt.Println("\nSteady-state temperature distribution:")
+		printMatrix(g) */
 	} else {
 		fmt.Println("Using IntModP")
 		primes := primeSieve(46340) // Max sqrt of int32

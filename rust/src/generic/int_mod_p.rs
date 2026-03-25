@@ -24,6 +24,9 @@ pub fn set_modulus(p: u64) {
 }
 
 fn mod_inverse(a: u64, p: u64) -> u64 {
+    if a == 0 {
+        panic!("Inverse does not exist for zero, {}, {}", a, p);
+    }
     let mut a = a % p;
     let mut m = p;
     let mut x0: i64 = 0;
@@ -93,7 +96,7 @@ impl IField for IntModP {
     fn d(&self, o: &IntModP) -> IntModP {
         let p = get_modulus();
         if o.i == 0 {
-            panic!("Division by zero in IntModP");
+            panic!("Division by zero in IntModP, {}", get_modulus());
         }
         else {
             let inv = mod_inverse(o.i, p);

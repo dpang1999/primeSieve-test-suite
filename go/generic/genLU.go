@@ -1,9 +1,9 @@
 package generic
 
 import (
+	"algos/helpers"
 	"fmt"
 	"math"
-	"math/rand"
 )
 
 // GenLU represents the LU factorization and pivot vector
@@ -16,6 +16,7 @@ type GenLU[R IField[R]] struct {
 func Factor[R interface {
 	IField[R]
 	IMath[R]
+	IOrdered[R]
 }](A [][]R, pivot []int) int {
 	N := len(A)
 	M := len(A[0])
@@ -30,7 +31,7 @@ func Factor[R interface {
 		for i := j + 1; i < M; i++ {
 			ab := A[i][j]
 			ab = ab.abs()
-			if ab.coerceToFloat() > t.coerceToFloat() {
+			if ab.gt(t) {
 				jp = i
 				t = ab
 			}
@@ -150,6 +151,7 @@ func PrimeSieve(limit int) []int {
 func Run[R interface {
 	IField[R]
 	IMath[R]
+	IOrdered[R]
 }](A [][]R, b []R, pivot []int) {
 	fmt.Println("Matrix A:")
 	PrintMatrix(A)
@@ -192,24 +194,76 @@ func PrintVector[R IField[R]](b []R) {
 	fmt.Println()
 }
 
-func TestGenLU() {
-	n := 4
-	var A [][]DoubleField
-	var b []DoubleField
-	pivot := make([]int, n)
+func TestGenLU(n int, mode int) {
+	rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 
-	// Randomly populate A and b
-	A = make([][]DoubleField, n)
-	for i := range A {
-		A[i] = make([]DoubleField, n)
-		for j := range A[i] {
-			A[i][j] = DoubleField{Value: rand.Float64() * 10.0}
+	if mode == 0 {
+		var A [][]DoubleField
+		var b []DoubleField
+
+		// Randomly populate A and b
+		A = make([][]DoubleField, n)
+		for i := range A {
+			row_sum := 0.0
+			A[i] = make([]DoubleField, n)
+			for j := range A[i] {
+				var val = rand.NextDouble() * 1000.0
+				A[i][j] = DoubleField{Value: val}
+				row_sum += val
+			}
+			// Ensure diagonal dominance for better numerical stability
+			A[i][i] = DoubleField{Value: row_sum + rand.NextDouble()*1000.0 + 1.0}
+		}
+
+		b = make([]DoubleField, n)
+		for i := range b {
+			b[i] = DoubleField{Value: rand.NextDouble() * 1000.0}
+		}
+		//printMatrix(A)
+		fmt.Println("Go Generic LU with DoubleField")
+		fmt.Println("Matrix size: ", n)
+		for i := 0; i < 10; i++ {
+			pivot := make([]int, n)
+			A_clone := A
+			b_clone := b
+			Factor(A_clone, pivot)
+			Solve(A_clone, pivot, b_clone)
+			fmt.Println("Iteration ", i, " complete")
+		}
+	} else {
+		var A [][]IntModP
+		var b []IntModP
+		SetModulus(uint64(math.Pow(2, 19) - 1))
+
+		// Randomly populate A and b
+		A = make([][]IntModP, n)
+		for i := range A {
+			row_sum := uint64(0)
+			A[i] = make([]IntModP, n)
+			for j := range A[i] {
+				val := uint64(rand.NextInt()) % modulus
+				A[i][j] = NewIntModP(val)
+				row_sum += val
+			}
+			// Ensure diagonal dominance for better numerical stability
+			A[i][i] = NewIntModP(row_sum + uint64(rand.NextInt()) + 1)
+		}
+
+		b = make([]IntModP, n)
+		for i := range b {
+			b[i] = NewIntModP(uint64(rand.NextInt()))
+		}
+		//printMatrix(A)
+		fmt.Println("Go Generic LU with IntModP")
+		fmt.Println("Matrix size: ", n)
+		for i := 0; i < 10; i++ {
+			pivot := make([]int, n)
+			A_clone := A
+			b_clone := b
+			Factor(A_clone, pivot)
+			Solve(A_clone, pivot, b_clone)
+			fmt.Println("Iteration ", i, " complete")
 		}
 	}
-	b = make([]DoubleField, n)
-	for i := range b {
-		b[i] = DoubleField{Value: rand.Float64() * 10.0}
-	}
 
-	Run(A, b, pivot)
 }

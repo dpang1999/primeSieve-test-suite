@@ -6,6 +6,27 @@
     "configurations": [
         {
             "type": "java",
+            "name": "FiniteLU",
+            "request": "launch",
+            "mainClass": "specialized.FiniteLU",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
+            "name": "GenMonteCarlo",
+            "request": "launch",
+            "mainClass": "generic.GenMonteCarlo",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
+            "name": "MonteCarlo",
+            "request": "launch",
+            "mainClass": "specialized.MonteCarlo",
+            "projectName": "primeSieve-test-suite_80a76369"
+        },
+        {
+            "type": "java",
             "name": "GenLU",
             "request": "launch",
             "mainClass": "generic.GenLU",

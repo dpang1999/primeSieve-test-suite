@@ -105,7 +105,8 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 		DoubleField num = new DoubleField(0);
 		GenFFT<ComplexField<DoubleField>> fft = new GenFFT<ComplexField<DoubleField>>(
 				c);
-		int type = 5;
+		int type = 5; // actual random tests are type !=0||1
+		// arg0 = n, arg1 = field type (0 for finite field, 1 for complex field)
 		if (args.length == 0 && type == 0) {
 			int n = 4;
 			ComplexField<DoubleField>[] data = fft.makeRandom(n);
@@ -276,8 +277,12 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 				System.out.println("Generic Java FFT Tests");
 				System.out.println("Java Generics, Finite Field, n=" + n);
 				for (int i = 0; i < 10; i++) {
-					finiteFft.transform_internal(data, -1);
-					finiteFft.transform_internal(data, 1);
+					IntModP[] dataCopy = new IntModP[n];
+					for (int j = 0; j < n; j++) {
+						dataCopy[j] = data[j].copy();
+					}
+					finiteFft.transform_internal(dataCopy, -1);
+					finiteFft.transform_internal(dataCopy, 1);
 					System.out.println("Loop " + i + " done.");	
 				}
 
@@ -287,17 +292,21 @@ public class GenFFT<N extends IField<N> & IOrdered<N> & ICopiable<N> & IPrimitiv
 				ComplexField<DoubleField>[] data = (ComplexField<DoubleField>[]) Array.newInstance(c.getClass(), n);
 				for (int i = 0; i < n; i++) {
 					data[i] = new ComplexField<DoubleField>(
-						new DoubleField(rand.nextDouble()),
-						new DoubleField(rand.nextDouble()));
+						new DoubleField((float)rand.nextDouble()),
+						new DoubleField((float)rand.nextDouble()));
 				}
 				ComplexField<DoubleField> c1 = new ComplexField<DoubleField>(new DoubleField(0),
 					new DoubleField(0));
 				GenFFT<ComplexField<DoubleField>> fft1 = new GenFFT<ComplexField<DoubleField>>(c1);
 				System.out.println("Generic Java FFT Tests");
 				System.out.println("Java Generics, Complex Field, n=" + n);				
-				for (int i = 0; i<= 10; i++) {
-					fft1.transform_internal(data, -1);
-					fft1.transform_internal(data, 1);
+				for (int i = 0; i< 10; i++) {
+					ComplexField<DoubleField>[] dataCopy = (ComplexField<DoubleField>[]) Array.newInstance(c.getClass(), n);
+					for (int j = 0; j < n; j++) {
+						dataCopy[j] = data[j].copy();
+					}
+					fft1.transform_internal(dataCopy, -1);
+					fft1.transform_internal(dataCopy, 1);
 					System.out.println("Loop " + i + " done.");
 				}
 			}

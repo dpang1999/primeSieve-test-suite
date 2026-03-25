@@ -1,8 +1,12 @@
 
 import { IField } from './iField';
 import { IMath } from './iMath';
-import { LCG } from '../helpers/lcg';
+import { LCG } from '../helpers/lcg.js';
 import { ICopiable } from './iCopiable';
+import {SingleField} from './singleField.js';
+import {DoubleField} from './doubleField.js';
+import {IntModP} from './intModP.js';
+import { mainModule } from 'node:process';
 
 // In-place LU factorization with partial pivoting, Rust-style
 export function factor<C extends IField<C> & IMath<C> & ICopiable<C>>(a: C[][], pivot: number[]): number {
@@ -105,7 +109,7 @@ export function printVector<C>(b: C[]): void {
 }
 
 // Main function for demonstration, similar to Rust
-if (require.main === module) {
+function main() {
   // Usage: tsx genLU.ts [n] [mode] [complex]
   // mode: 1=SingleField, 2=DoubleField, else IntModP
   // complex: 0=not complex, 1=complex
@@ -121,54 +125,95 @@ if (require.main === module) {
 
   if (complex === 0) {
     if (mode === 1) {
-      const { SingleField } = require('./singleField');
-      const a = Array.from({ length: n }, () => Array.from({ length: n }, () => new SingleField(rand.nextDouble() * 1000.0)));
+      console.log("TypeScript generic single field LU");
+      console.log(`Matrix size: ${n}`);
+      const a: SingleField[][] = Array.from({ length: n }, () =>
+        Array.from({ length: n }, () => new SingleField(0))
+      );
+      for (let i = 0; i < n; i++) {
+        let rowSum = 0;
+        for (let j = 0; j < n; j++) {
+          if (i !== j) {
+            const val = rand.nextDouble() * 1000;
+            a[i][j] = new SingleField(val);
+            rowSum += Math.abs(val);
+          }
+        }
+        // Set diagonal to be strictly greater than rowSum
+        a[i][i] = new SingleField(rowSum + rand.nextDouble() * 1000 + 1);
+      }
       const b = Array.from({ length: n }, () => new SingleField(rand.nextDouble() * 1000.0));
-      const pivot = Array(n).fill(0);
-      const aCopy = a.map(row => row.map(x => x.copy()));
-      const bCopy = b.map(x => x.copy());
-      printMatrix(a);
-      printVector(b);
-      factor(a, pivot);
-      printMatrix(a);
-      solve(a, pivot, b);
-      const product = multiplyMatrixVector(aCopy, b);
-      printVector(product);
+      for (let i = 0; i < 10; i++) {
+        const pivot = Array(n).fill(0);
+        const aCopy = a.map(row => row.map(x => x.copy()));
+        const bCopy = b.map(x => x.copy());
+        factor(aCopy, pivot);
+        solve(aCopy, pivot, bCopy);
+        console.log(`Iteration ${i} completed`);
+      }
     } else if (mode === 2) {
-      const { DoubleField } = require('./doubleField');
-      const a = Array.from({ length: n }, () => Array.from({ length: n }, () => new DoubleField(rand.nextDouble() * 1000.0)));
+      console.log("TypeScript generic double field LU");
+      console.log(`Matrix size: ${n}`);
+      const a: DoubleField[][] = Array.from({ length: n }, () =>
+        Array.from({ length: n }, () => new DoubleField(0))
+      );
+      for (let i = 0; i < n; i++) {
+        let rowSum = 0;
+        for (let j = 0; j < n; j++) {
+          if (i !== j) {
+            const val = rand.nextDouble() * 1000;
+            a[i][j] = new DoubleField(val);
+            rowSum += Math.abs(val);
+          }
+        }
+        // Set diagonal to be strictly greater than rowSum
+        a[i][i] = new DoubleField(rowSum + rand.nextDouble() * 1000 + 1);
+      }
       const b = Array.from({ length: n }, () => new DoubleField(rand.nextDouble() * 1000.0));
-      const pivot = Array(n).fill(0);
-      const aCopy = a.map(row => row.map(x => x.copy()));
-      const bCopy = b.map(x => x.copy());
-      factor(a, pivot);
-      solve(a, pivot, b);
-      const product = multiplyMatrixVector(aCopy, b);
-      printVector(product);
+      for (let i = 0; i < 10; i++) {
+        const pivot = Array(n).fill(0);
+        const aCopy = a.map(row => row.map(x => x.copy()));
+        const bCopy = b.map(x => x.copy());
+        factor(aCopy, pivot);
+        solve(aCopy, pivot, bCopy);
+        console.log(`Iteration ${i} completed`);
+      }
     } else {
-      const { IntModP } = require('./intModP');
-      const primes = primeSieve(Math.floor(rand.nextDouble() * 36340 + 10000));
-      const prime = primes.lastIndexOf(false);
+      console.log("TypeScript generic finite field LU");
+      console.log(`Matrix size: ${n}`);
+      const prime = 2**19 -1
       IntModP.setModulus(prime);
-      console.log(prime);
-      const a = Array.from({ length: n }, () => Array.from({ length: n }, () => new IntModP(rand.nextInt())));
+      const a: IntModP[][] = Array.from({ length: n }, () =>
+        Array.from({ length: n }, () => new IntModP(0))
+      );
+      for (let i = 0; i < n; i++) {
+        let rowSum = 0;
+        for (let j = 0; j < n; j++) {
+          if (i !== j) {
+            const val = rand.nextInt() % prime;
+            a[i][j] = new IntModP(val);
+            rowSum += Math.abs(val);
+          }
+        }
+        // Set diagonal to be strictly greater than rowSum
+        a[i][i] = new IntModP(rowSum + rand.nextInt() + 1);
+      }
       const b = Array.from({ length: n }, () => new IntModP(rand.nextInt()));
-      const pivot = Array(n).fill(0);
-      const aCopy = a.map(row => row.map(x => x.copy()));
-      const bCopy = b.map(x => x.copy());
-      //printMatrix(a);
-      //printVector(b);
-      factor(a, pivot);
-      //printMatrix(a);
-      solve(a, pivot, b);
-      //const product = multiplyMatrixVector(aCopy, b);
-      //printVector(product);
+      for (let i = 0; i < 10; i++) {
+        const pivot = Array(n).fill(0);
+        const aCopy = a.map(row => row.map(x => x.copy()));
+        const bCopy = b.map(x => x.copy());
+        factor(aCopy, pivot);
+        solve(aCopy, pivot, bCopy);
+        console.log(`Iteration ${i} completed`);
+      }
     }
   } else {
     // Complex not implemented in this stub, but could be added with a ComplexField class
     console.log('Complex field not implemented in this TypeScript stub.');
   }
 }
+main();
 function primeSieve(num:number): boolean[] {
     let primes = new Array(num)
     primes[0] = true;

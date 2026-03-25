@@ -1,7 +1,11 @@
 
 import { IField } from './iField';
 import { IMath } from './iMath';
-import { LCG } from '../helpers/lcg';
+import { LCG } from '../helpers/lcg.js';
+import { IntModP } from './intModP.js';
+import { SingleField } from './singleField.js';
+import { DoubleField } from './doubleField.js';
+import { primeSieve } from '../helpers/primeSieve.js';
 
 // SOR for grid-based problems, Rust-style
 export function executeSOR<C extends IField<C>>(omega: C, g: C[][], numIterations: number): void {
@@ -36,7 +40,7 @@ export function printMatrix<C>(a: C[][]): void {
   }
   console.log();
 }
-if (require.main === module) {
+function main(){
   // Usage: tsx genSor.ts [n] [mode] [complex]
   // mode: 1=SingleField, 2=DoubleField, else IntModP
   // complex: 0=real, 1=complex
@@ -45,12 +49,11 @@ if (require.main === module) {
   const m = n;
   const mode = parseInt(args[1] || '2', 10);
   const complex = parseInt(args[2] || '0', 10);
-  const numIterations = 1_000_000;
+  const numIterations = 10_000;
   const rand = new LCG(12345, 1345, 16645, 1013904);
 
   if (complex === 0) {
     if (mode === 1) {
-      const { SingleField } = require('./singleField');
       const omega = new SingleField(1.5);
       const g = Array.from({ length: m }, () => Array(n).fill(omega.zero()));
       for (let i = 0; i < m; i++) {
@@ -64,22 +67,22 @@ if (require.main === module) {
       executeSOR(omega, g, numIterations);
       printMatrix(g);
     } else if (mode === 2) {
-      const { DoubleField } = require('./doubleField');
       const omega = new DoubleField(1.5);
       const g = Array.from({ length: m }, () => Array(n).fill(omega.zero()));
-      for (let i = 0; i < m; i++) {
+      /* for (let i = 0; i < m; i++) {
         g[i][0] = omega.zero();
         g[i][n - 1] = omega.zero();
-      }
+      } */
       for (let j = 0; j < n; j++) {
         g[0][j] = new DoubleField(100.0);
-        g[m - 1][j] = omega.zero();
+        //g[m - 1][j] = omega.zero();
       }
+      console.log("Typescript generic SOR with DoubleField");
+      console.log("Grid size:", n, "x", m);
+      console.log("Iterations:", numIterations);
       executeSOR(omega, g, numIterations);
-      printMatrix(g);
+      //printMatrix(g);
     } else {
-      const { IntModP } = require('./intModP');
-      const { primeSieve } = require('../helpers/primeSieve');
       const primes = primeSieve(Math.floor(rand.nextDouble() * 36340 + 10000))
       const prime = primes.lastIndexOf(false);
       IntModP.setModulus(prime);
@@ -101,3 +104,4 @@ if (require.main === module) {
     console.log('Complex field not implemented in this TypeScript stub.');
   }
 }
+main();

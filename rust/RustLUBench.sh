@@ -1,0 +1,13 @@
+cargo build --release > /dev/null 2>&1;
+time ./target/release/lu 3000;
+time ./target/release/lu 4000;
+time ./target/release/lu 5000;
+time ./target/release/genlu 3000 2 0;
+time ./target/release/genlu 4000 2 0;
+time ./target/release/genlu 5000 2 0;
+time ./target/release/finiteLU 3000;
+time ./target/release/finiteLU 4000;
+time ./target/release/finiteLU 5000;
+time ./target/release/genlu 3000 3 0;
+time ./target/release/genlu 4000 3 0;
+time ./target/release/genlu 5000 3 0;

@@ -1,10 +1,9 @@
-import { LCG } from "../helpers/lcg";
 import { IField } from "./iField";
 import { IExponent } from "./iExponent";
 import { ICopiable } from "./iCopiable";
-import { IntModP } from './intModP';
-import { VecExponents } from './vecExponents';
-import { BitPackedExponents } from "./bitPackedExponents";
+import { IntModP } from './intModP.js';
+import { VecExponents } from './vecExponents.js';
+import { BitPackedExponents } from "./bitPackedExponents.js";
 import { parse } from "node:path";
 
 export type Term<C extends IField<C>, E extends IExponent<E>> = {
@@ -256,10 +255,15 @@ function main() {
           { coefficient: new IntModP(modulus - 1), exponents: new VecExponents([0, 0, 0, 0]) },
         ]);
         const start = [q1, q2, q3, q4];
-        const basis = naiveGrobnerBasis(start);
-        console.log(`Output basis size: ${basis.length}`);
-        for (let i = 0; i < basis.length; i++) {
-          console.log(`  [${i}]: ${basis[i].toString()}`);
+        for (let i = 0; i < 10; i++) {
+          const basis = naiveGrobnerBasis(start);
+          console.log("Iteration " + i + " complete");
+            if (i == 9) {
+            console.log(`Output basis size: ${basis.length}`);
+            for (let i = 0; i < basis.length; i++) {
+              console.log(`  [${i}]: ${basis[i].toString()}`);
+            }
+          }
         }
       }
       else {
@@ -291,10 +295,15 @@ function main() {
           { coefficient: new IntModP(modulus - 1), exponents: BitPackedExponents.fromArray([0, 0, 0, 0, 0, 0]) },
         ]);
         const start = [q1, q2, q3, q4];
-        const basis = naiveGrobnerBasis(start);
-        console.log(`Output basis size: ${basis.length}`);
-        for (let i = 0; i < basis.length; i++) {
-          console.log(`  [${i}]: ${basis[i].toString()}`);
+        for (let i = 0; i < 10; i++) {
+          const basis = naiveGrobnerBasis(start);
+          console.log("Iteration " + i + " complete");
+            if (i == 9) {
+            console.log(`Output basis size: ${basis.length}`);
+            for (let i = 0; i < basis.length; i++) {
+              console.log(`  [${i}]: ${basis[i].toString()}`);
+            }
+          }
         }
       }
     }
@@ -334,10 +343,15 @@ function main() {
           { coefficient: new IntModP(modulus - 1), exponents: new VecExponents([0, 0, 0, 0, 0]) },
         ]);
         const start = [p1, p2, p3, p4, p5];
-        const basis = naiveGrobnerBasis(start);
-        console.log(`Output basis size: ${basis.length}`);
-        for (let i = 0; i < basis.length; i++) {
-          console.log(`  [${i}]: ${basis[i].toString()}`);
+        for (let i = 0; i < 10; i++) {
+          const basis = naiveGrobnerBasis(start);
+          console.log("Iteration " + i + " complete");
+            if (i == 9) {
+            console.log(`Output basis size: ${basis.length}`);
+            for (let i = 0; i < basis.length; i++) {
+              console.log(`  [${i}]: ${basis[i].toString()}`);
+            }
+          }
         }
       }
       else {
@@ -375,10 +389,15 @@ function main() {
           { coefficient: new IntModP(modulus - 1), exponents: BitPackedExponents.fromArray([0, 0, 0, 0, 0, 0]) },
         ]);
         const start = [p1, p2, p3, p4, p5];
-        const basis = naiveGrobnerBasis(start);
-        console.log(`Output basis size: ${basis.length}`);
-        for (let i = 0; i < basis.length; i++) {
-          console.log(`  [${i}]: ${basis[i].toString()}`);
+        for (let i = 0; i < 10; i++) {
+          const basis = naiveGrobnerBasis(start);
+          console.log("Iteration " + i + " complete");
+            if (i == 9) {
+            console.log(`Output basis size: ${basis.length}`);
+            for (let i = 0; i < basis.length; i++) {
+              console.log(`  [${i}]: ${basis[i].toString()}`);
+            }
+          }
         }
       }
     }
@@ -430,10 +449,15 @@ function main() {
           { coefficient: new IntModP(modulus - 1), exponents: new VecExponents([0, 0, 0, 0, 0, 0]) },
         ]);
         const start = [p1, p2, p3, p4, p5, p6];
-        const basis = naiveGrobnerBasis(start);
-        console.log(`Output basis size: ${basis.length}`);
-        for (let i = 0; i < basis.length; i++) {
-          console.log(`  [${i}]: ${basis[i].toString()}`);
+        for (let i = 0; i < 10; i++) {
+          const basis = naiveGrobnerBasis(start);
+          console.log("Iteration " + i + " complete");
+            if (i == 9) {
+            console.log(`Output basis size: ${basis.length}`);
+            for (let i = 0; i < basis.length; i++) {
+              console.log(`  [${i}]: ${basis[i].toString()}`);
+            }
+          }
         }
       }
       else {
@@ -483,16 +507,19 @@ function main() {
           { coefficient: new IntModP(modulus - 1), exponents: BitPackedExponents.fromArray([0, 0, 0, 0, 0, 0]) },
         ]);
         const start = [p1, p2, p3, p4, p5, p6];
-        const basis = naiveGrobnerBasis(start);
-        console.log(`Output basis size: ${basis.length}`);
-        for (let i = 0; i < basis.length; i++) {
-          console.log(`  [${i}]: ${basis[i].toString()}`);
+        for (let i = 0; i < 10; i++) {
+          const basis = naiveGrobnerBasis(start);
+          console.log("Iteration " + i + " complete");
+            if (i == 9) {
+            console.log(`Output basis size: ${basis.length}`);
+            for (let i = 0; i < basis.length; i++) {
+              console.log(`  [${i}]: ${basis[i].toString()}`);
+            }
+          }
         }
       }
     }
   }
 }
 
-if (require.main === module) {
-  main();
-}
+main();

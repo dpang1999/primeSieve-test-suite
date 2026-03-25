@@ -5,9 +5,6 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
     public T im;
 
     public ComplexField(T re, T im) {
-        if (re instanceof ComplexField || im instanceof ComplexField) {
-            throw new IllegalArgumentException("ComplexField cannot be parameterized with ComplexField");
-        }
         this.re = re;
         this.im = im;
     }
@@ -113,28 +110,15 @@ public class ComplexField<T extends IField<T> & IOrdered<T> & ICopiable<T> &IMat
         return new ComplexField<>(re.one(), im.zero());
     }
 
-    @SuppressWarnings("unchecked")
     public ComplexField<T> primitiveRoot(long n) {
         if (n <= 0) {
             throw new IllegalArgumentException("n must be positive");
         }
-
-        if (re instanceof IntModP) {
-            System.out.println("Using IntModP for primitive root calculation");
-            // For finite fields, compute the primitive root algebraically
-            IntModP finiteRe = (IntModP) re;
-            IntModP finiteRoot = finiteRe.primitiveRoot(n); // Base field must implement primitiveRoot
-            T imagPart = re.zero();          // Imaginary part is zero in finite fields
-            T realPart = (T) finiteRoot.copy(); // Ensure we return a copy
-            return (ComplexField<T>) new ComplexField<>(realPart, imagPart);
-        }
-        // Else we work with doublefield/singlefield
-        else {
-            double angle = 2.0 * Math.PI / n;
-            T realPart = re.coerce(Math.cos(angle));
-            T imagPart = re.coerce(Math.sin(angle));
-            return new ComplexField<T>(realPart, imagPart);
-        }
+        double angle = 2.0 * Math.PI / n;
+        T realPart = re.coerce(Math.cos(angle));
+        T imagPart = re.coerce(Math.sin(angle));
+        return new ComplexField<T>(realPart, imagPart);
+        
     }
   
 

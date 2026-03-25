@@ -24,13 +24,12 @@ func SOR(omega float64, g [][]float64, numIterations int) {
 	}
 }
 
-func TestSOR(n int, iterations int) {
+func TestSOR(n int) {
 	if n <= 0 {
 		n = 10 // default size
 	}
-	if iterations <= 0 {
-		iterations = 100 // default iterations
-	}
+
+	iterations := 10000
 	omega := 1.5
 	g := make([][]float64, n)
 	for i := range g {
@@ -43,10 +42,9 @@ func TestSOR(n int, iterations int) {
 	}
 
 	//print g
-	printMatrix(g)
-
+	println("Go specialized float64 SOR")
+	println("Grid size:", n, "x", n)
+	println("Number of iterations:", iterations)
 	SOR(omega, g, iterations)
-
-	printMatrix(g)
 
 }

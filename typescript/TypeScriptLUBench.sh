@@ -1,0 +1,13 @@
+tsc;
+time node specialized/finiteLU.js 3000;
+time node specialized/finiteLU.js 4000;
+time node specialized/finiteLU.js 5000;
+time node generic/genLU.js 3000 3;
+time node generic/genLU.js 4000 3;
+time node generic/genLU.js 5000 3;
+time node specialized/lu.js 3000;
+time node specialized/lu.js 4000;
+time node specialized/lu.js 5000;
+time node generic/genLU.js 3000 2;
+time node generic/genLU.js 4000 2;
+# time node generic/genLU.js 5000 2;

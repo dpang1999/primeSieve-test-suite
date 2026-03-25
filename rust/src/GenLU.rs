@@ -27,7 +27,8 @@ pub fn solve<U: IField + ICopiable>(
         b[ip] = b[i].copy();
         if ii == 0 {
             for j in ii..i {
-                sum = sum.s(&lu[i][j].m(&b[j]));
+                let temp = lu[i][j].m(&b[j]);
+                sum = sum.s(&temp);
             }
         } else if sum.is_zero() {
             ii = i;
@@ -38,7 +39,8 @@ pub fn solve<U: IField + ICopiable>(
     for i in (0..n).rev() {
         let mut sum = b[i].copy();
         for j in (i + 1)..n {
-            sum = sum.s(&lu[i][j].m(&b[j]));
+            let temp = lu[i][j].m(&b[j]);
+            sum = sum.s(&temp);
         }
         b[i] = sum.d(&lu[i][i]);
     }
@@ -87,6 +89,7 @@ pub fn factor<U: IField + ICopiable + IMath + IOrdered>(
 
         // If zero pivot, factorization fails
         if a[jp][j].is_zero() {
+            println!("Matrix is singular");
             return 1;
         }
 
@@ -108,7 +111,8 @@ pub fn factor<U: IField + ICopiable + IMath + IOrdered>(
             for ii in (j + 1)..m {
                 let aii_j = a[ii][j].copy();
                 for jj in (j + 1)..n {
-                    a[ii][jj] = a[ii][jj].s(&aii_j.m(&a[j][jj]));
+                    let temp = aii_j.m(&a[j][jj]);
+                    a[ii][jj] = a[ii][jj].s(&temp);
                 }
             }
         }
@@ -124,7 +128,7 @@ fn run<T: IField + IMath + ICopiable + IOrdered + Display + Clone>(
     print_matrix(&a);
     let a_copy = a.clone();
     factor(&mut a, &mut pivot);
-    //print_matrix(&a);
+    print_matrix(&a);
     println!("b: ");
     print_vector(&b);
     let b_copy = b.clone();
@@ -135,14 +139,14 @@ fn run<T: IField + IMath + ICopiable + IOrdered + Display + Clone>(
     print_vector(&product);
 
     // RMS diff between b_copy and product
-    /*let mut rms_diff = 0.0;
+    let mut rms_diff = 0.0;
     for i in 0..b_copy.len() {
         let diff = b_copy[i].s(&product[i]);
         let diff_f64 = diff.coerce_to_f64();
         rms_diff += diff_f64 * diff_f64;
     }
     rms_diff = (rms_diff / (b_copy.len() as f64)).sqrt();
-    println!("RMS difference between original b and A*x: {}", rms_diff);*/
+    println!("RMS difference between original b and A*x: {}", rms_diff);
    
 }
 
@@ -153,9 +157,9 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     
     let mut n = 4;
-    let mut field = 1;
-    let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
-    let mut complex_bool = 1;
+    let mut field = 3;
+    let mut rand = Lcg::new(987654321, 2_i32.pow(31)-1, 16645, 1013904);
+    let mut complex_bool = 0;
     if args.len() > 1 {
         n = args[1].parse().unwrap_or(4);
     }
@@ -167,129 +171,115 @@ fn main() {
     }
     
     if complex_bool == 0 {
-        println!("Not Complex");
+        //println!("Not Complex");
         if field == 1 {
-            println!("Using SingleField");
-            let a: Vec<Vec<SingleField>> = (0..n)
-                .map(|_| (0..n).map(|_| SingleField::new((rand.next_double() * 1000.0) as f32)).collect())
-                .collect();
+            println!("Rust generic single field LU");
+            println!("Matrix size: {}", n);
+            let mut a: Vec<Vec<SingleField>> = vec![vec![SingleField::new(0.0); n]; n];
+            for i in 0..n {
+                let mut row_sum = 0.0;
+                for j in 0..n {
+                    if i != j {
+                        let val = rand.next_double() * 1000.0;
+                        row_sum += val;
+                        a[i][j] = SingleField::new(val as f32);
+                    }
+                }
+                // Set diagonal to be strictly greater than row_sum
+                a[i][i] = SingleField::new((row_sum as f32) + (rand.next_double() as f32) * 1000.0 + 1.0);
+            }
+        
             let b: Vec<SingleField> = (0..n)
                 .map(|_| SingleField::new((rand.next_double() * 1000.0) as f32))
                 .collect();
-            let pivot: Vec<usize> = vec![0; n];
-            run(a, b, pivot);
+            for i in 0..10 {
+              let mut pivot: Vec<usize> = vec![0; n];
+                let mut a_clone = a.clone();
+                let mut b_clone = b.clone();
+                factor(&mut a_clone, &mut pivot);
+                solve(&a_clone, &pivot, &mut b_clone);
+                println!("Iteration {} completed", i);
+               /*  if (i == 9) {
+                    println!("Final solution: ");
+                    print_matrix(&a_clone);
+                    print_vector(&b_clone);
+                } */
+            }           
+          
         } else if field == 2 {
-            println!("Using DoubleField");
-            let a: Vec<Vec<DoubleField>> = (0..n)
-                .map(|_| (0..n).map(|_| DoubleField::new(rand.next_double() * 1000.0)).collect())
-                .collect();
+            println!("Rust generic double field LU");
+            println!("Matrix size: {}", n);
+            let mut a: Vec<Vec<DoubleField>> = vec![vec![DoubleField::new(0.0); n]; n];
+            for i in 0..n {
+                let mut row_sum = 0.0;
+                for j in 0..n {
+                    if i != j {
+                        let val = rand.next_double() * 1000.0;
+                        row_sum += val;
+                        a[i][j] = DoubleField::new(val);
+                    }
+                }
+                // Set diagonal to be strictly greater than row_sum
+                a[i][i] = DoubleField::new(row_sum + rand.next_double() * 1000.0 + 1.0);
+            }
             let b: Vec<DoubleField> = (0..n)
                 .map(|_| DoubleField::new(rand.next_double() * 1000.0))
                 .collect();
-            let pivot: Vec<usize> = vec![0; n];
-            run(a, b, pivot);
+            for i in 0..10 {
+                let mut pivot: Vec<usize> = vec![0; n];
+                let mut a_clone = a.clone();
+                let mut b_clone = b.clone();
+                factor(&mut a_clone, &mut pivot);
+                solve(&a_clone, &pivot, &mut b_clone);
+                println!("Iteration {} completed", i);
+                /* if (i == 9) {
+                    println!("Final solution: ");
+                    print_matrix(&a_clone);
+                    print_vector(&b_clone);
+                } */
+            }   
         } else {
-            println!("Using int mod p");
-            let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
-            let prime = primes.last()
-                .expect("No prime found in the range");
-            set_modulus(*prime as u64);
-            let a: Vec<Vec<IntModP>> = (0..n)
-                .map(|_| (0..n).map(|_| IntModP::new(rand.next_int() as u64)).collect())
-                .collect();
+            println!("Rust generic finitefield LU");
+            println!("Matrix size: {}", n);
+            set_modulus(2_u64.pow(19)-1);
+            let modulus = 2_u64.pow(19)-1;
+            //set_modulus(7727);
+            let mut a: Vec<Vec<IntModP>> = vec![vec![IntModP::new(0); n]; n];
+            for i in 0..n {
+                let mut row_sum = 0;
+                for j in 0..n {
+                    if i != j {
+                        let val = (rand.next_int() as u64) % modulus;
+                        a[i][j] = IntModP::new(val);
+                        row_sum += val;
+                    }
+                }
+                // Set diagonal to be strictly greater than row_sum
+                a[i][i] = IntModP::new(row_sum + rand.next_int() as u64 + 1);
+            }
             let b: Vec<IntModP> = (0..n)
                 .map(|_| IntModP::new(rand.next_int() as u64))
                 .collect();
-            let pivot: Vec<usize> = vec![0; n];
-            run(a, b, pivot);
+            //print_matrix(&a);
+            for i in 0..10 {
+                let mut pivot: Vec<usize> = vec![0; n];
+                let mut a_clone = a.clone();
+                let mut b_clone = b.clone();
+                factor(&mut a_clone, &mut pivot);
+                solve(&a_clone, &pivot, &mut b_clone);
+                println!("Iteration {} completed", i);
+                /* if (i == 9) {
+                    println!("Final solution: ");
+                    print_matrix(&a_clone);
+                    print_vector(&b_clone);
+                    print_vector(&b);
+                    let product = multiplyMatrices(a.clone(), b_clone.clone());
+                    print_vector(&product)
+                } */ 
+            }   
         }
     }
-    else if (complex_bool == 1){
-        println!("Complex");
-        if field == 1 {
-            println!("Using SingleField");
-            let a: Vec<Vec<SingleField>> = (0..n)
-                .map(|_| (0..n).map(|_| SingleField::new((rand.next_double() * 1000.0) as f32)).collect())
-                .collect();
-            let b: Vec<SingleField> = (0..n)
-                .map(|_| SingleField::new((rand.next_double() * 1000.0) as f32))
-                .collect();
-            let pivot: Vec<usize> = vec![0; n];
-            run(a, b, pivot);
-        } else if field == 2 {
-            println!("Using DoubleField");
-            let a: Vec<Vec<ComplexField<DoubleField>>> = (0..n)
-                .map(|_| (0..n)
-                    .map(|_| ComplexField::new(
-                        DoubleField::new(rand.next_double() * 1000.0),
-                        DoubleField::new(rand.next_double() * 1000.0)
-                    ))
-                    .collect()
-                )
-                .collect(); 
-            let b: Vec<ComplexField<DoubleField>> = (0..n)
-                .map(|_| ComplexField::new(
-                    DoubleField::new(rand.next_double() * 1000.0),
-                    DoubleField::new(rand.next_double() * 1000.0)
-                ))
-                .collect(); 
-            let pivot: Vec<usize> = vec![0; n];
-            run(a, b, pivot);
-        } else {
-            println!("Using int mod p");
-            let primes = prime_sieve((rand.next_double()*36340.0+10000.0) as usize); // max i32 is 2147483647, sqrt is 46340.95 to avoid overflow
-            let prime = primes.last()
-                .expect("No prime found in the range");
-            set_modulus(*prime as u64);
-            let a: Vec<Vec<IntModP>> = (0..n)
-                .map(|_| (0..n).map(|_| IntModP::new(rand.next_int() as u64)).collect())
-                .collect();
-            let b: Vec<IntModP> = (0..n)
-                .map(|_| IntModP::new(rand.next_int() as u64))
-                .collect();
-            let pivot: Vec<usize> = vec![0; n];
-            run(a, b, pivot);
-        }
-    } else {
-          let a: Vec<Vec<DoubleField>> = vec![
-                vec![
-                    DoubleField::new(1.0),
-                    DoubleField::new(2.0),
-                    DoubleField::new(3.0),
-                    DoubleField::new(4.0),
-                ],
-                vec![
-                    DoubleField::new(2.0),
-                    DoubleField::new(3.0),
-                    DoubleField::new(4.0),
-                    DoubleField::new(5.0),
-                ],
-                vec![
-                    DoubleField::new(3.0),
-                    DoubleField::new(4.0),
-                    DoubleField::new(5.0),
-                    DoubleField::new(6.0),
-                ],
-                vec![
-                    DoubleField::new(4.0),
-                    DoubleField::new(5.0),
-                    DoubleField::new(6.0),
-                    DoubleField::new(7.0),
-                ],
-            ];
-            let b: Vec<DoubleField> = vec![
-                DoubleField::new(1.0),
-                DoubleField::new(2.0),
-                DoubleField::new(3.0),
-                DoubleField::new(4.0),
-            ];
-            let pivot: Vec<usize> = vec![0; 4];
-            run(a, b, pivot);
-        println!("Invalid complex_bool value. Use 0 for non-complex and 1 for complex.");
-    }
-    
-
-
+   
 }
 
 fn multiplyMatrices<U: IField + IMath + Display + Clone>(a: Vec<Vec<U>>, b: Vec<U>) -> Vec<U> {

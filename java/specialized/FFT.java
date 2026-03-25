@@ -17,13 +17,6 @@ import helpers.LCG;
 
 public class FFT {
 
-  public static final double num_flops(int N)
-  {
-	 double Nd = (double) N;
-	 double logN = (double) log2(N);
-
-	 return (5.0*Nd-2)*logN + 2*(Nd+1);
-   }
 
 
   /** Compute Fast Fourier Transform of (complex) data, in place.*/
@@ -114,9 +107,10 @@ public class FFT {
           data[i+1] = imag;
         }
       for (int loop = 1; loop <= 10; loop++) { //looping for JIT warmup
-        
-        transform_internal(data, -1);
-        transform_internal(data, 1);
+        double dataCopy[] = new double[2*n];
+        System.arraycopy(data,0,dataCopy,0,2*n);        
+        transform_internal(dataCopy, -1);
+        transform_internal(dataCopy, 1);
         System.out.println("Loop " + loop + " done");
       }
 

@@ -1,0 +1,13 @@
+go build -o main main.go > /dev/null 2>&1;
+time ./main 3000 0 0;
+time ./main 4000 0 0;
+time ./main 5000 0 0;
+time ./main 3000 1 0;
+time ./main 4000 1 0;
+time ./main 5000 1 0;
+time ./main 3000 0 1;
+time ./main 4000 0 1;
+time ./main 5000 0 1;
+time ./main 3000 1 1;
+time ./main 4000 1 1;
+time ./main 5000 1 1;

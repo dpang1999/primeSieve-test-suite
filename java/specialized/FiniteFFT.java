@@ -21,13 +21,7 @@ import helpers.FindPrime;
 
 public class FiniteFFT {
 
-  public static final double num_flops(int N)
-  {
-	 double Nd = (double) N;
-	 double logN = (double) log2(N);
-
-	 return (5.0*Nd-2)*logN + 2*(Nd+1);
-   }
+ 
     private static int modInverse(int b, int p) {
         int t = 0, newT = 1;
         int r = p, newR = b;
@@ -206,9 +200,11 @@ public class FiniteFFT {
           data[i] = real;
           }
       for (int loop = 1; loop <= 10; loop++) { //looping for JIT warmup
+        long dataCopy[] = new long[n];
+        System.arraycopy(data,0,dataCopy,0,n);
 
-        transform(data, modulus, root);
-        inverse(data, modulus, root);
+        transform(dataCopy, modulus, root);
+        inverse(dataCopy, modulus, root);
         System.out.println("Loop " + loop + " done");
       }
     }

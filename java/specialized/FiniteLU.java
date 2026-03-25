@@ -10,7 +10,7 @@ import helpers.LCG;
 
 
 */
-public class LU 
+public class FiniteLU 
 {
     /**
         Returns a <em>copy</em> of the compact LU factorization.
@@ -22,28 +22,54 @@ public class LU
         The main diagonal of L consists (by convention) of
         ones, and is not explicitly stored.
     */
+    private static int modInverse(int b, int p) {
+        int t = 0, newT = 1;
+        int r = p, newR = b;
 
-    protected static double[] new_copy(double x[])
+        while (newR != 0) {
+            int quotient = r / newR;
+
+            // Update t and r
+            int tempT = t;
+            t = newT;
+            newT = tempT - quotient * newT;
+
+            int tempR = r;
+            r = newR;
+            newR = tempR - quotient * newR;
+        }
+
+        if (r > 1) {
+            throw new ArithmeticException("b is not invertible modulo p");
+        }
+        if (t < 0) {
+            t += p;
+        }
+
+        return t;
+    }
+
+    protected static int[] new_copy(int x[])
     {
         int N = x.length;
-        double T[] = new double[N];
+        int T[] = new int[N];
         for (int i=0; i<N; i++)
             T[i] = x[i];
         return T;
     }
 
 
-    protected static double[][] new_copy(double A[][])
+    protected static int[][] new_copy(int A[][])
     {
         int M = A.length;
         int N = A[0].length;
 
-        double T[][] = new double[M][N];
+        int T[][] = new int[M][N];
 
         for (int i=0; i<M; i++)
         {
-            double Ti[] = T[i];
-            double Ai[] = A[i];
+            int Ti[] = T[i];
+            int Ai[] = A[i];
             for (int j=0; j<N; j++)
                 Ti[j] = Ai[j];
         }
@@ -53,16 +79,8 @@ public class LU
 
 
 
-    public static int[] new_copy(int x[])
-    {
-        int N = x.length;
-        int T[] = new int[N];
-        for (int i=0; i<N; i++)
-            T[i] = x[i];
-        return T;
-    }
 
-    protected static final void insert_copy(double B[][], double A[][])
+    protected static final void insert_copy(int B[][], int A[][])
     {
         int M = A.length;
         int N = A[0].length;
@@ -71,8 +89,8 @@ public class LU
 
         for (int i=0; i<M; i++)
         {
-            double Bi[] = B[i];
-            double Ai[] = A[i];
+            int Bi[] = B[i];
+            int Ai[] = A[i];
 			for (int j=0; j<remainder; j++)
                 Bi[j] = Ai[j];
             for (int j=remainder; j<N; j+=4)
@@ -85,7 +103,7 @@ public class LU
 		}
         
     }
-    public double[][] getLU()
+    public int[][] getLU()
     {
         return new_copy(LU_);
     }
@@ -109,20 +127,20 @@ public class LU
         @param A (in) the matrix to associate with this
                 factorization.
     */
-    public LU( double A[][] )
+    public FiniteLU( int A[][], int modulus )
     {
         int M = A.length;
         int N = A[0].length;
 
         //if ( LU_ == null || LU_.length != M || LU_[0].length != N)
-            LU_ = new double[M][N];
+            LU_ = new int[M][N];
 
         insert_copy(LU_, A);
 
         //if (pivot_.length != M)
             pivot_ = new int[M];
 
-        factor(LU_, pivot_);
+        factor(LU_, pivot_, modulus);
     }
 
     /**
@@ -131,11 +149,11 @@ public class LU
         @param b (in) the right-hand side.
         @return solution vector.
     */
-    public double[] solve(double b[])
+    public int[] solve(int b[], int modulus)
     {
-        double x[] = new_copy(b);
+        int x[] = new_copy(b);
 
-        solve(LU_, pivot_, x);
+        solve(LU_, pivot_, x, modulus);
         return x;
     }
     
@@ -151,7 +169,7 @@ public class LU
         
     @return 0, if OK, nozero value, othewise.
 */
-public static int factor(double A[][],  int pivot[])
+public static int factor(int A[][],  int pivot[], int modulus)
 {
     int N = A.length;
     int M = A[0].length;
@@ -188,7 +206,7 @@ public static int factor(double A[][],  int pivot[])
         if (jp != j)
         {
             // swap rows j and jp
-            double tA[] = A[j];
+            int tA[] = A[j];
             A[j] = A[jp];
             A[jp] = tA;
         }
@@ -198,10 +216,10 @@ public static int factor(double A[][],  int pivot[])
             // note A(j,j), was A(jp,p) previously which was
             // guarranteed not to be zero (Label #1)
             //
-            double recp =  1.0 / A[j][j];
+            int recp = modInverse(A[j][j], modulus);
 
             for (int k=j+1; k<M; k++)
-                A[k][j] *= recp;
+                A[k][j] = A[k][j] * recp % modulus;
         }
 
 
@@ -216,11 +234,11 @@ public static int factor(double A[][],  int pivot[])
 
             for (int ii=j+1; ii<M; ii++)
             {
-                double Aii[] = A[ii];
-                double Aj[] = A[j];
-                double AiiJ = Aii[j];
+                int Aii[] = A[ii];
+                int Aj[] = A[j];
+                int AiiJ = Aii[j];
                 for (int jj=j+1; jj<N; jj++)
-                  Aii[jj] -= AiiJ * Aj[jj];
+                  Aii[jj] = (Aii[jj] - (AiiJ * Aj[jj])) % modulus;
 
             }
         }
@@ -242,7 +260,7 @@ public static int factor(double A[][],  int pivot[])
         @param b    (in/out) On input, the right-hand side.
                     On output, the solution vector.
     */
-    public static void solve(double LU[][], int pvt[], double b[])
+    public static void solve(int LU[][], int pvt[], int b[], int modulus)
     {
         int M = LU.length;
         int N = LU[0].length;
@@ -251,64 +269,65 @@ public static int factor(double A[][],  int pivot[])
         for (int i=0; i<M; i++)
         {
             int ip = pvt[i];
-            double sum = b[ip];
+            int sum = b[ip];
 
             b[ip] = b[i];
             if (ii==0)
                 for (int j=ii; j<i; j++)
-                    sum -= LU[i][j] * b[j];
+                    sum = (sum - (LU[i][j] * b[j]) % modulus + modulus) % modulus;
             else 
-                if (sum == 0.0)
+                if (sum == 0)
                     ii = i;
             b[i] = sum;
         }
 
         for (int i=N-1; i>=0; i--)
         {
-            double sum = b[i];
+            int sum = b[i];
             for (int j=i+1; j<N; j++)
-                sum -= LU[i][j] * b[j];
-            b[i] = sum / LU[i][i];
+                sum = (sum - (LU[i][j] * b[j]) % modulus + modulus) % modulus;
+            b[i] = (sum * modInverse(LU[i][i], modulus)) % modulus;
         }
     }               
 
 
-    private double LU_[][];
+    private int LU_[][];
     private int pivot_[];
 
     public static void main(String[] args) throws Exception {
         int N = 4;
         if (args.length > 0)
             N = Integer.parseInt(args[0]);
-        double A[][] = new double[N][N];
-        double b[] = new double[N];
+        int A[][] = new int[N][N];
+        int b[] = new int[N];
+        int modulus = (int)(Math.pow(2, 19) - 1);
         LCG rand = new LCG(12345, 1345, 16645, 1013904);
         for (int i=0; i<N; i++)
         {
             int row_sum = 0;
             for (int j=0; j<N; j++) {
-                double val = rand.nextDouble() * 1000;
+                int val = rand.nextInt() % modulus;
                 row_sum += val;
                 A[i][j] = val;
             }
-            A[i][i] = row_sum + rand.nextDouble()*1000 + 1.0; // Ensure diagonal dominance
-            b[i] = rand.nextDouble()*1000;
+            A[i][i] = (row_sum + rand.nextInt() + 1) % modulus; // Ensure diagonal dominance
+            b[i] = rand.nextInt() % modulus;
         }
 
-        System.out.println("Java specialized double LU");
+        System.out.println("Java specialized finite field LU");
         System.out.println("Matrix size: " + N);
         //printMatrix(A);
         for (int i = 0; i < 10; i++) {
-            double Acopy[][] = new_copy(A);
-            double bcopy[] = new_copy(b);
+            int Acopy[][] = new_copy(A);
+            int bcopy[] = new_copy(b);
             int pivot[] = new int[N];
 
-            factor(Acopy, pivot);
+            factor(Acopy, pivot, modulus);
             
             //only needed for debugging
             /* System.out.println("b: ");
             printVector(b); */
-            solve(Acopy, pivot, bcopy); 
+            solve(Acopy, pivot, bcopy, modulus); 
             /* System.out.println("Solution: ");
             printVector(b); */
             System.out.println("Iteration " + i + " completed");

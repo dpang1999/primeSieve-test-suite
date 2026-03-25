@@ -1,7 +1,7 @@
 
 // --- Finite field Grobner basis, grobner.ts style ---
 
-import { LCG } from "../helpers/lcg";
+import { LCG } from "../helpers/lcg.js";
 
 let modulus: number = 13; // Global modulus for all terms, can be set from main
 
@@ -301,7 +301,7 @@ function main() {
     modulus = 7;
     
     if (n === 4) {
-      console.log("TypeScript finite coeff vec exponent cyclic 4");
+      console.log("TypeScript specialized finite coeff vec exponent cyclic 4");
       const p1 = new Polynomial([
         { coefficient: 1, exponents: [1, 0, 0, 0] },
         { coefficient: 1, exponents: [0, 1, 0, 0] },
@@ -327,6 +327,7 @@ function main() {
       const polys = [p1, p2, p3, p4];
       for (var i = 0; i < 10; i++) {
         const basis = naiveGrobnerBasis(polys);
+        console.log(`Iteration ${i}, complete`);
         if (i === 9) {
           console.log(`Final Grobner Basis for Cyclic-${n}:`);
           console.log(`Number of basis elements: ${basis.length}`);
@@ -345,7 +346,7 @@ function main() {
       }
      
     } else if (n === 5) {
-      console.log("TypeScript finite coeff vec exponent cyclic 5");
+      console.log("TypeScript specialized finite coeff vec exponent cyclic 5");
       const p1 = new Polynomial([
         { coefficient: 1, exponents: [1, 0, 0, 0, 0] },
         { coefficient: 1, exponents: [0, 1, 0, 0, 0] },
@@ -381,6 +382,7 @@ function main() {
       const polys = [p1, p2, p3, p4, p5];
       for (var i = 0; i < 10; i++) {
         const basis = naiveGrobnerBasis(polys);
+        console.log(`Iteration ${i}, complete`);
         if (i === 9) {
           console.log(`Final Grobner Basis for Cyclic-${n}:`);
           console.log(`Number of basis elements: ${basis.length}`);
@@ -398,7 +400,7 @@ function main() {
         }
       }
     } else if (n === 6) {
-      console.log("TypeScript finite coeff vec exponent cyclic 6");
+      console.log("TypeScript specialized finite coeff vec exponent cyclic 6");
       const p1 = new Polynomial([
         { coefficient: 1, exponents: [1, 0, 0, 0, 0, 0] },
         { coefficient: 1, exponents: [0, 1, 0, 0, 0, 0] },
@@ -467,6 +469,4 @@ function main() {
   }
 }
 
-if (require.main === module) {
-  main();
-}
+main();

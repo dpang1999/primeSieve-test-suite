@@ -1,4 +1,4 @@
-import { LCG } from "../helpers/lcg";
+import { LCG } from "../helpers/lcg.js";
 
 // Specialized Monte Carlo integration for number
 export function integrate(num_samples: number): number {
@@ -18,11 +18,12 @@ export function integrate(num_samples: number): number {
 function main() {
   const numSamples = parseInt(process.argv[2] ?? "1000000", 10);
   const result = integrate(numSamples);
-  console.log("Estimated pi:", result);
+  console.log("TypeScript specialized double Monte Carlo integration");
+  console.log("pi is approximately:", result);
+  console.log("number of samples:", numSamples);
+  console.log("rms error: ", Math.abs(result - Math.PI));
 }
 
 
-if (require.main === module) {
-  main();
-}
+main();
 

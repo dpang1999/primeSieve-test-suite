@@ -1,5 +1,19 @@
 import { LCG } from "../helpers/lcg.js";
 
+let modulus = 2**19 - 1; // Mersenne prime for 32-bit integers
+function modInverse(a: number, m: number): number {
+  let m0 = m, x0 = 0, x1 = 1;
+  if (m === 1) return 0;
+  a = ((a % m) + m) % m;
+  while (a > 1) {
+    const q = Math.floor(a / m);
+    [a, m] = [m, a % m];
+    [x0, x1] = [x1 - q * x0, x0];
+  }
+  if (x1 < 0) x1 += m0;
+  return x1;
+}
+
 function printMatrix(a: number[][]) {
   for (const row of a) {
     console.log(row.map(val => val.toFixed(3)).join(' '));
@@ -11,33 +25,34 @@ function printVector(b: number[]) {
 }
 
 function main() {
-  console.log("TypeScript specialized double LU")
+  console.log("TypeScript specialized finite field LU")
   const n = parseInt(process.argv[2] ?? "4", 10);
   console.log(`Matrix size: ${n}`);
-  const rand = new LCG(12345, 1345, 16645, 1013904);
+  const rand = new LCG(987654321, 2**31 - 1, 16645, 1013904);
   const a: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
   for (let i = 0; i < n; i++) {
     let rowSum = 0;
     for (let j = 0; j < n; j++) {
       if (i !== j) {
-        const val = rand.nextDouble() * 1000;
+        const val = rand.nextInt();
         a[i][j] = val;
         rowSum += Math.abs(val);
       }
     }
     // Set diagonal to be strictly greater than rowSum
-    a[i][i] = rowSum + rand.nextDouble() * 1000 + 1;
+    a[i][i] = rowSum + rand.nextInt() + 1;
   }
-  const b: number[] = Array.from({ length: n }, () => rand.nextDouble() * 1000);
-  for (let i = 0; i <10; i++) {
-     const pivot: number[] = Array(n).fill(0);
-     const aCopy = a.map(row => row.slice());
-     const bCopy = b.slice();
-     factor(aCopy, pivot);
-     solve(aCopy, pivot, bCopy);
-     console.log(`Iteration ${i} completed`);
+  const b: number[] = Array.from({ length: n }, () => rand.nextInt());
+  for (let i = 0; i < 10; i++) {
+    const pivot: number[] = Array(n).fill(0);
+    const aCopy = a.map(row => row.slice());
+    const bCopy = b.slice();
+    factor(aCopy, pivot);
+    solve(aCopy, pivot, bCopy);
+    console.log(`Iteration ${i} completed`);
   }
 }
+
 main();
 
 
@@ -69,9 +84,9 @@ export function factor(a: number[][], pivot: number[]): number {
     }
     // Compute elements j+1:M of jth column
     if (j < m - 1) {
-      const recp = 1.0 / a[j][j];
+      const recp = modInverse(a[j][j], modulus);
       for (let k = j + 1; k < m; k++) {
-        a[k][j] *= recp;
+        a[k][j] = (a[k][j] * recp + modulus) % modulus;
       }
     }
     // Rank-1 update to trailing submatrix
@@ -79,7 +94,7 @@ export function factor(a: number[][], pivot: number[]): number {
       for (let ii = j + 1; ii < m; ii++) {
         const aii_j = a[ii][j];
         for (let jj = j + 1; jj < n; jj++) {
-          a[ii][jj] -= aii_j * a[j][jj];
+          a[ii][jj] = ((a[ii][jj] - (aii_j * a[j][jj]) % modulus) + modulus) % modulus;
         }
       }
     }
@@ -98,7 +113,7 @@ export function solve(lu: number[][], pvt: number[], b: number[]): void {
     b[ip] = b[i];
     if (ii === 0) {
       for (let j = ii; j < i; j++) {
-        sum -= lu[i][j] * b[j];
+        sum = (sum - (lu[i][j] * b[j]) % modulus + modulus) % modulus;
       }
     } else if (sum === 0.0) {
       ii = i;
@@ -108,8 +123,8 @@ export function solve(lu: number[][], pvt: number[], b: number[]): void {
   for (let i = n - 1; i >= 0; i--) {
     let sum = b[i];
     for (let j = i + 1; j < n; j++) {
-      sum -= lu[i][j] * b[j];
+      sum = (sum - (lu[i][j] * b[j]) % modulus + modulus) % modulus;
     }
-    b[i] = sum / lu[i][i];
+    b[i] = ((sum * modInverse(lu[i][i], modulus)) + modulus) % modulus;
   }
 }

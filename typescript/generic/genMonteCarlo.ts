@@ -1,7 +1,10 @@
 import { IField } from './iField';
 import { IMath } from './iMath';
-import { LCG } from '../helpers/lcg';
+import { LCG } from '../helpers/lcg.js';
 import { IOrdered } from './iOrdered';
+import { IntModP } from './intModP.js';
+import { SingleField } from './singleField.js';
+import { DoubleField } from './doubleField.js';
 
 export function monteCarloPi<C extends IField<C> & IMath<C> & IOrdered<C>>(field: C, n: number): number {
   const rand = new LCG(12345, 1345, 16645, 1013904);
@@ -20,8 +23,7 @@ export function monteCarloPi<C extends IField<C> & IMath<C> & IOrdered<C>>(field
   return (underCurve / n) * 4.0;
 }
 
-
-if (require.main === module) {
+function main() {
   // Usage: tsx genMonteCarlo.ts [numSamples] [mode]
   // mode: 1 = SingleField, 2 = DoubleField, else IntModP
   const args = process.argv.slice(2);
@@ -33,22 +35,23 @@ if (require.main === module) {
   let pi: number;
   if (mode === 1) {
     // SingleField (float32)
-    const { SingleField } = require('./singleField');
     const field = new SingleField(0.0);
     pi = monteCarloPi(field, numSamples);
+    console.log("TypeScript generic singlefield monte carlo")
   } else if (mode === 2) {
     // DoubleField (float64)
-    const { DoubleField } = require('./doubleField');
     const field = new DoubleField(0.0);
     pi = monteCarloPi(field, numSamples);
+    console.log("TypeScript generic doublefield monte carlo")
   } else {
     // IntModP (modular arithmetic, not meaningful for pi, but for completeness)
-    const { IntModP } = require('./intModP');
     IntModP.setModulus(1_000_000_007);
     const field = new IntModP(0);
     pi = monteCarloPi(field, numSamples);
+    console.log("TypeScript generic intmodp monte carlo")
   }
   console.log(`Pi is approximately: ${pi}`);
   console.log(`Num samples: ${numSamples}`);
   console.log(`RMS Error: ${Math.abs(Math.PI - pi)}`);
 }
+main();

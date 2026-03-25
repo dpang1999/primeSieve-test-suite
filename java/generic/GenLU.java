@@ -2,6 +2,8 @@ package generic;
 
 import java.lang.reflect.*;
 
+import helpers.LCG;
+
 
 /**
  * LU matrix factorization. (Based on TNT implementation.) Decomposes a matrix A
@@ -22,12 +24,6 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 	 *         convention) of ones, and is not explicitly stored.
 	 */
 
-	public static final double num_flops(int N) {
-		// rougly 2/3*N^3
-
-		double Nd = (double) N;
-		return (2.0 * Nd * Nd * Nd / 3.0);
-	}
 
 	@SuppressWarnings("unchecked")
 	protected static <U extends IField<U>> U[] new_copy(U x[]) {
@@ -183,8 +179,11 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 			// jp now has the index of maximum element
 			// of column j, below the diagonal
 
-			if (A[jp][j].coerce() == 0)
+			if (A[jp][j].coerce() == 0) 
+			{
+				System.out.println("Matrix is singular");
 				return 1; // factorization failed because of zero pivot
+			}
 
 			if (jp != j) {
 				// swap rows j and jp
@@ -214,8 +213,10 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 					U Aii[] = A[ii];
 					U Aj[] = A[j];
 					U AiiJ = Aii[j];
-					for (int jj = j + 1; jj < N; jj++)
-						Aii[jj] = Aii[jj].s(AiiJ.m(Aj[jj]));
+					for (int jj = j + 1; jj < N; jj++){
+						U temp = AiiJ.m(Aj[jj]);
+						Aii[jj] = Aii[jj].s(temp);
+					}
 				}
 			}
 		}
@@ -247,8 +248,10 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 
 			b[ip] = b[i];
 			if (ii == 0)
-				for (int j = ii; j < i; j++)
-					sum = sum.s(LU[i][j].m(b[j]));
+				for (int j = ii; j < i; j++){
+					U temp = LU[i][j].m(b[j]);
+					sum = sum.s(temp);
+				}
 			else if (sum.coerce() == 0.0)
 				ii = i;
 			b[i] = sum;
@@ -256,8 +259,11 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 
 		for (int i = N - 1; i >= 0; i--) {
 			U sum = b[i];
-			for (int j = i + 1; j < N; j++)
-				sum = sum.s(LU[i][j].m(b[j]));
+			for (int j = i + 1; j < N; j++) {
+				U temp = LU[i][j].m(b[j]);
+				sum = sum.s(temp);
+			}
+				
 			b[i] = sum.d(LU[i][i]);
 		}
 	}
@@ -270,39 +276,54 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 		int N = 4;
 		if (args.length > 0)
 			N = Integer.parseInt(args[0]);
-
 		int mode = 0;
+		if (args.length > 1)
+			mode = Integer.parseInt(args[1]);
+		LCG rand = new LCG(12345, 1345, 16645, 1013904);
 		if (mode == 0) {
-
+			System.out.println("Java Generic DoubleField LU");
+			System.out.println("Matrix size: " + N);
 			DoubleField A[][] = new DoubleField[N][N];
 			DoubleField b[] = new DoubleField[N];
-			int pivot[] = new int[N];
+			
 			
 
 			for (int i = 0; i < N; i++) {
+				double row_sum = 0;
 				for (int j = 0; j < N; j++)
-					A[i][j] = new DoubleField(Math.random()*1000);
-				b[i] = new DoubleField(Math.random()*1000);
+				{
+					double val = rand.nextDouble() * 1000;
+					row_sum += val;
+					A[i][j] = new DoubleField(val);
+				}
+				A[i][i] = new DoubleField(row_sum + rand.nextDouble()*1000 + 1.0); // Ensure diagonal dominance
+				b[i] = new DoubleField(rand.nextDouble()*1000);
 			}
 
-			printMatrix(A);
-			DoubleField ACopy[][] = new_copy(A);
+			for (int i = 0; i < 10; i++) {
+				//printMatrix(A);
+				DoubleField ACopy[][] = new_copy(A);
+				int pivot[] = new int[N];
+				
+				factor(ACopy, pivot);
+				
+				//System.out.println("b: ");
+				//printVector(b);
+				DoubleField BCopy[] = new_copy(b);
+				solve(ACopy, pivot, BCopy);
+				//System.out.println("Solution: ");
+				//printVector(b);
 
-			factor(A, pivot);
-			
-			System.out.println("b: ");
-			printVector(b);
-			DoubleField BCopy[] = new_copy(b);
-			solve(A, pivot, b); //only needed for debugging
-			System.out.println("Solution: ");
-			printVector(b);
+				//DoubleField product[] = multiplyMatrices(A, BCopy);
+				//printVector(product);
 
-			DoubleField product[] = multiplyMatrices(ACopy, b);
-			//printVector(product);
-
-			System.out.println("RMS Difference: " + RMSDiff(BCopy, product));
+				//System.out.println("RMS Difference: " + RMSDiff(b, product));
+				System.out.println("Iteration " + i + " completed");
+				}
 		}
 		else {
+			System.out.println("Java Generic IntModP LU");
+			System.out.println("Matrix size: " + N);
 			IntModP A[][] = new IntModP[N][N];
 			IntModP b[] = new IntModP[N];
 			int pivot[] = new int[N];
@@ -310,26 +331,34 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 			IntModP.setModulus(p);
 
 			for (int i = 0; i < N; i++) {
-				for (int j = 0; j < N; j++)
-					A[i][j] = new IntModP((long)(Math.random()*10000));
-				b[i] = new IntModP((long)(Math.random()*10000));
+				int row_sum = 0;
+				for (int j = 0; j < N; j++) {
+					int value = rand.nextInt();
+					A[i][j] = new IntModP(value);
+					row_sum += value;
+				}
+				A[i][i]= new IntModP(row_sum + rand.nextInt() + 1); // Ensure diagonal dominance					
+				b[i] = new IntModP(rand.nextInt());
 			}
 
-			printMatrix(A);
-			IntModP ACopy[][] = new_copy(A);
+			//printMatrix(A);
+				for (int i = 0; i < 10; i++) {
+				IntModP ACopy[][] = new_copy(A);
 
-			factor(A, pivot);
-			System.out.println("b: ");
-			printVector(b);
-			IntModP BCopy[] = new_copy(b);
-			solve(A, pivot, b); //only needed for debugging
-			System.out.println("Solution: ");
-			printVector(b);
+				factor(ACopy, pivot);
+				//System.out.println("b: ");
+				//printVector(b);
+				IntModP BCopy[] = new_copy(b);
+				solve(ACopy, pivot, BCopy);
+				/* System.out.println("Solution: ");
+				printVector(b);
 
-			IntModP product[] = multiplyMatrices(ACopy, b);
-			printVector(product);
+				IntModP product[] = multiplyMatrices(ACopy, b);
+				printVector(product);
 
-			System.out.println("RMS Difference: " + RMSDiff(BCopy, product));
+				System.out.println("RMS Difference: " + RMSDiff(BCopy, product)); */
+				System.out.println("Iteration " + i + " completed");
+			}
 		}
 	}
 

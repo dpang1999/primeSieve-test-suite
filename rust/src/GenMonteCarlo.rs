@@ -37,14 +37,17 @@ fn main() {
     let pi;
     if(mode == 1) {
         let temp = SingleField::new(0.0);
+        println!("Rust generic singlefield montecarlo");
         pi = integrate(&temp, num_samples);
     }
     else if (mode == 2) {
         let temp = DoubleField::new(0.0);
+        println!("Rust generic doublefield montecarlo");
         pi = integrate(&temp, num_samples);
     }
     else {
         let temp = IntModP::new(0);
+        println!("Rust generic intmodp montecarlo");
         pi = integrate(&temp, num_samples);
     }
     println!("Pi is approximately: {}", pi);

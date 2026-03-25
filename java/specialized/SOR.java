@@ -2,14 +2,6 @@ package specialized;
 
 public class SOR
 {
-	public static final double num_flops(int M, int N, int num_iterations)
-	{
-		double Md = (double) M;
-		double Nd = (double) N;
-		double num_iterD = (double) num_iterations;
-
-		return (Md-1)*(Nd-1)*num_iterD*6.0;
-	}
 
 	public static final void execute(double omega, double G[][], int 
 			num_iterations)
@@ -42,28 +34,32 @@ public class SOR
     public static void main(String[] args)
     {
         int M = 10;
-        int N = 10;
-        int num_iterations = 1;
+        if (args.length > 0) { M = Integer.parseInt(args[0]); }
+        int N = M;
+        int num_iterations = 10000;
 
         double omega = 1.5;
         double[][] G = new double[M][N];
 
         // Set boundary conditions
-        for (int i = 0; i < M; i++) {
+       /*  for (int i = 0; i < M; i++) {
             G[i][0] = 0;         // Left edge
             G[i][N-1] = 0;       // Right edge
-        }
+        } */
         for (int j = 0; j < N; j++) {
             G[0][j] = 100;       // Top edge (hot)
-            G[M-1][j] = 0;       // Bottom edge (cold)
+            //G[M-1][j] = 0;       // Bottom edge (cold)
         }
 
-        printMatrix(G);
+        //printMatrix(G);
+        System.out.println("Java specialized double SOR");
+        System.out.println("Grid size: " + M + "x" + N);
+        System.out.println("Iterations: " + num_iterations);
         SOR.execute(omega, G, num_iterations);
 
-
+/* 
         System.out.println("\nSteady-state temperature distribution:");
-        printMatrix(G);
+        printMatrix(G); */
         
     }
 

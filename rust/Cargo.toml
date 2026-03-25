@@ -16,11 +16,17 @@ num-integer = "0.1"
 name = "lu"
 path = "src/specialized/LU.rs"
 [[bin]]
+name = "finiteLU"
+path = "src/specialized/FiniteLU.rs"
+[[bin]]
 name = "genlu"
 path = "src/GenLU.rs"
 [[bin]]
 name = "sor"
 path = "src/specialized/SOR.rs"
+[[bin]]
+name = "finiteSOR"
+path = "src/specialized/FiniteSOR.rs"
 [[bin]]
 name = "gensor"
 path = "src/GenSOR.rs"

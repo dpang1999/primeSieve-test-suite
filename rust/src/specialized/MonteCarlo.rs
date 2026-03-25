@@ -21,6 +21,7 @@ fn main() {
     }
 
     let pi = integrate(num_samples);
+    println!("Rust specialized f64 montecarlo");
     println!("Pi is approximately: {}", pi);
     println!("Num samples: {}", num_samples);
     println!("RMS Error: {}", (std::f64::consts::PI - pi).abs());

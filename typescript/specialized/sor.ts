@@ -31,25 +31,27 @@ function main() {
   // arg 1 = grid size n (nxn)
   const n = parseInt(process.argv[2]) || 16;
   const m = n;
-  const num_iterations = 1000;
+  const num_iterations = 10000;
   const omega = 1.5;
   // make m x n grid, all 0
   const g: number[][] = Array.from({ length: m }, () => Array(n).fill(0));
   // Set boundary conditions
-  for (let i = 0; i < m; i++) {
+  /* for (let i = 0; i < m; i++) {
     g[i][0] = 0.0;         // Left edge
     g[i][n - 1] = 0.0;     // Right edge
-  }
+  } */
   for (let j = 0; j < n; j++) {
     g[0][j] = 100.0;       // Top edge (hot)
-    g[m - 1][j] = 0.0;     // Bottom edge (cold)
+    //g[m - 1][j] = 0.0;     // Bottom edge (cold)
   }
+  
+  console.log("Typescript specialized number SOR")
+  console.log("Grid size:", n, "x", m);
+  console.log("Iterations:", num_iterations);
   sorHeat(g, omega, num_iterations);
   // Optionally print the grid
   //for (const row of g) console.log(row.map(v => v.toFixed(2)).join(' '));
 }
 
-if (require.main === module) {
-  main();
-}
+main();
 

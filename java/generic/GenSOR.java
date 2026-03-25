@@ -1,14 +1,6 @@
 package generic;
 public class GenSOR
 {
-	public static final double num_flops(int M, int N, int num_iterations)
-	{
-		double Md = (double) M;
-		double Nd = (double) N;
-		double num_iterD = (double) num_iterations;
-
-		return (Md-1)*(Nd-1)*num_iterD*6.0;
-	}
 
 	public static final <R extends IField<R>> void execute(R omega, R G[][], int num_iterations)
 	{
@@ -41,8 +33,9 @@ public class GenSOR
 		int mode = 0;
 		if (mode == 0) {
 			int M = 10;
-			int N = 10;
-			int num_iterations = 100;
+			if (args.length > 0) { M = Integer.parseInt(args[0]); }
+			int N = M;
+			int num_iterations = 10000;
 
 			DoubleField omega = new DoubleField(1.5);
 			DoubleField G[][] = new DoubleField[M][N];
@@ -56,15 +49,17 @@ public class GenSOR
 						G[i][j] = new DoubleField(0.0);
 					}
 				}
-			System.out.println("Initial grid:");
-			printMatrix(G);
-					
+			/* System.out.println("Initial grid:");
+			printMatrix(G); */
+			System.out.println("Java generic DoubleField SOR");
+			System.out.println("Grid size: " + M + "x" + N);
+			System.out.println("Iterations: " + num_iterations);		
 
 			//System.out.println("Num flops: " + num_flops(M, N, num_iterations));
 			execute(omega, G, num_iterations);
 
-			System.out.println("Resulting grid:");
-			printMatrix(G);
+			/* System.out.println("Resulting grid:");
+			printMatrix(G); */
 		}
 		else {
 			int M = 10;
