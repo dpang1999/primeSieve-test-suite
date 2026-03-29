@@ -7,6 +7,10 @@ function set_modulus(m::UInt64)
     GLOBAL_MODULUS[] = m
 end
 
+function get_modulus()
+    return GLOBAL_MODULUS[]
+end
+
 struct IntModP <: IField
     value::UInt64
 end

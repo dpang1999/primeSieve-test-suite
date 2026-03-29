@@ -1,8 +1,6 @@
 include("generic/IField.jl")
 include("generic/IExponent.jl")
 include("generic/int_mod_p.jl")
-include("generic/double_field.jl")
-include("generic/single_field.jl")
 include("generic/vec_exponent.jl")
 include("generic/bit_packed_exponent.jl")
 
@@ -10,11 +8,11 @@ module GenGrobner
     import ..IField
     import ..IExponent
     import ..IntModP
-    import ..DoubleField
-    import ..SingleField
     import ..VecExponent
-    # import ..BitPackedExponent
+    import ..BitPackedExponent
     import ..is_zero, ..can_reduce, ..get_lcm, ..lex_compare, ..degree
+
+    import ..set_modulus, ..get_modulus
 
     export Term, Polynomial, TermOrder, set_term_order, grobner_basis, s_polynomial, reduce_polynomial
 
@@ -56,12 +54,37 @@ module GenGrobner
 
     mutable struct Polynomial{C <: IField, E <: IExponent}
         terms::Vector{Term{C, E}}
+        function Polynomial{C, E}(terms::Vector{Term{C, E}}) where {C <: IField, E <: IExponent}
+            sort!(terms, by=t -> t, lt= (a,b) -> compare(a,b) == 1)
+            filter!(t -> !is_zero(t.coefficient), terms)
+            new{C, E}(terms)
+        end
     end
 
-    function Polynomial(terms::Vector{Term{C, E}}) where {C, E}
-        sort!(terms, by=t -> t, lt= (a,b) -> compare(a,b) == 1)
-        filter!(t -> !is_zero(t.coefficient), terms)
+    function Polynomial(terms::Vector{Term{C, E}}) where {C <: IField, E <: IExponent}
         Polynomial{C, E}(terms)
+    end
+
+    import Base: ==, hash
+
+    function ==(t1::Term{C, E}, t2::Term{C, E}) where {C <: IField, E <: IExponent}
+        t1.coefficient == t2.coefficient && t1.exponents == t2.exponents
+    end
+
+    function hash(t::Term{C, E}, h::UInt) where {C <: IField, E <: IExponent}
+        hash(t.coefficient, hash(t.exponents, h))
+    end
+
+    function ==(p1::Polynomial{C, E}, p2::Polynomial{C, E}) where {C <: IField, E <: IExponent}
+        length(p1.terms) == length(p2.terms) && all(t1 == t2 for (t1, t2) in zip(p1.terms, p2.terms))
+    end
+
+    function hash(p::Polynomial{C, E}, h::UInt) where {C <: IField, E <: IExponent}
+        h2 = hash(length(p.terms), h)
+        for t in p.terms
+            h2 = hash(t, h2)
+        end
+        return h2
     end
 
     import Base: +, -, *
@@ -183,6 +206,7 @@ module GenGrobner
 
     function grobner_basis(polynomials::Vector{Polynomial{C, E}}) where {C, E}
         basis = deepcopy(polynomials)
+        basis_set = Set{Polynomial{C, E}}(basis)
         pair_set = [(i, j) for i in 1:length(basis) for j in (i+1):length(basis)]
 
         while !isempty(pair_set)
@@ -194,8 +218,9 @@ module GenGrobner
                 h = Polynomial(Term{C,E}[])
             end
 
-            if !isempty(h.terms)
+            if !isempty(h.terms) && !in(h, basis_set)
                 push!(basis, h)
+                push!(basis_set, h)
                 n = length(basis)
                 for k in 1:(n-1)
                     push!(pair_set, (k, n))
@@ -215,34 +240,261 @@ module GenGrobner
         return reduced_basis
     end
 
-    function main()
-        println("Generic Grobner basis execution...")
-        Main.set_modulus(UInt64(7))
-        p1 = Polynomial([Term(IntModP(1), VecExponent([2, 0, 0])), Term(IntModP(6), VecExponent([0, 1, 0]))])
-        p2 = Polynomial([Term(IntModP(1), VecExponent([3, 0, 0])), Term(IntModP(6), VecExponent([0, 0, 1]))])
-        basis = grobner_basis([p1, p2])
-        println("Basis size: ", length(basis))
-        for b in basis
+    function main(n::Int, mode::Int)
+        # mode = 0 for vec, 1 for bit packed
+        set_modulus(UInt64(7))
+        basis = []
+        if n == 4
+            if mode == 0
+                # cyclic 4
+                println("Julia generic vec exponent cyclic 4")
+                p1 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 0, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 1])),
+                ])
+                p2 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 0, 1])),
+                ])
+                p3 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 0, 1])),
+                ])
+                p4 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 1])), 
+                    Term(IntModP(get_modulus() - 1), VecExponent([0, 0, 0, 0])),
+                ])
+            else
+                # cyclic 4 with bit packed exponents
+                println("Julia generic bit packed exponent cyclic 4")
+                p1 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000001)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001000000)),
+                ])
+                p2 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001000001)),
+                ])
+                p3 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010001)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001000101)),
+                ])
+                p4 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010101)), 
+                    Term(IntModP(get_modulus() - 1), BitPackedExponent(0x0000000000000000)),
+                ])
+            end
+            for i in 0:9
+                basis = grobner_basis([p1, p2, p3, p4])
+                println("Iteration $i complete")
+            end
+        elseif n == 5
+            if mode == 0
+                # cyclic 5
+                println("Julia generic vec exponent cyclic 5")
+                p1 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 0, 0, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 0, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 0, 1])),
+                ])
+                p2 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 0, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 0, 0, 1])),
+                ])
+                p3 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 0, 0, 1])),
+                ])
+                p4 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 1, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 1, 0, 1])),
+                ])
+                p5 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 1, 1])), 
+                    Term(IntModP(get_modulus() - 1), VecExponent([0, 0, 0, 0, 0])),
+                ])
+            else
+                # cyclic 5 with bit packed exponents
+                println("Julia generic bit packed exponent cyclic 5")
+                p1 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000001)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001000000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000100000000)),
+                ])
+                p2 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000101000000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000100000001)),
+                ])
+                p3 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000101010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000101000001)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000100000101)),
+                ])
+                p4 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000101010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000101010001)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000101000101)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000100010101)),
+                ])
+                p5 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000101010101)), 
+                    Term(IntModP(get_modulus() - 1), BitPackedExponent(0x0000000000000000)),
+                ])
+            end
+            for i in 0:9
+                basis = grobner_basis([p1, p2, p3, p4, p5])
+                println("Iteration $i complete")
+            end
+        elseif n == 6
+            if mode == 0
+                # cyclic 6
+                println("Julia generic vec exponent cyclic 6")
+                p1 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 0, 0, 0, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 0, 0, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 0, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 1, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 0, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 0, 0, 1])),
+                ])
+                p2 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 0, 0, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 0, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 1, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 1, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 0, 0, 0, 1])),
+                ])
+                p3 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 0, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 1, 0, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 1, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 0, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 0, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 0, 0, 0, 1])),
+                ])
+                p4 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 1, 0, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 1, 1, 0])),
+                    Term(IntModP(1), VecExponent([0, 0, 1, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 0, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 0, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 1, 0, 0, 1])),
+                ])
+                p5 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 1, 1, 0])), 
+                    Term(IntModP(1), VecExponent([0, 1, 1, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 0, 1, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 0, 1, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 1, 0, 1, 1])),
+                    Term(IntModP(1), VecExponent([1, 1, 1, 1, 0, 1])),
+                ])
+                p6 = Polynomial([
+                    Term(IntModP(1), VecExponent([1, 1, 1, 1, 1, 1])), 
+                    Term(IntModP(get_modulus() - 1), VecExponent([0, 0, 0, 0, 0, 0])),
+                ])
+            else
+                # cyclic 6 with bit packed exponents
+                println("Julia generic bit packed exponent cyclic 6")
+                p1 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000001)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001000000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000100000000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010000000000)),
+                ])
+                p2 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000000101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000101000000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010100000000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010000000001)),
+                ])
+                p3 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000000010101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000000101010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010101000000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010100000001)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010000000101)),
+                ])
+                p4 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000001010101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000000101010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010101010000)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010101000001)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010100000101)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010000010101)),
+                ])
+                p5 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000000101010101)), 
+                    Term(IntModP(1), BitPackedExponent(0x0000010101010100)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010101010001)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010101000101)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010100010101)),
+                    Term(IntModP(1), BitPackedExponent(0x0000010001010101)),
+                ])
+                p6 = Polynomial([
+                    Term(IntModP(1), BitPackedExponent(0x0000010101010101)), 
+                    Term(IntModP(get_modulus() - 1), BitPackedExponent(0x0000000000000000)),
+                ])
+            end
+            for i in 0:9
+                basis = grobner_basis([p1, p2, p3, p4, p5, p6])
+                println("Iteration $i complete")
+            end
+        end
+        #println("Basis size: ", length(basis))
+        #= for b in basis
             for t in b.terms
                 print("(", t.coefficient.value, " * ", t.exponents.exps, ") ")
             end
             println()
-        end
-        IntModP.Main.set_modulus(UInt64(7))
-        p1 = Polynomial([Term(IntModP(1), VecExponent([2, 0, 0])), Term(IntModP(6), VecExponent([0, 1, 0]))])
-        p2 = Polynomial([Term(IntModP(1), VecExponent([3, 0, 0])), Term(IntModP(6), VecExponent([0, 0, 1]))])
-        basis = grobner_basis([p1, p2])
-        println("Basis size: ", length(basis))
-        for b in basis
-            for t in b.terms
-                print("(", t.coefficient.value, " * ", t.exponents.exps, ") ")
-            end
-            println()
-        end
-        # Add basic test to make sure it works
+        end =#
     end
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    GenGrobner.main()
+     n = 4 # Default to cyclic 4
+    if length(ARGS) > 0
+        n = parse(Int, ARGS[1])
+    end
+    mode = 0
+    if length(ARGS) > 1
+        mode = parse(Int, ARGS[2])
+    end
+    GenGrobner.main(n, mode)
 end

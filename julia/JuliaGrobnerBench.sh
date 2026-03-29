@@ -1,0 +1,12 @@
+time julia -O3 --math-mode=fast GenGrobner.jl 4 1
+time julia -O3 --math-mode=fast GenGrobner.jl 4 0
+time julia -O3 --math-mode=fast GenGrobner.jl 5 1
+time julia -O3 --math-mode=fast GenGrobner.jl 5 0
+time julia -O3 --math-mode=fast GenGrobner.jl 6 1
+time julia -O3 --math-mode=fast GenGrobner.jl 6 0
+time julia -O3 --math-mode=fast specialized/FiniteGrobner.jl 4
+time julia -O3 --math-mode=fast specialized/FiniteGrobner.jl 5
+time julia -O3 --math-mode=fast specialized/FiniteGrobner.jl 6
+time julia -O3 --math-mode=fast specialized/GrobnerSmart.jl 4
+time julia -O3 --math-mode=fast specialized/GrobnerSmart.jl 5
+time julia -O3 --math-mode=fast specialized/GrobnerSmart.jl 6

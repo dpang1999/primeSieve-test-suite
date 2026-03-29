@@ -74,7 +74,7 @@ func NewPolynomial[N interface {
 }](terms []Term[N, E]) Polynomial[N, E] {
 	filtered := make([]Term[N, E], 0, len(terms))
 	for _, t := range terms {
-		if math.Abs(t.Coefficient.coerceToFloat()) > 1e-2 {
+		if math.Abs(t.Coefficient.coerceToFloat()) > 0.0 {
 			t.Coefficient = t.Coefficient.coerceFromFloat(
 				math.Round(t.Coefficient.coerceToFloat()*1e5) / 1e5)
 			filtered = append(filtered, t)

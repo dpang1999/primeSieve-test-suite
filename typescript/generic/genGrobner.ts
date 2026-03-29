@@ -64,7 +64,7 @@ class Polynomial<C extends IField<C> & ICopiable<C>, E extends IExponent<E>> {
   constructor(terms: Term<C, E>[]) {
     // Remove near-zero coefficients, round, and sort
     this.terms = terms
-      .filter(t => Math.abs(t.coefficient.coerce_to_number()) > 1e-2)
+      .filter(t => Math.abs(t.coefficient.coerce_to_number()) > 0.0)
       .sort((a, b) => -compare(a, b));
   }
 

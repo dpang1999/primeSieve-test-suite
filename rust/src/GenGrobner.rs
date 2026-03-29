@@ -124,7 +124,7 @@ where
     pub fn new(mut terms: Vec<Term<C, E>>) -> Self {
         terms.sort_by(|a, b| b.compare(a));
         //terms.retain(|t| !t.coefficient.is_zero());
-        terms.retain(|t| (t.coefficient.coerce_to_f64() - 0.0).abs() > 1e-2);
+        terms.retain(|t| (t.coefficient.coerce_to_f64().abs() > 0.0));
         Polynomial { terms }
     }
 

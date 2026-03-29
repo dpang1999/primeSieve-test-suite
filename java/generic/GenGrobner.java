@@ -81,7 +81,7 @@ public class GenGrobner {
         public Polynomial(List<Term<C, E>> terms) {
             List<Term<C, E>> filtered = new ArrayList<>();
             for (Term<C, E> t : terms) {
-                if (Math.abs(t.coefficient.coerce() - 0.0) > 1e-2) filtered.add(t);
+                if (Math.abs(t.coefficient.coerce()) > 0.0) filtered.add(t);
             }
             filtered.sort((a, b) -> b.compareTo(a));
             this.terms = filtered;

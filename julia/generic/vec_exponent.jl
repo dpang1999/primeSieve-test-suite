@@ -1,8 +1,12 @@
+import Base: ==, hash
 import .IExponent
 
 struct VecExponent <: IExponent
     exps::Vector{Int}
 end
+
+==(a::VecExponent, b::VecExponent) = a.exps == b.exps
+hash(a::VecExponent, h::UInt) = hash(a.exps, h)
 
 Base.:+(a::VecExponent, b::VecExponent) = VecExponent(a.exps .+ b.exps)
 Base.:-(a::VecExponent, b::VecExponent) = VecExponent(a.exps .- b.exps)
