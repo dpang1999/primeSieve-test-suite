@@ -21,6 +21,7 @@ import helpers.FindPrime;
 
 public class FiniteFFT {
 
+    static int mod;
  
     private static int modInverse(int b, int p) {
         int t = 0, newT = 1;
@@ -49,13 +50,14 @@ public class FiniteFFT {
         return t;
     }
 
-    public static int primitiveRoot(int modulus) {
+    public static int primitiveRoot() {
+        int modulus = FiniteFFT.mod;
         List<Integer> factors = factorize(modulus - 1);
 
         for (int g = 2; g < modulus; g++) {
             boolean isRoot = true;
             for (int factor : factors) {
-                if (modPow(g, (modulus - 1) / factor, modulus) == 1) {
+                if (modPow(g, (modulus - 1) / factor) == 1) {
                     isRoot = false;
                     break;
                 }
@@ -85,7 +87,8 @@ public class FiniteFFT {
     }
 
 
-    private static int modPow(int base, int exp, int mod) {
+    private static int modPow(int base, int exp) {
+        int mod = FiniteFFT.mod;
         if (mod <= 0) {
             throw new IllegalArgumentException("Modulus must be positive");
         }
@@ -106,18 +109,19 @@ public class FiniteFFT {
         return result;
     }
 
-    public static int[] precomputeRootsOfUnity(int n, int direction, int modulus) {
+    public static int[] precomputeRootsOfUnity(int n, int direction) {
+        int modulus = FiniteFFT.mod;
 		// Ensure n divides (p - 1)
 		if ((modulus - 1) % n != 0) {
             throw new IllegalArgumentException("n must divide p-1 for roots of unity to exist");
 		}
 
 		// Find a primitive root modulo p
-		int primitiveRoot = primitiveRoot(modulus);
+		int primitiveRoot = primitiveRoot();
         //System.out.println("Primitive root: " + primitiveRoot);
 
 		// Compute the primitive n-th root of unity
-		int omega = modPow(primitiveRoot, (modulus - 1) / n, modulus);
+		int omega = modPow(primitiveRoot, (modulus - 1) / n);
         //System.out.println("Omega: " + omega + " p: " + modulus + " n: " + n + " p-1/n= " + (modulus - 1) / n);
 
 		// Generate all n-th roots of unity
@@ -128,7 +132,7 @@ public class FiniteFFT {
 			if (exponent < 0) {
 				exponent += (modulus - 1); // Ensure positive exponent
 			}
-			roots[k] = modPow(omega, exponent, modulus);
+			roots[k] = modPow(omega, exponent);
             //System.out.println("Root " + k + ": " + roots[k] + " exponent: " + exponent);
 		}
 
@@ -136,12 +140,13 @@ public class FiniteFFT {
 	}
 
   /** Compute Fast Fourier Transform of (complex) data, in place.*/
-  public static void transform (long data[], int modulus, int root) {
-    transform_internal(data, -1, modulus, root); }
+  public static void transform (long data[], int root) {
+    transform_internal(data, -1, root); }
 
   /** Compute Inverse Fast Fourier Transform of (complex) data, in place.*/
-  public static void inverse (long data[], int modulus, int root) {
-    transform_internal(data, +1, modulus, root);
+  public static void inverse (long data[], int root) {
+    int modulus = FiniteFFT.mod;
+    transform_internal(data, +1, root);
     // Normalize
     int nd=data.length;
     int n =nd;
@@ -185,14 +190,14 @@ public class FiniteFFT {
     if (mode == 0) {
       int n = Integer.parseInt(args[0]);
       System.out.println("FFT with " + n);
-      int modulus;
+      
       switch (n){ 
-        case 1048576: modulus = 7340033;
-        case 16777216: modulus = 167772161;
-        case 67108864: modulus = 469762049;
-        default: modulus = FindPrime.findPrimeCongruentOneModN(n);
+        case 1048576: FiniteFFT.mod = 7340033;
+        case 16777216: FiniteFFT.mod = 167772161;
+        case 67108864: FiniteFFT.mod = 469762049;
+        default: FiniteFFT.mod = FindPrime.findPrimeCongruentOneModN(n);
       }
-      int root = primitiveRoot(modulus);
+      int root = primitiveRoot();
       LCG rand = new LCG(12345, 1345, 16645, 1013904);
       long data[] = new long[n];
       for (int i = 0; i < n; i=i+2) {
@@ -203,8 +208,8 @@ public class FiniteFFT {
         long dataCopy[] = new long[n];
         System.arraycopy(data,0,dataCopy,0,n);
 
-        transform(dataCopy, modulus, root);
-        inverse(dataCopy, modulus, root);
+        transform(dataCopy, root);
+        inverse(dataCopy, root);
         System.out.println("Loop " + loop + " done");
       }
     }
@@ -213,10 +218,10 @@ public class FiniteFFT {
         long[] in1 = {38L,  0L, 44L, 87L,  6L, 45L, 22L, 93L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L};
         long[] in2 = {80L, 18L, 62L, 90L, 17L, 96L, 27L, 97L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L};
         int prime = 40961;
-        int root = primitiveRoot(prime);
-        transform(in1, prime, root);
+        int root = primitiveRoot();
+        transform(in1, root);
         System.out.println("Transformed in1: " + Arrays.toString(in1));
-        transform(in2, prime, root);
+        transform(in2, root);
         System.out.println("Transformed in2: " + Arrays.toString(in2));
 
         long[] product = new long[in1.length];
@@ -225,11 +230,11 @@ public class FiniteFFT {
             product[i] = in1[i] * in2[i] % prime;
         }
         System.out.println("Product: " + Arrays.toString(product));
-        inverse(product, prime, root);
+        inverse(product, root);
         System.out.println("Inverse Product: " + Arrays.toString(product));
-        inverse(in1, prime, root);
+        inverse(in1, root);
         System.out.println("Inverse in1: " + Arrays.toString(in1));
-        inverse(in2, prime, root);
+        inverse(in2, root);
         System.out.println("Inverse in2: " + Arrays.toString(in2));
         }
     }
@@ -244,7 +249,8 @@ public class FiniteFFT {
       throw new Error("FFT: Data length is not a power of 2!: "+n);
     return log; }
 
-  protected static void transform_internal (long data[], int direction, int modulus, int root) {
+  protected static void transform_internal (long data[], int direction, int root) {
+    int modulus = FiniteFFT.mod;
 	if (data.length == 0) return;    
 	int n = data.length;
     if (n == 1) return;         // Identity operation!
@@ -253,7 +259,7 @@ public class FiniteFFT {
     /* bit reverse the input data for decimation in time algorithm */
     bitreverse(data) ;
     
-    int[] roots = precomputeRootsOfUnity(n, direction, modulus);
+    int[] roots = precomputeRootsOfUnity(n, direction);
     // print roots
     //System.out.println("Roots of unity: " + Arrays.toString(roots));
 

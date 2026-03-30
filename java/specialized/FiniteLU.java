@@ -22,6 +22,8 @@ public class FiniteLU
         The main diagonal of L consists (by convention) of
         ones, and is not explicitly stored.
     */
+   
+    static int mod;
     private static int modInverse(int b, int p) {
         int t = 0, newT = 1;
         int r = p, newR = b;
@@ -127,7 +129,7 @@ public class FiniteLU
         @param A (in) the matrix to associate with this
                 factorization.
     */
-    public FiniteLU( int A[][], int modulus )
+    public FiniteLU( int A[][] )
     {
         int M = A.length;
         int N = A[0].length;
@@ -140,7 +142,7 @@ public class FiniteLU
         //if (pivot_.length != M)
             pivot_ = new int[M];
 
-        factor(LU_, pivot_, modulus);
+        factor(LU_, pivot_);
     }
 
     /**
@@ -149,11 +151,11 @@ public class FiniteLU
         @param b (in) the right-hand side.
         @return solution vector.
     */
-    public int[] solve(int b[], int modulus)
+    public int[] solve(int b[])
     {
         int x[] = new_copy(b);
 
-        solve(LU_, pivot_, x, modulus);
+        solve(LU_, pivot_, x);
         return x;
     }
     
@@ -169,8 +171,9 @@ public class FiniteLU
         
     @return 0, if OK, nozero value, othewise.
 */
-public static int factor(int A[][],  int pivot[], int modulus)
+public static int factor(int A[][],  int pivot[])
 {
+    int modulus = FiniteLU.mod;
     int N = A.length;
     int M = A[0].length;
 
@@ -260,8 +263,9 @@ public static int factor(int A[][],  int pivot[], int modulus)
         @param b    (in/out) On input, the right-hand side.
                     On output, the solution vector.
     */
-    public static void solve(int LU[][], int pvt[], int b[], int modulus)
+    public static void solve(int LU[][], int pvt[], int b[])
     {
+        int modulus = FiniteLU.mod;
         int M = LU.length;
         int N = LU[0].length;
         int ii=0;
@@ -300,7 +304,8 @@ public static int factor(int A[][],  int pivot[], int modulus)
             N = Integer.parseInt(args[0]);
         int A[][] = new int[N][N];
         int b[] = new int[N];
-        int modulus = (int)(Math.pow(2, 19) - 1);
+        FiniteLU.mod = (int)(Math.pow(2, 19) - 1);
+        int modulus = FiniteLU.mod;
         LCG rand = new LCG(12345, 1345, 16645, 1013904);
         for (int i=0; i<N; i++)
         {
@@ -322,12 +327,12 @@ public static int factor(int A[][],  int pivot[], int modulus)
             int bcopy[] = new_copy(b);
             int pivot[] = new int[N];
 
-            factor(Acopy, pivot, modulus);
+            factor(Acopy, pivot);
             
             //only needed for debugging
             /* System.out.println("b: ");
             printVector(b); */
-            solve(Acopy, pivot, bcopy, modulus); 
+            solve(Acopy, pivot, bcopy); 
             /* System.out.println("Solution: ");
             printVector(b); */
             System.out.println("Iteration " + i + " completed");

@@ -117,7 +117,7 @@ class FFT {
     for (let g = 2; g < FFT.mod; g++) {
       let isPrimitiveRoot = true;
       for (let factor of factors) {
-        if (this.mod_pow(g, (FFT.mod - 1) / factor, FFT.mod) === 1) {
+        if (this.mod_pow(g, (FFT.mod - 1) / factor) === 1) {
           isPrimitiveRoot = false;
           break;
         }
@@ -136,12 +136,12 @@ class FFT {
       throw new Error(`Modulus ${FFT.mod} minus one must be divisible by n ${n} for precomputeRootsOfUnity`);
     }
     let root = this.primitive_root();
-    let omega = this.mod_pow(root, (FFT.mod - 1) / n, FFT.mod);
+    let omega = this.mod_pow(root, (FFT.mod - 1) / n);
     let roots: number[] = [];
     for (let k = 0; k < n; k++) {
       let exponent = (k * direction + (FFT.mod-1)) % (FFT.mod -1)
       if (exponent < 0) exponent += (FFT.mod - 1);
-      roots.push(this.mod_pow(omega, exponent, FFT.mod));
+      roots.push(this.mod_pow(omega, exponent));
     }
     return roots;
   }
@@ -160,14 +160,14 @@ class FFT {
     }
     return factors;
   }
-  static mod_pow(base: number, exp: number, mod: number): number {
+  static mod_pow(base: number, exp: number): number {
     let result = 1;
     while (exp > 0) {
       if (exp % 2 === 1) {
-        result = (result * base) % mod;
+        result = (result * base) % FFT.mod;
       }
       exp = Math.floor(exp / 2);
-      base = (base * base) % mod;
+      base = (base * base) % FFT.mod;
     }
     return result;
   }

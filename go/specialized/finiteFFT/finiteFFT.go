@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+var modulus = 7340033
+
 // FFTFloat64 is a specialized FFT for real/imag arrays (float64)
 type FFT struct{}
 
@@ -28,7 +30,7 @@ func modInverse(a, p int) int {
 	return t
 }
 
-func modPow(base, exp, modulus int) int {
+func modPow(base, exp int) int {
 	if modulus == 0 {
 		panic("Modulus must be positive")
 	}
@@ -47,12 +49,12 @@ func modPow(base, exp, modulus int) int {
 	return result
 }
 
-func primitiveRoots(modulus int) int {
+func primitiveRoots() int {
 	factors := factorize(modulus - 1)
 	for g := 2; g < modulus; g++ {
 		isRoot := true
 		for _, factor := range factors {
-			if modPow(g, (modulus-1)/factor, modulus) == 1 {
+			if modPow(g, (modulus-1)/factor) == 1 {
 				isRoot = false
 				break
 			}
@@ -65,21 +67,21 @@ func primitiveRoots(modulus int) int {
 	return 0 // No primitive root found
 }
 
-func precomputeRootsOfUnity(n int, direction int, modulus int) []int {
+func precomputeRootsOfUnity(n int, direction int) []int {
 	if (modulus-1)%n != 0 {
 		print(n, "  ", modulus)
 		panic("n must divide p-1 for roots of unity to exist in IntModP")
 	}
 
-	g := primitiveRoots(modulus)
+	g := primitiveRoots()
 	//fmt.Printf("Primitive root: %d\n", g)
 
-	omega := modPow(g, (modulus-1)/n, modulus)
+	omega := modPow(g, (modulus-1)/n)
 	//fmt.Printf("omega %d\n", omega)
 	roots := make([]int, n)
 	for k := 0; k < n; k++ {
 		exponent := (k*direction + modulus - 1) % (modulus - 1)
-		roots[k] = int(modPow(omega, exponent, modulus))
+		roots[k] = int(modPow(omega, exponent))
 		//fmt.Printf("Root %d: %d, exponent: %d\n", k, roots[k], exponent)
 	}
 	return roots
@@ -102,13 +104,13 @@ func factorize(n int) []int {
 
 // Transform performs the FFT on the given data (in-place)
 // real and imag are both length n (n must be a power of 2)
-func (fft FFT) Transform(data []int64, modulus int) {
-	fft.transformInternal(data, -1, modulus)
+func (fft FFT) Transform(data []int64) {
+	fft.transformInternal(data, -1)
 }
 
 // Inverse performs the inverse FFT on the given data (in-place)
-func (fft FFT) Inverse(data []int64, modulus int) {
-	fft.transformInternal(data, 1, modulus)
+func (fft FFT) Inverse(data []int64) {
+	fft.transformInternal(data, 1)
 
 	nd := len(data)
 	n := nd
@@ -119,22 +121,22 @@ func (fft FFT) Inverse(data []int64, modulus int) {
 }
 
 // Test performs a round-trip FFT and inverse FFT, returning the RMS error
-func (fft FFT) Test(data []int64, modulus int) int {
+func (fft FFT) Test(data []int64) int {
 	n := len(data)
 	copyData := make([]int64, n)
 	copy(copyData, data)
 
-	fft.Transform(data, modulus)
+	fft.Transform(data)
 	fmt.Printf("After transform: %v\n", data)
 
-	fft.Inverse(data, modulus)
+	fft.Inverse(data)
 	fmt.Printf("After inverse: %v\n", data)
 
 	return 0
 }
 
 // transformInternal performs the FFT or inverse FFT
-func (fft FFT) transformInternal(data []int64, direction int, modulus int) {
+func (fft FFT) transformInternal(data []int64, direction int) {
 	n := len(data)
 	if n <= 1 {
 		return
@@ -146,7 +148,7 @@ func (fft FFT) transformInternal(data []int64, direction int, modulus int) {
 	// print bitreverse
 	//fmt.Printf("After bit-reverse: %v\n", data)
 
-	roots := precomputeRootsOfUnity(n, direction, modulus)
+	roots := precomputeRootsOfUnity(n, direction)
 	// print roots
 	//fmt.Printf("Roots of unity: %v\n", roots)
 
@@ -211,7 +213,6 @@ func TestFFT(n int) {
 	if mode == 0 {
 		rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
 		//rand := helpers.NewLCG(12345, 1345, 16645, 1013904)
-		modulus := 7
 		switch n {
 		case 1048576:
 			modulus = 7340033
@@ -230,30 +231,30 @@ func TestFFT(n int) {
 
 		fmt.Printf("Go Specialized intmodp FFT Test: n=%d\n", n)
 		for i := 0; i < 10; i++ {
-			fft.transformInternal(data1, -1, modulus)
-			fft.transformInternal(data1, 1, modulus)
+			fft.transformInternal(data1, -1)
+			fft.transformInternal(data1, 1)
 			fmt.Printf("loop %d done\n", i)
 		}
 	} else {
 		in1 := []int64{38, 0, 44, 87, 6, 45, 22, 93, 0, 0, 0, 0, 0, 0, 0, 0}
 		in2 := []int64{80, 18, 62, 90, 17, 96, 27, 97, 0, 0, 0, 0, 0, 0, 0, 0}
 		//out := []int64{3040, 684, 5876, 11172, 5420, 16710, 12546, 20555, 16730, 15704, 21665, 5490, 13887, 4645, 9021, 0}
-		prime := 40961
+		modulus = 40961
 
 		fft := FFT{}
-		fft.Transform(in1, prime)
-		fft.Transform(in2, prime)
+		fft.Transform(in1)
+		fft.Transform(in2)
 		fmt.Println("Transformed in1: ", in1)
 		fmt.Println("Transformed in2: ", in2)
 
 		product := make([]int64, len(in1))
 
 		for i := 0; i < len(in1); i++ {
-			product[i] = in1[i] * in2[i] % int64(prime)
+			product[i] = in1[i] * in2[i] % int64(modulus)
 		}
 		fmt.Println("Product: ", product)
 
-		fft.Inverse(product, prime)
+		fft.Inverse(product)
 		fmt.Println("Inverse product: ", product)
 	}
 }
