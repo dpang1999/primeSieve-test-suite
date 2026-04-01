@@ -1,4 +1,4 @@
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 
 fn print_matrix(a: &Vec<Vec<f64>>) {
     for row in a {
@@ -112,12 +112,12 @@ fn multiply_matrices(a: &Vec<Vec<f64>>, b: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let mut n = 2000;
+    let mut n = 4;
     if args.len() > 1 {
-        n = args[1].parse().unwrap_or(2000);
+        n = args[1].parse().unwrap_or(4);
     }
 
-    let mut rand = Lcg::new(12345, 2_i32.pow(13)-1, 16645, 1013904);
+    let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
     let mut a: Vec<Vec<f64>> = vec![vec![0.0; n]; n];
     for i in 0..n {
         let mut row_sum = 0.0;
@@ -153,4 +153,8 @@ fn main() {
         } */
     }
 
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

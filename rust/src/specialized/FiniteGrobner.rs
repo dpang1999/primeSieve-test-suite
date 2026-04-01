@@ -5,7 +5,7 @@ use std::vec;
 
 static mut TERM_ORDER: TermOrder = TermOrder::Lex; // default to lex order, can be set to GrLex or RevLex as well
 static mut MODULUS: u64 = 7;
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
@@ -677,4 +677,9 @@ fn main() {
 
      
 
+}
+
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

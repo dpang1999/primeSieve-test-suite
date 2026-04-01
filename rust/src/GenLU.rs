@@ -8,7 +8,7 @@ use crate::generic::complex_field::ComplexField;
 use crate::generic::i_copiable::ICopiable;
 use crate::generic::i_ordered::IOrdered;
 use std::fmt::Display;
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 pub mod generic;
 
 pub fn solve<U: IField + ICopiable>(
@@ -154,11 +154,13 @@ fn main() {
     // arg1 = n (matrix size)
     // arg2 = field (1=SingleField, 2=DoubleField, else=int mod p)
     // arg3 = complex_bool (0=not complex, 1=complex)
+        println!("Test");
     let args: Vec<String> = std::env::args().collect();
+
     
     let mut n = 4;
     let mut field = 3;
-    let mut rand = Lcg::new(987654321, 2_i32.pow(31)-1, 16645, 1013904);
+    let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
     let mut complex_bool = 0;
     if args.len() > 1 {
         n = args[1].parse().unwrap_or(4);
@@ -241,8 +243,8 @@ fn main() {
         } else {
             println!("Rust generic finitefield LU");
             println!("Matrix size: {}", n);
-            set_modulus(2_u64.pow(19)-1);
-            let modulus = 2_u64.pow(19)-1;
+            set_modulus(2_u64.pow(13)-1);
+            let modulus = 2_u64.pow(13)-1;
             //set_modulus(7727);
             let mut a: Vec<Vec<IntModP>> = vec![vec![IntModP::new(0); n]; n];
             for i in 0..n {
@@ -319,4 +321,8 @@ fn prime_sieve(num:usize) -> Vec<i32> {
         }
     }
     prime_numbers
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

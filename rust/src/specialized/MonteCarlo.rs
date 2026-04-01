@@ -1,4 +1,4 @@
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 
 fn integrate(num_samples: usize) -> f64 {
     let mut rng = Lcg::new(12345, 1345, 16645, 1013904);
@@ -25,4 +25,8 @@ fn main() {
     println!("Pi is approximately: {}", pi);
     println!("Num samples: {}", num_samples);
     println!("RMS Error: {}", (std::f64::consts::PI - pi).abs());
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

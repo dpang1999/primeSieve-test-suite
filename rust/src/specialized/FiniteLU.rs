@@ -1,4 +1,4 @@
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 
 static mut MODULUS: i32 = 2^31 -1;
 
@@ -73,7 +73,7 @@ pub fn factor(a: &mut Vec<Vec<i32>>, pivot: &mut Vec<usize>) -> i32 {
         if j < m - 1 {
             let recp = mod_inverse(a[j][j] as i32, modulus);
             for k in (j + 1)..m {
-                a[k][j] = ((a[k][j] * recp) + modulus) % modulus;
+                a[k][j] = ((a[k][j] * recp)) % modulus;
             }
         }
 
@@ -124,26 +124,24 @@ fn main() {
     if args.len() > 1 {
         n = args[1].parse().unwrap_or(4);
     }
-    unsafe{MODULUS= 2_i32.pow(19)-1};
+    unsafe{MODULUS= 2_i32.pow(13)-1};
     let modulus = unsafe{MODULUS};
     
-    let mut rand = Lcg::new(987654321, 2_i32.pow(31)-1, 16645, 1013904);
+    let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
     let mut a: Vec<Vec<i32>> = vec![vec![0; n]; n];
     for i in 0..n {
         let mut row_sum = 0;
         for j in 0..n {
-            if i != j {
                 let val = rand.next_int() % modulus;
                 a[i][j] = val;
                 row_sum += val.abs();
-            }
         }
         // Set diagonal to be strictly greater than row_sum
         a[i][i] = (row_sum + rand.next_int() + 1) % modulus;
     }
    
     let mut b: Vec<i32> = (0..n).map(|_| rand.next_int() % modulus).collect();
-    //print_matrix(&a);
+    print_matrix(&a);
     println!("Rust specialized finite field LU");
     println!("Matrix size: {}", n);
     for i in 0..10 {
@@ -161,4 +159,8 @@ fn main() {
         }  */
     }
 
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

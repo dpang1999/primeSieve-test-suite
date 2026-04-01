@@ -1,7 +1,7 @@
 use core::fmt;
-use rust::helpers::lcg::Lcg;
-use rust::helpers::prime_sieve::prime_sieve;
-use rust::helpers::find_prime::find_prime_congruent_one_mod_n;
+use crate::helpers::lcg::Lcg;
+use crate::helpers::prime_sieve::prime_sieve;
+use crate::helpers::find_prime::find_prime_congruent_one_mod_n;
 
 use crate::generic::complex_field::ComplexField;
 use crate::generic::i_field::IField;
@@ -417,4 +417,8 @@ fn main() {
             println!("Random Doubles: {}", random_doubles.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         }
     }
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

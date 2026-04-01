@@ -233,7 +233,7 @@ func TestGenLU(n int, mode int) {
 	} else {
 		var A [][]IntModP
 		var b []IntModP
-		SetModulus(uint64(math.Pow(2, 19) - 1))
+		SetModulus(uint64(math.Pow(2, 13) - 1))
 
 		// Randomly populate A and b
 		A = make([][]IntModP, n)

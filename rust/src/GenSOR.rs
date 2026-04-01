@@ -2,11 +2,11 @@ use crate::generic::i_field::IField;
 use crate::generic::double_field::DoubleField;
 use crate::generic::single_field::SingleField;
 //use crate::generic::i_math::IMath;
-use crate::generic::int_mod_p::IntModP;
+///use crate::generic::int_mod_p::IntModP;
 use crate::generic::int_mod_p::set_modulus;
 use crate::generic::complex_field::ComplexField;
 use std::fmt::Display;
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 pub mod generic;
 pub fn execute<U: IField + Display + Clone>(omega: U, g: &mut Vec<Vec<U>>, num_iterations: usize) {
     let m = g.len();
@@ -106,7 +106,7 @@ fn main() {
             //println!("\nSteady-state temperature distribution:");
             //print_matrix(&g);
         }
-        else {
+        /* else {
             println!("Rust generic IntModP SOR");
             println!("Grid size: {}x{}", m, n);
             println!("Number of iterations: {}", num_iterations);
@@ -133,7 +133,7 @@ fn main() {
 
             //println!("\nSteady-state temperature distribution:");
             //print_matrix(&g);
-        }
+        } */
     }
     else {
         println!("Complex");
@@ -187,7 +187,7 @@ fn main() {
             //println!("\nSteady-state temperature distribution:");
             //print_matrix(&g);
         }
-        else {
+        /* else {
             println!("Rust generic complex IntModP SOR");
             println!("Grid size: {}x{}", m, n);
             println!("Number of iterations: {}", num_iterations);
@@ -214,7 +214,7 @@ fn main() {
 
             //println!("\nSteady-state temperature distribution:");
             //print_matrix(&g);
-        }
+        } */
     }
 }
 
@@ -238,4 +238,8 @@ fn prime_sieve(num:usize) -> Vec<i32> {
         }
     }
     prime_numbers
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

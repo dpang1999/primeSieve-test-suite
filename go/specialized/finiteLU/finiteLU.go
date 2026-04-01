@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-var modulus = int(math.Pow(2, 19) - 1)
+var modulus = int(math.Pow(2, 13) - 1)
 
 func modInverse(a, m int) int {
 	var m0, x0, x1 = m, 0, 1

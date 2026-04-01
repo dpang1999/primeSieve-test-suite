@@ -1,7 +1,7 @@
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 use crate::generic::double_field::DoubleField;
 use crate::generic::single_field::SingleField;
-use crate::generic::int_mod_p::IntModP;
+//use crate::generic::int_mod_p::IntModP;
 use crate::generic::int_mod_p::set_modulus;
 use crate::generic::i_field::IField;
 use crate::generic::i_ordered::IOrdered;
@@ -40,17 +40,21 @@ fn main() {
         println!("Rust generic singlefield montecarlo");
         pi = integrate(&temp, num_samples);
     }
-    else if (mode == 2) {
+    else {
         let temp = DoubleField::new(0.0);
         println!("Rust generic doublefield montecarlo");
         pi = integrate(&temp, num_samples);
     }
-    else {
+ /*    else {
         let temp = IntModP::new(0);
         println!("Rust generic intmodp montecarlo");
         pi = integrate(&temp, num_samples);
-    }
+    } */
     println!("Pi is approximately: {}", pi);
     println!("Num samples: {}", num_samples);
     println!("RMS Error: {}", (std::f64::consts::PI - pi).abs());
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

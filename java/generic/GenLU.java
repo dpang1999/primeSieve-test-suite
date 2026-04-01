@@ -327,7 +327,7 @@ public class GenLU<R extends IField<R> & IOrdered<R> & IMath<R> & ICopiable<R>> 
 			IntModP A[][] = new IntModP[N][N];
 			IntModP b[] = new IntModP[N];
 			int pivot[] = new int[N];
-			long p = 3221225473L;
+			long p = (long)(Math.pow(2, 13) - 1);
 			IntModP.setModulus(p);
 
 			for (int i = 0; i < N; i++) {

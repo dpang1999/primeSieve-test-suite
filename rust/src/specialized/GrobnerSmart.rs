@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 static mut TERM_ORDER: TermOrder = TermOrder::Lex; // default to lex order, can be set to GrLex or RevLex as well
 static mut MODULUS: u64 = 7; // default modulus for coefficients, can be changed as needed
 
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -683,4 +683,8 @@ fn main() {
             //bitpacked cant fit 7 variables
         }
     }
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

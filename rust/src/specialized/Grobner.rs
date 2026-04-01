@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::sync::OnceLock;
 static TERM_ORDER: OnceLock<TermOrder> = OnceLock::new();
-use rust::helpers::lcg::Lcg;
+use crate::helpers::lcg::Lcg;
 use num_integer::Integer;
 use num_bigint::BigInt;
 use num_traits::{Zero, One, Signed};
@@ -517,4 +517,9 @@ fn main() {
         }
 */
     }
+}
+
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

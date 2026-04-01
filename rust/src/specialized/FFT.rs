@@ -1,6 +1,6 @@
-use rust::helpers::lcg::Lcg;
-use rust::helpers::prime_sieve::prime_sieve;
-use rust::helpers::find_prime::find_prime_congruent_one_mod_n;
+use crate::helpers::lcg::Lcg;
+use crate::helpers::prime_sieve::prime_sieve;
+use crate::helpers::find_prime::find_prime_congruent_one_mod_n;
 
 pub struct FFT {}
 
@@ -205,4 +205,8 @@ fn main() {
         //println!("{}", data.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
         println!("n={} => RMS Error={}", n, fft.test(&mut data));
     }
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

@@ -181,7 +181,7 @@ function main() {
     } else {
       console.log("TypeScript generic finite field LU");
       console.log(`Matrix size: ${n}`);
-      const prime = 2**19 -1
+      const prime = 2**13 -1
       IntModP.setModulus(prime);
       const a: IntModP[][] = Array.from({ length: n }, () =>
         Array.from({ length: n }, () => new IntModP(0))

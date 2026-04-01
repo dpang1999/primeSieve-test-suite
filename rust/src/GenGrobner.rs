@@ -3,10 +3,10 @@ use std::env;
 use crate::generic::i_field::IField;
 use crate::generic::i_exponent::IExponent;
 pub mod generic;
-use crate::generic::double_field::DoubleField;
+//use crate::generic::double_field::DoubleField;
 use crate::generic::int_mod_p::IntModP;
 use crate::generic::int_mod_p::set_modulus;
-use crate::generic::single_field::SingleField;
+//use crate::generic::single_field::SingleField;
 use crate::generic::vec_exponent::VecExponent;
 use crate::generic::bit_packed_exponent::BitPackedExponent;
 pub mod helpers;
@@ -319,7 +319,7 @@ fn main() {
     // let mode = 0 be for testing
     let mode = 0;
    // println!("This is a generic Grobner basis computation module.");
-    if mode != 0 {
+    /* if mode != 0 {
         let mut rand = Lcg::new(12345, 1345, 16645, 1013904);
         let args: Vec<String> = env::args().collect();
 
@@ -411,8 +411,8 @@ fn main() {
         }
 
 
-    }
-    else if mode == 0 {
+    } */
+    if mode == 0 {
         let args: Vec<String> = std::env::args().collect();
         let n = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(4);
         let vec_type = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -752,7 +752,7 @@ fn main() {
 // conditions: always 3 terms per poly, 3 variables, exponents in [0,3]
 // coefficient type (0 = SingleField, 1 = DoubleField, 2 = IntModP)
 // exponent type (0 = VecExponent, 1 = BitPackedExponent) 
-pub fn generate_polynomials(
+/* pub fn generate_polynomials(
     num_polys: usize,
     coeff_type: usize,
     exp_type: usize,
@@ -849,4 +849,8 @@ pub enum GeneratedPolynomials {
     IntModPVecExponent(Vec<Polynomial<IntModP, VecExponent>>),
     IntModPBitPackedExponent(Vec<Polynomial<IntModP, BitPackedExponent>>),
     None,
+} */
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

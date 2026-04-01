@@ -1,6 +1,6 @@
 import { LCG } from "../helpers/lcg.js";
 
-let modulus = 2**19 - 1; // Mersenne prime for 32-bit integers
+let modulus = 2**13 - 1; // Mersenne prime for 32-bit integers
 function modInverse(a: number, m: number): number {
   let m0 = m, x0 = 0, x1 = 1;
   if (m === 1) return 0;
@@ -28,7 +28,7 @@ function main() {
   console.log("TypeScript specialized finite field LU")
   const n = parseInt(process.argv[2] ?? "4", 10);
   console.log(`Matrix size: ${n}`);
-  const rand = new LCG(987654321, 2**31 - 1, 16645, 1013904);
+  const rand = new LCG(12345, 1345, 16645, 1013904);
   const a: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
   for (let i = 0; i < n; i++) {
     let rowSum = 0;

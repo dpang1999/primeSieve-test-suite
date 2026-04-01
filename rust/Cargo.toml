@@ -11,58 +11,6 @@ num-bigint = "0.4"
 num-traits = "0.2"
 num-integer = "0.1"
 
-
-[[bin]]
-name = "lu"
-path = "src/specialized/LU.rs"
-[[bin]]
-name = "finiteLU"
-path = "src/specialized/FiniteLU.rs"
-[[bin]]
-name = "genlu"
-path = "src/GenLU.rs"
-[[bin]]
-name = "sor"
-path = "src/specialized/SOR.rs"
-[[bin]]
-name = "finiteSOR"
-path = "src/specialized/FiniteSOR.rs"
-[[bin]]
-name = "gensor"
-path = "src/GenSOR.rs"
-[[bin]]
-name = "fft"
-path = "src/specialized/FFT.rs"
-[[bin]]
-name = "genfft"
-path = "src/GenFFT.rs"
 [[bin]]
 name = "test"
 path = "src/test.rs"
-[[bin]]
-name = "montecarlo"
-path = "src/specialized/MonteCarlo.rs"
-[[bin]]
-name = "genmontecarlo"
-path = "src/GenMonteCarlo.rs"
-[[bin]]
-name = "grobner"
-path = "src/specialized/Grobner.rs"
-[[bin]]
-name = "finitegrobner"
-path = "src/specialized/FiniteGrobner.rs"
-[[bin]]
-name = "grobnerSmart"
-path = "src/specialized/GrobnerSmart.rs"
-[[bin]]
-name = "gengrobner"
-path = "src/GenGrobner.rs"
-[[bin]]
-name = "cyclicPolys"
-path = "src/helpers/cyclic_polynomials.rs"
-[[bin]]
-name = "testCyclicPolys"
-path = "src/specialized/test.rs"
-[[bin]]
-name = "finiteFFT"
-path = "src/specialized/FiniteFFT.rs"

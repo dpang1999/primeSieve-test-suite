@@ -220,9 +220,9 @@ public static int factor(int A[][],  int pivot[])
             // guarranteed not to be zero (Label #1)
             //
             int recp = modInverse(A[j][j], modulus);
-
-            for (int k=j+1; k<M; k++)
+            for (int k=j+1; k<M; k++) {
                 A[k][j] = A[k][j] * recp % modulus;
+            }
         }
 
 
@@ -241,7 +241,7 @@ public static int factor(int A[][],  int pivot[])
                 int Aj[] = A[j];
                 int AiiJ = Aii[j];
                 for (int jj=j+1; jj<N; jj++)
-                  Aii[jj] = (Aii[jj] - (AiiJ * Aj[jj])) % modulus;
+                  Aii[jj] = (Aii[jj] - (AiiJ * Aj[jj]) % modulus + modulus) % modulus;
 
             }
         }
@@ -304,7 +304,7 @@ public static int factor(int A[][],  int pivot[])
             N = Integer.parseInt(args[0]);
         int A[][] = new int[N][N];
         int b[] = new int[N];
-        FiniteLU.mod = (int)(Math.pow(2, 19) - 1);
+        FiniteLU.mod = (int)(Math.pow(2, 13) - 1);
         int modulus = FiniteLU.mod;
         LCG rand = new LCG(12345, 1345, 16645, 1013904);
         for (int i=0; i<N; i++)
@@ -316,12 +316,15 @@ public static int factor(int A[][],  int pivot[])
                 A[i][j] = val;
             }
             A[i][i] = (row_sum + rand.nextInt() + 1) % modulus; // Ensure diagonal dominance
-            b[i] = rand.nextInt() % modulus;
+
         }
+        for (int i=0; i<N; i++)
+            b[i] = rand.nextInt() % modulus;
+
 
         System.out.println("Java specialized finite field LU");
         System.out.println("Matrix size: " + N);
-        //printMatrix(A);
+        printMatrix(A);
         for (int i = 0; i < 10; i++) {
             int Acopy[][] = new_copy(A);
             int bcopy[] = new_copy(b);
@@ -342,7 +345,7 @@ public static int factor(int A[][],  int pivot[])
 		System.exit(0);
     }
 
-    public static void printMatrix(double A[][])
+    public static void printMatrix(int A[][])
     {
         int M = A.length;
         int N = A[0].length;
@@ -354,7 +357,7 @@ public static int factor(int A[][],  int pivot[])
             System.out.println();
         }
     }
-    public static void printVector(double B[])
+    public static void printVector(int B[])
     {
         int N = B.length;
 

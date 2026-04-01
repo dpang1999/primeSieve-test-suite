@@ -1,6 +1,6 @@
-use rust::helpers::lcg::Lcg;
-use rust::helpers::prime_sieve::prime_sieve;
-use rust::helpers::find_prime::{self, find_prime_congruent_one_mod_n};
+use crate::helpers::lcg::Lcg;
+use crate::helpers::prime_sieve::prime_sieve;
+use crate::helpers::find_prime::{self, find_prime_congruent_one_mod_n};
 
 static mut MODULUS: i32 = 0;
 
@@ -272,4 +272,8 @@ fn main() {
         println!("inverse product: {}", product.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
        
     }
+}
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
 }

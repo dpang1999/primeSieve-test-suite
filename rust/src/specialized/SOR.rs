@@ -59,3 +59,7 @@ fn main() {
     //println!("\nSteady-state temperature distribution:");
     //print_matrix(&g);
 }
+#[allow(dead_code)]
+pub fn run_algorithm() {
+    main();
+}
