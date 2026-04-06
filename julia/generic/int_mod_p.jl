@@ -25,6 +25,12 @@ Base.zero(::Type{IntModP}) = IntModP(0)
 Base.one(::Type{IntModP}) = IntModP(1)
 Base.zero(a::IntModP) = IntModP(0)
 is_zero(a::IntModP) = a.value == 0
+is_one(a::IntModP) = a.value == 1
+
+coerce_to_f64(a::IntModP) = Float64(a.value)
+coerce_from_int(::Type{IntModP}, value::Int32) = IntModP(value)
+coerce(::Type{IntModP}, value::Float64) = IntModP(Int(round(value)))
+
 Base.show(io::IO, a::IntModP) = print(io, a.value)
 
 function mod_inverse(a::IntModP)

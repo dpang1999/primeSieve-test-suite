@@ -14,3 +14,7 @@ num-integer = "0.1"
 [[bin]]
 name = "test"
 path = "src/test.rs"
+# the binaries in target/release are finalized executables 
+# there had been changes to the files to support running them all through test.rs for footprinting
+# thus they can no longer be compiled as individual binaries, but instead are compiled as part of the test binary
+# as such, for individual testing the already compiled binaries are to be used

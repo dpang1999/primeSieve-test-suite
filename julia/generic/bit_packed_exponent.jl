@@ -63,8 +63,6 @@ function get_lcm(a::BitPackedExponent, b::BitPackedExponent)
     return BitPackedExponent(lcm_exponents)
 end
 
-Base.:+(a::BitPackedExponent, b::BitPackedExponent) = BitPackedExponent(a.exps + b.exps)
-Base.:-(a::BitPackedExponent, b::BitPackedExponent) = BitPackedExponent(a.exps - b.exps)
 
 function Base.show(io::IO, a::BitPackedExponent)
     deg = (a.exps >> 48) & 0xFFFF
@@ -74,3 +72,8 @@ function Base.show(io::IO, a::BitPackedExponent)
         print(io, string(exp, base=16, pad=2), " ")
     end
 end
+
+Base.:+(a::BitPackedExponent, b::BitPackedExponent) = BitPackedExponent(a.exps + b.exps)
+Base.:-(a::BitPackedExponent, b::BitPackedExponent) = BitPackedExponent(a.exps - b.exps)
+Base.:(==)(a::BitPackedExponent, b::BitPackedExponent) = a.exps == b.exps
+Base.hash(a::BitPackedExponent, h::UInt) = hash(a.exps, h)
