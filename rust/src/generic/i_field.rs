@@ -1,4 +1,4 @@
-pub trait IField: {
+pub trait IField {
     fn a(&self, o: &Self) -> Self;
     fn ae(&mut self, o: &Self);
     fn s(&self, o: &Self) -> Self;
