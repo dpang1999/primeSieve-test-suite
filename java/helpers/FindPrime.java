@@ -20,7 +20,7 @@ public class FindPrime {
 
     // Example usage
     public static void main(String[] args) {
-        int n =  67108864;
+        int n =  134217728;
         int p = findPrimeCongruentOneModN(n);
         System.out.println("Smallest prime ≡ 1 mod " + n + ": " + p);
     }
